@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Permission to access the Internet -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication"
+        tools:targetApi="31">
+        <activity
+            android:name=".verifyPNR"
+            android:exported="false" />
+        <activity
+            android:name=".editableAddress"
+            android:exported="false" />
+        <activity
+            android:name=".autoCompleteAddress"
+            android:exported="false" /> <!-- MainActivity: Default Launcher -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity> <!-- OTP_Verification: Non-Launcher Activity -->
+        <activity
+            android:name=".OTP_Verification"
+            android:exported="true" />
+
+        <meta-data
+            android:name="com.google.android.geo.AIzaSyCDmMtuO7w9uBecNRCtf5vndLUAsZVPUHI"
+            android:value="AIzaSyCDmMtuO7w9uBecNRCtf5vndLUAsZVPUHI" />
+    </application>
+
+</manifest>

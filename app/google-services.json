@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "528917615335",
+    "firebase_url": "https://bhejochalo-3d292-default-rtdb.firebaseio.com",
+    "project_id": "bhejochalo-3d292",
+    "storage_bucket": "bhejochalo-3d292.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528917615335:android:283e2edf0f601d47cac842",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKHxOgIFelgPshx2LyY5mAqAK8cBrMlZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
