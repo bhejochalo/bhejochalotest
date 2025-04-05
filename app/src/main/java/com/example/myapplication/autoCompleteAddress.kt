@@ -24,7 +24,7 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import java.util.*
 
 class autoCompleteAddress : AppCompatActivity() {
-
+// for autocomplete address
     private val FROM_ADDRESS_REQUEST = 1
     private val TO_ADDRESS_REQUEST = 2
     private val LOCATION_PERMISSION_REQUEST = 100
