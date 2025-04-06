@@ -1,95 +1,168 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#6AEDE7E6"
+    android:textColor="@color/labelTextColor"
+    android:padding="16dp"
     tools:context=".editableAddress">
 
-    <!-- House Number Field -->
+    <!-- House Number -->
+    <TextView
+        android:id="@+id/houseNumberLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="House Number"
+        android:textSize="16sp"
+        android:textColor="#888888"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="16dp"/>
+
     <EditText
         android:id="@+id/houseNumberEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="House Number"
-        android:inputType="number"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:hint="Enter house number"
+        android:inputType="text"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/houseNumberLabel"
+        android:layout_marginTop="8dp"/>
 
-    <!-- Street Field -->
+    <!-- Street -->
+    <TextView
+        android:id="@+id/streetLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Street"
+        android:textSize="16sp"
+        android:textColor="#888888"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/houseNumberEditText"
+        android:layout_marginTop="16dp"/>
+
     <EditText
         android:id="@+id/streetEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="Street"
+        android:hint="Enter street name"
         android:inputType="text"
-        app:layout_constraintTop_toBottomOf="@id/houseNumberEditText"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    android:layout_marginTop="16dp"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/streetLabel"
+        android:layout_marginTop="8dp"/>
 
-    <!-- Area Field -->
+    <!-- Area/Locality -->
+    <TextView
+        android:id="@+id/areaLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Area/Locality"
+        android:textSize="16sp"
+        android:textColor="#888888"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/streetEditText"
+        android:layout_marginTop="16dp"/>
+
     <EditText
         android:id="@+id/areaEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="Area"
+        android:hint="Enter area/locality"
         android:inputType="text"
-        app:layout_constraintTop_toBottomOf="@id/streetEditText"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/areaLabel"
+        android:layout_marginTop="8dp"/>
 
-    <!-- Postal Code Field -->
+    <!-- Postal Code -->
+    <TextView
+        android:id="@+id/postalCodeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Postal Code"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#888888"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/areaEditText"
+        android:layout_marginTop="16dp"/>
+
     <EditText
         android:id="@+id/postalCodeEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="Postal Code"
+        android:hint="Enter postal code"
         android:inputType="number"
-        app:layout_constraintTop_toBottomOf="@id/areaEditText"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/postalCodeLabel"
+        android:layout_marginTop="8dp"/>
 
-    <!-- City Field -->
+    <!-- City -->
+    <TextView
+        android:id="@+id/cityLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="City"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#888888"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/postalCodeEditText"
+        android:layout_marginTop="16dp"/>
+
     <EditText
         android:id="@+id/cityEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="City"
+        android:hint="Enter city"
         android:inputType="text"
-        app:layout_constraintTop_toBottomOf="@id/postalCodeEditText"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cityLabel"
+        android:layout_marginTop="8dp"/>
 
-    <!-- State Field -->
+    <!-- State -->
+    <TextView
+        android:id="@+id/stateLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="State"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#888888"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cityEditText"
+        android:layout_marginTop="16dp"/>
+
     <EditText
         android:id="@+id/stateEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="State"
+        android:hint="Enter state"
         android:inputType="text"
-        app:layout_constraintTop_toBottomOf="@id/cityEditText"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stateLabel"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Save Button -->
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Address"
+        android:layout_marginTop="32dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/stateEditText"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

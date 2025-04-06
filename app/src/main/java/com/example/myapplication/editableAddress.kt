@@ -2,6 +2,7 @@ package com.example.myapplication
 
 import android.os.Bundle
 import android.widget.EditText
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -18,6 +19,22 @@ class editableAddress : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Initialize all TextViews (labels)
+        val houseNumberLabel = findViewById<TextView>(R.id.houseNumberLabel)
+        val streetLabel = findViewById<TextView>(R.id.streetLabel)
+        val areaLabel = findViewById<TextView>(R.id.areaLabel)
+        val postalCodeLabel = findViewById<TextView>(R.id.postalCodeLabel)
+        val cityLabel = findViewById<TextView>(R.id.cityLabel)
+        val stateLabel = findViewById<TextView>(R.id.stateLabel)
+
+        // Set label texts
+        houseNumberLabel.text = "House Number"
+        streetLabel.text = "Street"
+        areaLabel.text = "Area/Locality"
+        postalCodeLabel.text = "Postal Code"
+        cityLabel.text = "City"
+        stateLabel.text = "State"
 
         // Initialize all EditText fields
         val houseNumberEditText = findViewById<EditText>(R.id.houseNumberEditText)

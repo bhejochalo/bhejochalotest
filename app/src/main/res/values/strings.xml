@@ -5,6 +5,12 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
+    <string name="house_number_label">House Number <font color='#FF0000'>*</font></string>
+    <string name="street_label">Street <font color='#FF0000'>*</font></string>
+    <string name="area_label">Area/Locality <font color='#FF0000'>*</font></string>
+    <string name="postal_code_label">Postal Code <font color='#FF0000'>*</font></string>
+    <string name="city_label">City <font color='#FF0000'>*</font></string>
+    <string name="state_label">State <font color='#FF0000'>*</font></string>
 
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
