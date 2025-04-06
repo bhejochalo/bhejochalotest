@@ -24,13 +24,13 @@ import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import java.util.*
 
 class autoCompleteAddress : AppCompatActivity() {
-// for autocomplete address
-    //code sync
     private val FROM_ADDRESS_REQUEST = 1
     private val TO_ADDRESS_REQUEST = 2
     private val LOCATION_PERMISSION_REQUEST = 100
     private var fromAddress: String? = null
     private var toAddress: String? = null
+    private var fromPlace: Place? = null
+    private var toPlace: Place? = null
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -70,7 +70,19 @@ class autoCompleteAddress : AppCompatActivity() {
 
         val nextButton = findViewById<Button>(R.id.NextButton)
         nextButton.setOnClickListener {
-            if (fromAddress != null) {
+            if (fromPlace != null) {
+                val addressComponents = parsePlace(fromPlace!!)
+                val intent = Intent(this@autoCompleteAddress, editableAddress::class.java).apply {
+                    putExtra("HOUSE_NUMBER", addressComponents["houseNumber"])
+                    putExtra("STREET", addressComponents["street"])
+                    putExtra("AREA", addressComponents["area"])
+                    putExtra("POSTAL_CODE", addressComponents["postalCode"])
+                    putExtra("CITY", addressComponents["city"])
+                    putExtra("STATE", addressComponents["state"])
+                    putExtra("FULL_ADDRESS", fromPlace!!.address)
+                }
+                startActivity(intent)
+            } else if (fromAddress != null) {
                 val addressComponents = parseAddress(fromAddress!!)
                 val intent = Intent(this@autoCompleteAddress, editableAddress::class.java).apply {
                     putExtra("HOUSE_NUMBER", addressComponents["houseNumber"])
@@ -79,6 +91,7 @@ class autoCompleteAddress : AppCompatActivity() {
                     putExtra("POSTAL_CODE", addressComponents["postalCode"])
                     putExtra("CITY", addressComponents["city"])
                     putExtra("STATE", addressComponents["state"])
+                    putExtra("FULL_ADDRESS", fromAddress)
                 }
                 startActivity(intent)
             } else {
@@ -88,7 +101,7 @@ class autoCompleteAddress : AppCompatActivity() {
     }
 
     private fun launchAutocomplete(requestCode: Int) {
-        val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
+        val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.ADDRESS_COMPONENTS)
         val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
             .setCountry("IN")
             .build(this)
@@ -108,9 +121,11 @@ class autoCompleteAddress : AppCompatActivity() {
                         if (requestCode == FROM_ADDRESS_REQUEST) {
                             fromAddress = address
                             findViewById<EditText>(R.id.et_from_address).setText(address)
+                            fromPlace = place
                         } else if (requestCode == TO_ADDRESS_REQUEST) {
                             toAddress = address
                             findViewById<EditText>(R.id.et_to_address).setText(address)
+                            toPlace = place
                         }
                     }
                 }
@@ -127,24 +142,98 @@ class autoCompleteAddress : AppCompatActivity() {
         }
     }
 
+    private fun parsePlace(place: Place): Map<String, String> {
+        val components = mutableMapOf<String, String>()
+
+        // Get address components from Place object
+        components["houseNumber"] = place.addressComponents?.asList()?.find {
+            it.types.contains("street_number")
+        }?.name ?: ""
+
+        components["street"] = place.addressComponents?.asList()?.find {
+            it.types.contains("route")
+        }?.name ?: place.address?.split(",")?.firstOrNull()?.trim() ?: ""
+
+        components["area"] = place.addressComponents?.asList()?.find {
+            it.types.contains("sublocality") || it.types.contains("neighborhood")
+        }?.name ?: ""
+
+        components["postalCode"] = place.addressComponents?.asList()?.find {
+            it.types.contains("postal_code")
+        }?.name ?: ""
+
+        components["city"] = place.addressComponents?.asList()?.find {
+            it.types.contains("locality")
+        }?.name ?: ""
+
+        components["state"] = place.addressComponents?.asList()?.find {
+            it.types.contains("administrative_area_level_1")
+        }?.name ?: ""
+
+        return components
+    }
+
     private fun parseAddress(fullAddress: String): Map<String, String> {
         val components = mutableMapOf<String, String>()
         val parts = fullAddress.split(",").map { it.trim() }
 
-        // Simple parsing - adjust based on your actual address format
+        // Initialize all components with empty strings
+        components["houseNumber"] = ""
+        components["street"] = ""
+        components["area"] = ""
+        components["postalCode"] = ""
+        components["city"] = ""
+        components["state"] = ""
+
         if (parts.isNotEmpty()) {
             // First part is typically house number and street
-            val streetParts = parts[0].split(" ")
+            val streetParts = parts[0].split(" ").filter { it.isNotBlank() }
             if (streetParts.isNotEmpty()) {
-                components["houseNumber"] = streetParts.firstOrNull() ?: ""
-                components["street"] = streetParts.drop(1).joinToString(" ")
+                // Try to extract house number (if it starts with a digit)
+                val houseNumberIndex = streetParts.indexOfFirst { it.any { char -> char.isDigit() } }
+                if (houseNumberIndex != -1) {
+                    components["houseNumber"] = streetParts[houseNumberIndex]
+                    components["street"] = streetParts.filterIndexed { index, _ -> index != houseNumberIndex }.joinToString(" ")
+                } else {
+                    components["street"] = parts[0]
+                }
             }
 
-            // Subsequent parts
-            if (parts.size > 1) components["area"] = parts[1]
-            if (parts.size > 2) components["city"] = parts[2]
-            if (parts.size > 3) components["state"] = parts[3]
-            if (parts.size > 4) components["postalCode"] = parts[4]
+            // Assign remaining parts based on position
+            when (parts.size) {
+                2 -> {
+                    components["area"] = parts[1]
+                }
+                3 -> {
+                    components["area"] = parts[1]
+                    components["city"] = parts[2]
+                }
+                4 -> {
+                    components["area"] = parts[1]
+                    components["city"] = parts[2]
+                    components["state"] = parts[3]
+                }
+                5 -> {
+                    components["area"] = parts[1]
+                    components["city"] = parts[2]
+                    components["state"] = parts[3]
+                    // Try to identify postal code (assuming it's numeric)
+                    components["postalCode"] = parts[4].filter { it.isDigit() }
+                }
+                else -> {
+                    // For longer addresses, try to identify components by content
+                    parts.forEachIndexed { index, part ->
+                        when {
+                            index == 0 -> {} // already handled
+                            part.contains("PIN") || part.contains("Pincode") -> components["postalCode"] = part.filter { it.isDigit() }
+                            part.any { it.isDigit() } && part.length < 10 -> components["postalCode"] = part.filter { it.isDigit() }
+                            index == parts.size - 1 -> components["state"] = part
+                            index == parts.size - 2 -> components["city"] = part
+                            else -> components["area"] = if (components["area"]?.isEmpty() == true) part else components["area"] + ", $part"
+                        }
+                    }
+                }
+            }
         }
 
         return components
