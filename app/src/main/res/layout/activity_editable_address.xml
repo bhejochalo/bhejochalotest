@@ -6,7 +6,6 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:textColor="@color/labelTextColor"
     android:padding="16dp"
     tools:context=".editableAddress">
 
@@ -29,8 +28,8 @@
         android:layout_height="wrap_content"
         android:hint="Enter house number"
         android:inputType="text"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/houseNumberLabel"
         android:layout_marginTop="8dp"/>
 
@@ -53,8 +52,8 @@
         android:layout_height="wrap_content"
         android:hint="Enter street name"
         android:inputType="text"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/streetLabel"
         android:layout_marginTop="8dp"/>
 
@@ -77,8 +76,8 @@
         android:layout_height="wrap_content"
         android:hint="Enter area/locality"
         android:inputType="text"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/areaLabel"
         android:layout_marginTop="8dp"/>
 
@@ -101,8 +100,8 @@
         android:layout_height="wrap_content"
         android:hint="Enter postal code"
         android:inputType="number"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/postalCodeLabel"
         android:layout_marginTop="8dp"/>
 
@@ -125,8 +124,8 @@
         android:layout_height="wrap_content"
         android:hint="Enter city"
         android:inputType="text"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/cityLabel"
         android:layout_marginTop="8dp"/>
 
@@ -149,8 +148,8 @@
         android:layout_height="wrap_content"
         android:hint="Enter state"
         android:inputType="text"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/stateLabel"
         android:layout_marginTop="8dp"/>
 
@@ -161,8 +160,8 @@
         android:layout_height="wrap_content"
         android:text="Save Address"
         android:layout_marginTop="32dp"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/stateEditText"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

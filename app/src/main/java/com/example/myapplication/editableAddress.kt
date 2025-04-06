@@ -3,10 +3,13 @@ package com.example.myapplication
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.text.HtmlCompat
 
 class editableAddress : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,7 +23,7 @@ class editableAddress : AppCompatActivity() {
             insets
         }
 
-        // Initialize all TextViews (labels)
+        // Label TextViews
         val houseNumberLabel = findViewById<TextView>(R.id.houseNumberLabel)
         val streetLabel = findViewById<TextView>(R.id.streetLabel)
         val areaLabel = findViewById<TextView>(R.id.areaLabel)
@@ -28,15 +31,15 @@ class editableAddress : AppCompatActivity() {
         val cityLabel = findViewById<TextView>(R.id.cityLabel)
         val stateLabel = findViewById<TextView>(R.id.stateLabel)
 
-        // Set label texts
-        houseNumberLabel.text = "House Number"
-        streetLabel.text = "Street"
-        areaLabel.text = "Area/Locality"
-        postalCodeLabel.text = "Postal Code"
-        cityLabel.text = "City"
-        stateLabel.text = "State"
+        // Add asterisk to each label
+        houseNumberLabel.text = withAsterisk("House Number")
+        streetLabel.text = withAsterisk("Street")
+        areaLabel.text = withAsterisk("Area/Locality")
+        postalCodeLabel.text = withAsterisk("Postal Code")
+        cityLabel.text = withAsterisk("City")
+        stateLabel.text = withAsterisk("State")
 
-        // Initialize all EditText fields
+        // EditTexts
         val houseNumberEditText = findViewById<EditText>(R.id.houseNumberEditText)
         val streetEditText = findViewById<EditText>(R.id.streetEditText)
         val areaEditText = findViewById<EditText>(R.id.areaEditText)
@@ -44,7 +47,43 @@ class editableAddress : AppCompatActivity() {
         val cityEditText = findViewById<EditText>(R.id.cityEditText)
         val stateEditText = findViewById<EditText>(R.id.stateEditText)
 
-        // Populate fields from intent extras
+        // Save button
+        val saveButton = findViewById<Button>(R.id.saveButton)
+
+        saveButton.setOnClickListener {
+            var isValid = true
+
+            if (houseNumberEditText.text.isNullOrBlank()) {
+                houseNumberEditText.error = "This field is required"
+                isValid = false
+            }
+            if (streetEditText.text.isNullOrBlank()) {
+                streetEditText.error = "This field is required"
+                isValid = false
+            }
+            if (areaEditText.text.isNullOrBlank()) {
+                areaEditText.error = "This field is required"
+                isValid = false
+            }
+            if (postalCodeEditText.text.isNullOrBlank()) {
+                postalCodeEditText.error = "This field is required"
+                isValid = false
+            }
+            if (cityEditText.text.isNullOrBlank()) {
+                cityEditText.error = "This field is required"
+                isValid = false
+            }
+            if (stateEditText.text.isNullOrBlank()) {
+                stateEditText.error = "This field is required"
+                isValid = false
+            }
+
+            if (isValid) {
+                Toast.makeText(this, "Address saved successfully", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Populate fields from intent (optional)
         intent?.extras?.let { bundle ->
             houseNumberEditText.setText(bundle.getString("HOUSE_NUMBER", ""))
             streetEditText.setText(bundle.getString("STREET", ""))
@@ -53,5 +92,12 @@ class editableAddress : AppCompatActivity() {
             cityEditText.setText(bundle.getString("CITY", ""))
             stateEditText.setText(bundle.getString("STATE", ""))
         }
+    }
+
+    private fun withAsterisk(label: String): CharSequence {
+        return HtmlCompat.fromHtml(
+            "$label <font color='#FF0000'>*</font>",
+            HtmlCompat.FROM_HTML_MODE_LEGACY
+        )
     }
 }
