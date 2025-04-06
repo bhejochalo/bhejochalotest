@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.TextView
@@ -79,6 +80,11 @@ class editableAddress : AppCompatActivity() {
             }
 
             if (isValid) {
+                val intent = Intent(this, pnrCheck::class.java).apply {
+                    // Add any extras if needed
+                    // putExtra("KEY", value)
+                }
+                startActivity(intent)
                 Toast.makeText(this, "Address saved successfully", Toast.LENGTH_SHORT).show()
             }
         }

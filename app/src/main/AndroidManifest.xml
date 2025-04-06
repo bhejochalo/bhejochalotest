@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- Permission to access the Internet -->
+
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
@@ -15,31 +16,44 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication"
         tools:targetApi="31">
-        <activity
-            android:name=".verifyPNR"
-            android:exported="false" />
-        <activity
-            android:name=".editableAddress"
-            android:exported="false" />
-        <activity
-            android:name=".autoCompleteAddress"
-            android:exported="false" /> <!-- MainActivity: Default Launcher -->
+
+        <!-- Main Launcher Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- OTP_Verification: Non-Launcher Activity -->
+        </activity>
+
+        <!-- OTP Verification -->
         <activity
             android:name=".OTP_Verification"
-            android:exported="true" />
+            android:exported="false"/>
 
+        <!-- Address Flow -->
+        <activity
+            android:name=".autoCompleteAddress"
+            android:exported="false"/>
+        <activity
+            android:name=".editableAddress"
+            android:exported="false"/>
+
+        <!-- PNR Flow -->
+        <activity
+            android:name=".pnrCheck"
+            android:exported="false"/>
+        <activity
+            android:name=".webviewPnr"
+            android:exported="false"/>
+
+        <!-- Other Activities -->
+
+
+        <!-- Google Maps API Key -->
         <meta-data
-            android:name="com.google.android.geo.AIzaSyCDmMtuO7w9uBecNRCtf5vndLUAsZVPUHI"
+            android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCDmMtuO7w9uBecNRCtf5vndLUAsZVPUHI" />
     </application>
-
 </manifest>

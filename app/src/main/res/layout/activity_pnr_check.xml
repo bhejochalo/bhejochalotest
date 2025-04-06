@@ -1,0 +1,30 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etPnr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter PNR Number"
+        android:inputType="textCapCharacters"/>
+
+    <EditText
+        android:id="@+id/etSurname"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Surname"
+        android:inputType="textCapCharacters"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/btnVerify"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Verify PNR"
+        android:layout_marginTop="16dp"/>
+</LinearLayout>
