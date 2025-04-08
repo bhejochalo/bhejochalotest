@@ -10,78 +10,73 @@
     android:padding="24dp"
     tools:context=".MainActivity">
 
-    <!-- Logo with round corners -->
+    <!-- App Logo -->
     <ImageView
         android:id="@+id/logo"
         android:layout_width="160dp"
         android:layout_height="160dp"
+        android:layout_marginTop="48dp"
         android:src="@drawable/logo"
         android:contentDescription="App Logo"
         android:scaleType="centerCrop"
         android:background="@drawable/bg_round_image"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="48dp"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Phone input group -->
-
-    <!-- OTP Button -->
-
+    <!-- Phone Input Group -->
     <LinearLayout
         android:id="@+id/phoneInputGroup"
-        android:layout_width="303dp"
-        android:layout_height="73dp"
-        android:layout_marginTop="108dp"
+        android:layout_width="327dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
         android:background="@drawable/bg_rounded_white"
         android:elevation="4dp"
-        android:orientation="vertical"
-        android:padding="20dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
         app:layout_constraintTop_toBottomOf="@id/logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintWidth_percent="0.85">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Phone Icon -->
+        <ImageView
+            android:id="@+id/orangelogo"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/orangephone"
+            android:contentDescription="Phone Icon"
+            android:layout_marginEnd="12dp"
+            android:scaleType="fitCenter" />
+
+        <!-- Phone Number Input -->
+        <EditText
+            android:id="@+id/phoneNumber"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="37dp"
-                android:layout_height="104dp"
-                android:contentDescription="Phone Icon"
-                android:src="@drawable/ic_phone_orange"
-                app:tint="#F05A28"
-                tools:ignore="MissingConstraints" />
-
-            <EditText
-                android:id="@+id/phoneNumber"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@null"
-                android:hint="+91 9900 XXXX XX"
-                android:inputType="phone"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:textColor="#333333"
-                android:textSize="16sp" />
-        </LinearLayout>
-
+            android:layout_weight="1"
+            android:background="@null"
+            android:hint="+91 9900 XXXX XX"
+            android:inputType="phone"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textColor="#333333"
+            android:textSize="16sp" />
     </LinearLayout>
 
+    <!-- Send OTP Button -->
     <Button
         android:id="@+id/button"
         android:layout_width="148dp"
         android:layout_height="49dp"
         android:layout_marginTop="56dp"
-        app:backgroundTint="@null"
         android:background="@drawable/bg_rounded_button"
         android:text="Send OTP"
         android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="@id/phoneInputGroup"
+        app:backgroundTint="@null"
+        app:layout_constraintTop_toBottomOf="@id/phoneInputGroup"
         app:layout_constraintStart_toStartOf="@id/phoneInputGroup"
-        app:layout_constraintTop_toBottomOf="@id/phoneInputGroup" />
+        app:layout_constraintEnd_toEndOf="@id/phoneInputGroup" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
