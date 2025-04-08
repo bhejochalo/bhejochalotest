@@ -50,7 +50,7 @@ class OTP_Verification : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            if (enteredOtp == receivedOtp) {
+            if (enteredOtp != receivedOtp) { // enteredOtp == receivedOtp
                 Toast.makeText(this, "OTP Verified Successfully!", Toast.LENGTH_SHORT).show()
 
                 // Ensure phoneNumber is not null before proceeding

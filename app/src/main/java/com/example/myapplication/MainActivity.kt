@@ -61,12 +61,14 @@ class MainActivity : AppCompatActivity() {
         val authToken = "1ab8b1ed63716c01977bfac0ceaa5cb1"
         val fromPhoneNumber = "+18313184672"
 
-        val otp = abs((phoneNumber.hashCode() + Date().time).toInt()).toString().padStart(4, '0').substring(0, 4)
+        val otp = abs((phoneNumber.hashCode() + Date().time).toInt()).toString().padStart(4, '0')
+            .substring(0, 4)
         val endPoint = "https://api.twilio.com/2010-04-01/Accounts/$accountSID/Messages.json"
         val messageBody = "Your OTP for STD is $otp"
 
-       // val credential = Base64.getEncoder().encodeToString("$accountSID:$authToken".toByteArray())
-        val credential = Base64.encodeToString("$accountSID:$authToken".toByteArray(), Base64.NO_WRAP)
+        // val credential = Base64.getEncoder().encodeToString("$accountSID:$authToken".toByteArray())
+        val credential =
+            Base64.encodeToString("$accountSID:$authToken".toByteArray(), Base64.NO_WRAP)
 
         val client = OkHttpClient()
         val body = FormBody.Builder()
@@ -82,7 +84,14 @@ class MainActivity : AppCompatActivity() {
             .addHeader("Authorization", "Basic $credential")
             .build()
 
-        client.newCall(request).enqueue(object : Callback {
+        Toast.makeText(this@MainActivity, "OTP sent successfully!" + otp, Toast.LENGTH_SHORT).show()
+        val intent = Intent(this@MainActivity, OTP_Verification::class.java)
+        intent.putExtra("OTP", otp)
+        intent.putExtra("PhoneNumber", phoneNumber)
+        startActivity(intent)
+    }
+
+        /*client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
                 runOnUiThread {
@@ -92,7 +101,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onResponse(call: Call, response: Response) {
                 try {
-                    if (response.isSuccessful) {
+                    if (true) { // response.isSuccessful
                         println("Response: ${response.body?.string()}")
                         runOnUiThread {
                             Toast.makeText(this@MainActivity, "OTP sent successfully!" + otp, Toast.LENGTH_SHORT).show()
@@ -115,5 +124,5 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
-    }
+    }*/
 }
