@@ -28,7 +28,13 @@ class webviewPnr : AppCompatActivity() {
 
         val pnr = intent.getStringExtra("PNR") ?: ""
         val surname = intent.getStringExtra("SURNAME") ?: ""
-        originalPnrUrl = "https://www.spicejet.com/checkin/trip-details?pnr=$pnr&last=$surname"
+        val airline = intent.getStringExtra("AIRLINE") ?: "SpiceJet"
+
+        // Determine URL based on selected airline
+        originalPnrUrl = when (airline) {
+            "IndiGo" -> "https://www.goindigo.in/check-in?pnr=$pnr&lastName=$surname"
+            else -> "https://www.spicejet.com/checkin/trip-details?pnr=$pnr&last=$surname"
+        }
 
         webView = WebView(this).apply {
             layoutParams = ViewGroup.LayoutParams(1, 1)
@@ -50,10 +56,7 @@ class webviewPnr : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             private var currentUrl: String? = null
 
-            override fun shouldOverrideUrlLoading(
-                view: WebView,
-                request: WebResourceRequest
-            ): Boolean {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 currentUrl = request.url.toString()
                 Log.d("URL_TRACKING", "Loading: $currentUrl")
                 return false
@@ -96,11 +99,7 @@ class webviewPnr : AppCompatActivity() {
 
         runOnUiThread {
             loaderContainer.visibility = View.GONE
-            if (isValid) {
-                Toast.makeText(this, "✅ Valid PNR", Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(this, "❌ Invalid PNR", Toast.LENGTH_LONG).show()
-            }
+            Toast.makeText(this, if (isValid) "✅ Valid PNR" else "❌ Invalid PNR", Toast.LENGTH_LONG).show()
             finish()
         }
     }
