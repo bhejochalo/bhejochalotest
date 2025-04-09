@@ -5,14 +5,17 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.*
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import android.view.ViewGroup
 
 class webviewPnr : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var loader: ProgressBar
     private lateinit var originalPnrUrl: String
     private val handler = Handler(Looper.getMainLooper())
     private var verificationCompleted = false
@@ -22,12 +25,14 @@ class webviewPnr : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_webview_pnr)
 
-        // Get PNR and Surname from intent
+        // Get references
+        loader = findViewById(R.id.loader)
+
         val pnr = intent.getStringExtra("PNR") ?: ""
         val surname = intent.getStringExtra("SURNAME") ?: ""
         originalPnrUrl = "https://www.spicejet.com/checkin/trip-details?pnr=$pnr&last=$surname"
 
-        // Initialize hidden WebView
+        // Create hidden WebView
         webView = WebView(this).apply {
             layoutParams = ViewGroup.LayoutParams(1, 1)
             alpha = 0f
@@ -63,13 +68,19 @@ class webviewPnr : AppCompatActivity() {
                 Log.d("PAGE_LOADED", "Finished: $url")
 
                 if (!verificationCompleted) {
-                    // Check after delay to ensure all redirects complete
                     handler.postDelayed({
                         getFinalUrl()
-                    }, 10000) // 3 seconds delay
+                    }, 10000) // wait for all redirects to finish
                 }
             }
         }
+    }
+
+    private fun startVerification() {
+        Toast.makeText(this, "Verifying PNR...", Toast.LENGTH_SHORT).show()
+        verificationCompleted = false
+        loader.visibility = View.VISIBLE
+        webView.loadUrl(originalPnrUrl)
     }
 
     private fun getFinalUrl() {
@@ -87,6 +98,7 @@ class webviewPnr : AppCompatActivity() {
         Log.d("VERIFICATION", "Original: $originalPnrUrl\nFinal: $finalUrl\nValid: $isValid")
 
         runOnUiThread {
+            loader.visibility = View.GONE
             if (isValid) {
                 Toast.makeText(this, "✅ Valid PNR", Toast.LENGTH_LONG).show()
             } else {
@@ -94,12 +106,6 @@ class webviewPnr : AppCompatActivity() {
             }
             finish()
         }
-    }
-
-    private fun startVerification() {
-        Toast.makeText(this, "Verifying PNR...", Toast.LENGTH_SHORT).show()
-        verificationCompleted = false
-        webView.loadUrl(originalPnrUrl)
     }
 
     override fun onDestroy() {
