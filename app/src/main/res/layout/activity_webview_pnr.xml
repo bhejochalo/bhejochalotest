@@ -4,20 +4,34 @@
     android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFF3E0"
     tools:context=".webviewPnr">
 
-    <!-- You can add a visible WebView here if you want (optional) -->
-    <!-- But this example uses an invisible one created programmatically -->
-
-    <!-- Orange Loader -->
-    <ProgressBar
-        android:id="@+id/loader"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+    <!-- Centered container for loader and text -->
+    <LinearLayout
+        android:id="@+id/loaderContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"
-        android:indeterminate="true"
-        android:indeterminateTint="#F25C05" />
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
 
+        <ProgressBar
+            android:id="@+id/loader"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:indeterminate="true"
+            android:indeterminateTint="#F25C05" />
+
+        <TextView
+            android:id="@+id/tvVerifying"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verifying PNR..."
+            android:textColor="#F25C05"
+            android:textSize="16sp"
+            android:layout_marginTop="12dp" />
+    </LinearLayout>
 </FrameLayout>

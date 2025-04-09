@@ -8,14 +8,13 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
-import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class webviewPnr : AppCompatActivity() {
 
     private lateinit var webView: WebView
-    private lateinit var loader: ProgressBar
+    private lateinit var loaderContainer: View
     private lateinit var originalPnrUrl: String
     private val handler = Handler(Looper.getMainLooper())
     private var verificationCompleted = false
@@ -25,14 +24,12 @@ class webviewPnr : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_webview_pnr)
 
-        // Get references
-        loader = findViewById(R.id.loader)
+        loaderContainer = findViewById(R.id.loaderContainer)
 
         val pnr = intent.getStringExtra("PNR") ?: ""
         val surname = intent.getStringExtra("SURNAME") ?: ""
         originalPnrUrl = "https://www.spicejet.com/checkin/trip-details?pnr=$pnr&last=$surname"
 
-        // Create hidden WebView
         webView = WebView(this).apply {
             layoutParams = ViewGroup.LayoutParams(1, 1)
             alpha = 0f
@@ -70,7 +67,7 @@ class webviewPnr : AppCompatActivity() {
                 if (!verificationCompleted) {
                     handler.postDelayed({
                         getFinalUrl()
-                    }, 10000) // wait for all redirects to finish
+                    }, 10000)
                 }
             }
         }
@@ -79,7 +76,7 @@ class webviewPnr : AppCompatActivity() {
     private fun startVerification() {
         Toast.makeText(this, "Verifying PNR...", Toast.LENGTH_SHORT).show()
         verificationCompleted = false
-        loader.visibility = View.VISIBLE
+        loaderContainer.visibility = View.VISIBLE
         webView.loadUrl(originalPnrUrl)
     }
 
@@ -98,7 +95,7 @@ class webviewPnr : AppCompatActivity() {
         Log.d("VERIFICATION", "Original: $originalPnrUrl\nFinal: $finalUrl\nValid: $isValid")
 
         runOnUiThread {
-            loader.visibility = View.GONE
+            loaderContainer.visibility = View.GONE
             if (isValid) {
                 Toast.makeText(this, "✅ Valid PNR", Toast.LENGTH_LONG).show()
             } else {
