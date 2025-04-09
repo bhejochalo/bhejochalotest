@@ -24,6 +24,8 @@
         android:layout_width="96dp"
         android:layout_height="42dp"
         android:text="Verify OTP"
+        app:backgroundTint="@null"
+        android:background="@drawable/bg_rounded_button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
