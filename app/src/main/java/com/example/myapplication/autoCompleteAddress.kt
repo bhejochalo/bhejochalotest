@@ -24,7 +24,6 @@ class AutoCompleteAddressActivity : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var fromPlace: Place? = null
     private var toPlace: Place? = null
-
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -69,6 +68,7 @@ class AutoCompleteAddressActivity : AppCompatActivity() {
             val intent = Intent(this, FromAddressActivity::class.java).apply {
                 putExtra("FROM_PLACE", fromPlace)
                 putExtra("TO_PLACE", toPlace)
+                putExtra("PHONE_NUMBER", intent.getStringExtra("PHONE_NUMBER"))
             }
             startActivity(intent)
         }

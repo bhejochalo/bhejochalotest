@@ -77,6 +77,7 @@ class OTP_Verification : AppCompatActivity() {
                         Toast.makeText(this, "User record saved!", Toast.LENGTH_SHORT).show()
 
                         val intent = Intent(this@OTP_Verification, AutoCompleteAddressActivity::class.java)
+                        intent.putExtra("PHONE_NUMBER", phoneNumber)
                         startActivity(intent)
                     }
                     .addOnFailureListener { e ->

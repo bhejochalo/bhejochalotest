@@ -13,6 +13,9 @@ class FromAddressActivity : AppCompatActivity() {
     private lateinit var toPlace: Place
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val fromAddress = intent.getStringExtra("FROM_ADDRESS")
+        val toAddress = intent.getStringExtra("TO_ADDRESS")
+        val phoneNumber = intent.getStringExtra("PHONE_NUMBER")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editable_address)
         findViewById<TextView>(R.id.addressHeading).text = "From Address"
@@ -51,7 +54,12 @@ class FromAddressActivity : AppCompatActivity() {
         nextButton.setOnClickListener {
             if (validateFields()) {
                 val intent = Intent(this, ToAddressActivity::class.java).apply {
+                    putExtra("FROM_PLACE", intent.getParcelableExtra<Place>("FROM_PLACE"))
                     putExtra("TO_PLACE", toPlace)
+                    putExtra("PHONE_NUMBER", phoneNumber)
+                    // Also pass the address strings if needed
+                    putExtra("FROM_ADDRESS", fromAddress)
+                    putExtra("TO_ADDRESS", toAddress)
                 }
                 startActivity(intent)
             }

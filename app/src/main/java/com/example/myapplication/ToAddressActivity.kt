@@ -11,6 +11,9 @@ import com.google.android.libraries.places.api.model.Place
 
 class ToAddressActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val fromAddress = intent.getStringExtra("FROM_ADDRESS")
+        val toAddress = intent.getStringExtra("TO_ADDRESS")
+        val phoneNumber = intent.getStringExtra("PHONE_NUMBER")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editable_address)
         findViewById<TextView>(R.id.addressHeading).text = "To Address"
@@ -44,6 +47,9 @@ class ToAddressActivity : AppCompatActivity() {
         nextButton.setOnClickListener {
             if (validateFields()) {
                 val intent = Intent(this, SenderReceiverSelectionActivity::class.java)
+                intent.putExtra("FROM_ADDRESS", fromAddress)
+                intent.putExtra("TO_ADDRESS", toAddress)
+                intent.putExtra("PHONE_NUMBER", phoneNumber) // This is correct
                 startActivity(intent)
             }
         }
