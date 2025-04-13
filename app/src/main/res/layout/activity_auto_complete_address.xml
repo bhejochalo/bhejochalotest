@@ -7,49 +7,95 @@
     android:padding="16dp"
     tools:context=".autoCompleteAddress">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="72dp"
+        android:text="Enter Destination"
+        android:textColor="@color/quantum_orange"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <!-- EditText for "From Address" -->
+
+    <!-- EditText for "To Address" -->
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="21dp"
+        android:layout_height="22dp"
+        android:layout_marginTop="80dp"
+        android:contentDescription="App Logo"
+        android:scaleType="centerCrop"
+        android:src="@drawable/flightimg"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.765"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <EditText
         android:id="@+id/et_from_address"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:hint="From Address"
-        android:inputType="text"
+        android:layout_height="55dp"
+        android:layout_marginTop="148dp"
+        android:background="@drawable/rounded_edittext"
         android:clickable="true"
         android:focusableInTouchMode="false"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:hint="From Address"
+        android:inputType="text"
+        android:gravity="center_vertical|start"
+        android:padding="12dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        android:elevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.8"
-        android:layout_marginTop="32dp" />
+        app:layout_constraintHorizontal_bias="0.493"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.8" />
 
-    <!-- EditText for "To Address" -->
+
     <EditText
         android:id="@+id/et_to_address"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="55dp"
+        android:layout_marginTop="32dp"
+        android:background="@drawable/rounded_edittext"
         android:hint="To Address"
         android:inputType="text"
         android:clickable="true"
         android:focusableInTouchMode="false"
+        android:gravity="center_vertical|start"
+        android:padding="12dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        android:elevation="4dp"
         app:layout_constraintTop_toBottomOf="@id/et_from_address"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.8"
-        android:layout_marginTop="32dp" />
+        app:layout_constraintWidth_percent="0.8" />
 
     <Button
         android:id="@+id/NextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/bg_rounded_button"
         android:text="Next"
         app:backgroundTint="@null"
-        android:background="@drawable/bg_rounded_button"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.479"
+        app:layout_constraintHorizontal_bias="0.536"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/et_to_address"
-        app:layout_constraintVertical_bias="0.109" />
+        app:layout_constraintVertical_bias="0.11" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -76,7 +76,7 @@ class OTP_Verification : AppCompatActivity() {
                         Log.d("FirestoreDebug", "User record upserted successfully!")
                         Toast.makeText(this, "User record saved!", Toast.LENGTH_SHORT).show()
 
-                        val intent = Intent(this@OTP_Verification, autoCompleteAddress::class.java)
+                        val intent = Intent(this@OTP_Verification, AutoCompleteAddressActivity::class.java)
                         startActivity(intent)
                     }
                     .addOnFailureListener { e ->

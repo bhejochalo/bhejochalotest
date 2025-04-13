@@ -33,12 +33,10 @@
             android:exported="false"/>
 
         <!-- Address Flow -->
-        <activity
-            android:name=".autoCompleteAddress"
-            android:exported="false"/>
-        <activity
-            android:name=".editableAddress"
-            android:exported="false"/>
+        <activity android:name=".AutoCompleteAddressActivity" />
+        <activity android:name=".FromAddressActivity" />
+        <activity android:name=".ToAddressActivity" />
+        <activity android:name=".SenderReceiverSelectionActivity" />
 
         <!-- PNR Flow -->
         <activity
