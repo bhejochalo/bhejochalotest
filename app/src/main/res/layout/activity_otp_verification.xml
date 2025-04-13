@@ -43,7 +43,7 @@
         android:id="@+id/verifyButton"
         android:layout_width="96dp"
         android:layout_height="42dp"
-        android:text="Verify OTP"
+        android:text="Verify"
         app:backgroundTint="@null"
         android:background="@drawable/bg_rounded_button"
         app:layout_constraintBottom_toBottomOf="parent"
