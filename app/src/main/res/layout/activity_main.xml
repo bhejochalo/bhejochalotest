@@ -6,7 +6,6 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA"
     android:padding="24dp"
     tools:context=".MainActivity">
 
@@ -20,6 +19,7 @@
         android:contentDescription="App Logo"
         android:scaleType="centerCrop"
         android:background="@drawable/bg_round_image"
+        android:clipToOutline="true"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
