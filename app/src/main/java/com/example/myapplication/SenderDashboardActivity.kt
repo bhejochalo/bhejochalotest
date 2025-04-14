@@ -51,13 +51,21 @@ class SenderDashboardActivity : AppCompatActivity() {
                 lastVisibleDocument = documents.documents[documents.size() - 1]
                 travelersList.clear()
                 for (doc in documents) {
-                    val traveler = Traveler(
-                        name = doc.getString("lastName") ?: "Unknown",
-                        airline = doc.getString("airline") ?: "Unknown",
-                        destination = doc.getString("toAddress.fullAddress") ?: "Unknown",
-                        pnr = doc.getString("pnr") ?: "Unknown"
-                    )
-                    travelersList.add(traveler)
+                    val name = doc.getString("lastName")
+                    val airline = doc.getString("airline")
+                    val destination = doc.getString("toAddress.fullAddress")
+                    val pnr = doc.getString("pnr")
+
+                    // Only add travelers with all required fields present
+                    if (name != null && airline != null && destination != null && pnr != null) {
+                        val traveler = Traveler(
+                            name = name,
+                            airline = airline,
+                            destination = destination,
+                            pnr = pnr
+                        )
+                        travelersList.add(traveler)
+                    }
                 }
                 adapter.notifyDataSetChanged()
             }
@@ -65,6 +73,7 @@ class SenderDashboardActivity : AppCompatActivity() {
             Log.e("FirestoreError", "Error loading travelers: ${e.message}")
         }
     }
+
 
     private fun loadMoreTravelers() {
         if (lastVisibleDocument == null) return
@@ -78,13 +87,20 @@ class SenderDashboardActivity : AppCompatActivity() {
             if (!documents.isEmpty) {
                 lastVisibleDocument = documents.documents[documents.size() - 1]
                 for (doc in documents) {
-                    val traveler = Traveler(
-                        name = doc.getString("lastName") ?: "Unknown",
-                        airline = doc.getString("airline") ?: "Unknown",
-                        destination = doc.getString("toAddress.fullAddress") ?: "Unknown",
-                        pnr = doc.getString("pnr") ?: "Unknown"
-                    )
-                    travelersList.add(traveler)
+                    val name = doc.getString("lastName")
+                    val airline = doc.getString("airline")
+                    val destination = doc.getString("toAddress.fullAddress")
+                    val pnr = doc.getString("pnr")
+
+                    if (name != null && airline != null && destination != null && pnr != null) {
+                        val traveler = Traveler(
+                            name = name,
+                            airline = airline,
+                            destination = destination,
+                            pnr = pnr
+                        )
+                        travelersList.add(traveler)
+                    }
                 }
                 adapter.notifyDataSetChanged()
             }
@@ -92,4 +108,5 @@ class SenderDashboardActivity : AppCompatActivity() {
             Log.e("FirestoreError", "Error loading more travelers: ${e.message}")
         }
     }
+
 }
