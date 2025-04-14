@@ -14,7 +14,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
         setContentView(R.layout.activity_sender_receiver_selection)
 
         findViewById<Button>(R.id.senderButton).setOnClickListener {
-            val newIntent = Intent(this, pnrCheck::class.java).apply {
+            val newIntent = Intent(this, SenderDashboardActivity::class.java).apply {
                 putExtra("FROM_HOUSE_NUMBER", intent.getStringExtra("FROM_HOUSE_NUMBER"))
                 putExtra("FROM_STREET", intent.getStringExtra("FROM_STREET"))
                 putExtra("FROM_ADDRESS", intent.getStringExtra("FROM_ADDRESS"))

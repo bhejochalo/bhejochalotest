@@ -37,6 +37,7 @@
         <activity android:name=".FromAddressActivity" />
         <activity android:name=".ToAddressActivity" />
         <activity android:name=".SenderReceiverSelectionActivity" />
+        <activity android:name=".SenderDashboardActivity" />
 
         <!-- PNR Flow -->
         <activity
