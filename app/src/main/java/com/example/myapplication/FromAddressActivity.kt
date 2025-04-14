@@ -57,9 +57,17 @@ class FromAddressActivity : AppCompatActivity() {
                     putExtra("FROM_PLACE", intent.getParcelableExtra<Place>("FROM_PLACE"))
                     putExtra("TO_PLACE", toPlace)
                     putExtra("PHONE_NUMBER", phoneNumber)
-                    // Also pass the address strings if needed
-                    putExtra("FROM_ADDRESS", fromAddress)
-                    putExtra("TO_ADDRESS", toAddress)
+                    // Add detailed address components
+                    // Forward full addresses
+                    putExtra("FROM_ADDRESS", intent.getStringExtra("FROM_ADDRESS"))
+                    putExtra("TO_ADDRESS", intent.getStringExtra("TO_ADDRESS"))
+                    putExtra("FROM_HOUSE_NUMBER", houseNumber.text.toString())
+                    putExtra("FROM_STREET", street.text.toString())
+                    putExtra("FROM_AREA", area.text.toString())
+                    putExtra("FROM_POSTAL_CODE", postalCode.text.toString())
+                    putExtra("FROM_CITY", city.text.toString())
+                    putExtra("FROM_STATE", state.text.toString())
+
                 }
                 startActivity(intent)
             }

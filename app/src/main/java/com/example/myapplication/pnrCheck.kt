@@ -74,11 +74,22 @@ class pnrCheck : AppCompatActivity() {
                 "phoneNumber" to phoneNumber,
                 "verified" to true,
                 "fromAddress" to mapOf(
-                    "address" to fromAddress,
-
+                    "houseNumber" to intent.getStringExtra("FROM_HOUSE_NUMBER"),
+                    "street" to intent.getStringExtra("FROM_STREET"),
+                    "area" to intent.getStringExtra("FROM_AREA"),
+                    "postalCode" to intent.getStringExtra("FROM_POSTAL_CODE"),
+                    "city" to intent.getStringExtra("FROM_CITY"),
+                    "state" to intent.getStringExtra("FROM_STATE"),
+                    "fullAddress" to intent.getStringExtra("FROM_ADDRESS")  // Now properly passed
                 ),
                 "toAddress" to mapOf(
-                    "address" to toAddress,
+                    "houseNumber" to intent.getStringExtra("TO_HOUSE_NUMBER"),
+                    "street" to intent.getStringExtra("TO_STREET"),
+                    "area" to intent.getStringExtra("TO_AREA"),
+                    "postalCode" to intent.getStringExtra("TO_POSTAL_CODE"),
+                    "city" to intent.getStringExtra("TO_CITY"),
+                    "state" to intent.getStringExtra("TO_STATE"),
+                    "fullAddress" to intent.getStringExtra("TO_ADDRESS")  // Now properly passed
                 ),
                 "pnr" to pnr,
                 "lastName" to surname,

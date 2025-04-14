@@ -69,6 +69,8 @@ class AutoCompleteAddressActivity : AppCompatActivity() {
                 putExtra("FROM_PLACE", fromPlace)
                 putExtra("TO_PLACE", toPlace)
                 putExtra("PHONE_NUMBER", intent.getStringExtra("PHONE_NUMBER"))
+                putExtra("FROM_ADDRESS", fromPlace?.address)  // Full formatted address
+                putExtra("TO_ADDRESS", toPlace?.address)      // Full formatted address
             }
             startActivity(intent)
         }
