@@ -56,13 +56,13 @@ class SenderDashboardActivity : AppCompatActivity() {
                     val destination = doc.getString("toAddress.fullAddress")
                     val pnr = doc.getString("pnr")
 
-                    // Only add travelers with all required fields present
                     if (name != null && airline != null && destination != null && pnr != null) {
                         val traveler = Traveler(
                             name = name,
                             airline = airline,
                             destination = destination,
-                            pnr = pnr
+                            pnr = pnr,
+                            bookingStatus = "available" // Default status
                         )
                         travelersList.add(traveler)
                     }
@@ -73,7 +73,6 @@ class SenderDashboardActivity : AppCompatActivity() {
             Log.e("FirestoreError", "Error loading travelers: ${e.message}")
         }
     }
-
 
     private fun loadMoreTravelers() {
         if (lastVisibleDocument == null) return
@@ -97,7 +96,8 @@ class SenderDashboardActivity : AppCompatActivity() {
                             name = name,
                             airline = airline,
                             destination = destination,
-                            pnr = pnr
+                            pnr = pnr,
+                            bookingStatus = "available" // Default status
                         )
                         travelersList.add(traveler)
                     }
@@ -108,5 +108,4 @@ class SenderDashboardActivity : AppCompatActivity() {
             Log.e("FirestoreError", "Error loading more travelers: ${e.message}")
         }
     }
-
 }

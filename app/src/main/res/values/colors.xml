@@ -3,4 +3,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="labelTextColor">#888888</color>
+    <color name="green_500">#4CAF50</color>
+    <color name="grey_500">#9E9E9E</color>
 </resources>
