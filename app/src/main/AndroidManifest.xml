@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
+    xmlns:tools="http://schemas.android.com/tools" >
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
 
     <application
         android:allowBackup="true"
@@ -15,44 +16,38 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication"
-        tools:targetApi="31">
-
+        tools:targetApi="31" >
+        <activity
+            android:name=".bookOrder_Borzo"
+            android:exported="false" />
         <!-- Main Launcher Activity -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- OTP Verification -->
+        </activity> <!-- OTP Verification -->
         <activity
             android:name=".OTP_Verification"
-            android:exported="false"/>
-
-        <!-- Address Flow -->
+            android:exported="false" /> <!-- Address Flow -->
         <activity android:name=".AutoCompleteAddressActivity" />
         <activity android:name=".FromAddressActivity" />
         <activity android:name=".ToAddressActivity" />
         <activity android:name=".SenderReceiverSelectionActivity" />
-        <activity android:name=".SenderDashboardActivity" />
-
-        <!-- PNR Flow -->
+        <activity android:name=".SenderDashboardActivity" /> <!-- PNR Flow -->
         <activity
             android:name=".pnrCheck"
-            android:exported="false"/>
+            android:exported="false" />
         <activity
             android:name=".webviewPnr"
-            android:exported="false"/>
-
-        <!-- Other Activities -->
-
-
+            android:exported="false" /> <!-- Other Activities -->
         <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCDmMtuO7w9uBecNRCtf5vndLUAsZVPUHI" />
     </application>
+
 </manifest>

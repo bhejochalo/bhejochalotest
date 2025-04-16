@@ -91,6 +91,7 @@ class editableAddress : AppCompatActivity() {
 
         // Populate fields from intent (optional)
         intent?.extras?.let { bundle ->
+
             houseNumberEditText.setText(bundle.getString("HOUSE_NUMBER", ""))
             streetEditText.setText(bundle.getString("STREET", ""))
             areaEditText.setText(bundle.getString("AREA", ""))
