@@ -21,14 +21,22 @@ class ItemDetailsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_item_details)
 
+        initializeViews()
+        phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: ""
+
+        setupWeightSeekBar()
+        setupNextButton()
+    }
+
+    private fun initializeViews() {
         itemNameEditText = findViewById(R.id.itemNameEditText)
         weightSeekBar = findViewById(R.id.itemWeightSeekBar)
         weightValueText = findViewById(R.id.weightValueText)
         instructionsEditText = findViewById(R.id.instructionsEditText)
         nextButton = findViewById(R.id.nextButton)
+    }
 
-        phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: ""
-
+    private fun setupWeightSeekBar() {
         weightSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 itemWeight = progress
@@ -38,42 +46,54 @@ class ItemDetailsActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar) {}
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
         })
+    }
 
+    private fun setupNextButton() {
         nextButton.setOnClickListener {
-            saveItemToFirestore()
+            if (validateInputs()) {
+               // saveItemToFirestore()
+                navigateToSenderDashboard()
+            }
         }
+    }
+
+    private fun validateInputs(): Boolean {
+        if (itemNameEditText.text.toString().trim().isEmpty()) {
+            itemNameEditText.error = "Item name required"
+            return false
+        }
+        return true
     }
 
     private fun saveItemToFirestore() {
         val itemName = itemNameEditText.text.toString().trim()
         val instructions = instructionsEditText.text.toString().trim()
 
-        if (itemName.isEmpty()) {
-            itemNameEditText.error = "Item name required"
-            return
-        }
-
         val itemData = hashMapOf(
             "itemName" to itemName,
             "itemWeight" to itemWeight,
-            "instructions" to instructions
+            "instructions" to instructions,
+            "timestamp" to System.currentTimeMillis()
         )
 
-        val db = FirebaseFirestore.getInstance()
-
-        db.collection("users")
+        FirebaseFirestore.getInstance().collection("SenderItems")
             .document(phoneNumber)
-            .collection("Sender")
+            .collection("Items")
             .add(itemData)
             .addOnSuccessListener {
-                Toast.makeText(this, "Item saved", Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, SenderDashboardActivity::class.java)
-                intent.putExtra("PHONE_NUMBER", phoneNumber)
-                startActivity(intent)
-                finish()
+                //navigateToSenderDashboard()
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun navigateToSenderDashboard() {
+        val intent = Intent(this, SenderDashboardActivity::class.java).apply {
+            putExtra("PHONE_NUMBER", phoneNumber)
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(intent)
+        finish()
     }
 }

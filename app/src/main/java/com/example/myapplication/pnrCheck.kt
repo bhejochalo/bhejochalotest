@@ -98,7 +98,7 @@ class pnrCheck : AppCompatActivity() {
             )
 
             // Save to Firestore
-            db.collection("users").document(phoneNumber)
+            db.collection("traveler").document(phoneNumber)
                 .set(userData, SetOptions.merge())
                 .addOnSuccessListener {
                     Toast.makeText(this, "Data saved successfully!", Toast.LENGTH_SHORT).show()

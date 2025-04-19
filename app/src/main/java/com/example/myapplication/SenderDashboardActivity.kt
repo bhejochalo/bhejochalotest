@@ -22,6 +22,7 @@ class SenderDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sender_dashboard)
 
+        // Initialize RecyclerView
         recyclerView = findViewById(R.id.travelersRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = TravelerAdapter(travelersList)
@@ -40,33 +41,16 @@ class SenderDashboardActivity : AppCompatActivity() {
             }
         })
     }
-
     private fun loadTravelers() {
         val query = db.collection("users")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .limit(10)
 
-        query.get().addOnSuccessListener { documents ->
-            if (!documents.isEmpty) {
-                lastVisibleDocument = documents.documents[documents.size() - 1]
+        query.get().addOnSuccessListener { querySnapshot ->
+            if (!querySnapshot.isEmpty) {
+                lastVisibleDocument = querySnapshot.documents[querySnapshot.size() - 1]
                 travelersList.clear()
-                for (doc in documents) {
-                    val name = doc.getString("lastName")
-                    val airline = doc.getString("airline")
-                    val destination = doc.getString("toAddress.fullAddress")
-                    val pnr = doc.getString("pnr")
-
-                    if (name != null && airline != null && destination != null && pnr != null) {
-                        val traveler = Traveler(
-                            name = name,
-                            airline = airline,
-                            destination = destination,
-                            pnr = pnr,
-                            bookingStatus = "available" // Default status
-                        )
-                        travelersList.add(traveler)
-                    }
-                }
+                processDocuments(querySnapshot.documents) // Pass the documents list
                 adapter.notifyDataSetChanged()
             }
         }.addOnFailureListener { e ->
@@ -75,37 +59,46 @@ class SenderDashboardActivity : AppCompatActivity() {
     }
 
     private fun loadMoreTravelers() {
-        if (lastVisibleDocument == null) return
+        lastVisibleDocument?.let { lastDoc ->
+            val query = db.collection("users")
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .startAfter(lastDoc)
+                .limit(10)
 
-        val query = db.collection("users")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .startAfter(lastVisibleDocument!!)
-            .limit(10)
-
-        query.get().addOnSuccessListener { documents ->
-            if (!documents.isEmpty) {
-                lastVisibleDocument = documents.documents[documents.size() - 1]
-                for (doc in documents) {
-                    val name = doc.getString("lastName")
-                    val airline = doc.getString("airline")
-                    val destination = doc.getString("toAddress.fullAddress")
-                    val pnr = doc.getString("pnr")
-
-                    if (name != null && airline != null && destination != null && pnr != null) {
-                        val traveler = Traveler(
-                            name = name,
-                            airline = airline,
-                            destination = destination,
-                            pnr = pnr,
-                            bookingStatus = "available" // Default status
-                        )
-                        travelersList.add(traveler)
-                    }
+            query.get().addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    lastVisibleDocument = querySnapshot.documents[querySnapshot.size() - 1]
+                    processDocuments(querySnapshot.documents) // Pass the documents list
+                    adapter.notifyDataSetChanged()
                 }
-                adapter.notifyDataSetChanged()
+            }.addOnFailureListener { e ->
+                Log.e("FirestoreError", "Error loading more travelers: ${e.message}")
             }
-        }.addOnFailureListener { e ->
-            Log.e("FirestoreError", "Error loading more travelers: ${e.message}")
         }
+    }
+
+    private fun processDocuments(documents: List<DocumentSnapshot>) {
+        for (doc in documents) {
+            val name = doc.getString("lastName") ?: continue
+            val airline = doc.getString("airline") ?: continue
+            val destination = doc.getString("toAddress.fullAddress") ?: continue
+            val pnr = doc.getString("pnr") ?: continue
+
+            travelersList.add(
+                Traveler(
+                    name = name,
+                    airline = airline,
+                    destination = destination,
+                    pnr = pnr,
+                    bookingStatus = "available"
+                )
+            )
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clear AddressHolder when leaving this activity if needed
+        // AddressHolder.clear()
     }
 }

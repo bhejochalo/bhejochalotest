@@ -1,8 +1,7 @@
 package com.example.myapplication
 
+import android.app.Activity
 import android.app.AlertDialog
-import android.content.Context
-import android.net.ConnectivityManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -18,8 +17,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class TravelerAdapter(private val travelers: MutableList<Traveler>) :
@@ -83,65 +80,124 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                 .setPositiveButton("Yes") { dialog, which ->
                     traveler.bookingStatus = "pending"
                     notifyItemChanged(adapterPosition)
-                    // Here you would typically also update the booking status in your database
-                    placeTestBorzoOrder()
+                    placeBorzoOrder()
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         }
 
-        private fun placeTestBorzoOrder() {
-            val client = OkHttpClient()
+        private fun placeBorzoOrder() {
+            val fromAddress = buildFullAddress(
+                AddressHolder.fromHouseNumber,
+                AddressHolder.fromStreet,
+                AddressHolder.fromArea,
+                AddressHolder.fromCity,
+                AddressHolder.fromState,
+                AddressHolder.fromPostalCode
+            )
 
-            val jsonBody = """
-        {
-          "matter": "Documents",
-          "vehicle_type_id": 2,
-          "points": [
-            {
-              "address": "Saket, New Delhi, Delhi",
-              "contact_person": {
-                "phone": "918880000001",
-                "name": "Sender"
-              }
-            },
-            {
-              "address": "Janakpuri, New Delhi, Delhi",
-              "contact_person": {
-                "phone": "918880000001",
-                "name": "Receiver"
-              }
-            }
-          ]
-        }
-    """.trimIndent()
+            val toAddress = buildFullAddress(
+                AddressHolder.toHouseNumber,
+                AddressHolder.toStreet,
+                AddressHolder.toArea,
+                AddressHolder.toCity,
+                AddressHolder.toState,
+                AddressHolder.toPostalCode
+            )
+
+            val client = OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build()
+
+            val jsonBody = JSONObject().apply {
+                put("matter", "Documents")
+                put("vehicle_type_id", 2)
+                put("points", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("address", fromAddress)
+                        put("contact_person", JSONObject().apply {
+                            put("phone", AddressHolder.phoneNumber ?: "")
+                            put("name", "Sender")
+                        })
+                    })
+                    put(JSONObject().apply {
+                        put("address", toAddress)
+                        put("contact_person", JSONObject().apply {
+                            put("phone", AddressHolder.phoneNumber ?: "")
+                            put("name", "Receiver")
+                        })
+                    })
+                })
+            }.toString()
 
             val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
 
             val request = Request.Builder()
                 .url("https://robotapitest-in.borzodelivery.com/api/business/1.6/create-order")
                 .addHeader("Content-Type", "application/json")
-                .addHeader("X-DV-Auth-Token", "3F561C810EDAC4F9339582C4BCB9F1A1B3800B87") // Replace with your actual key
+                .addHeader("X-DV-Auth-Token", "3F561C810EDAC4F9339582C4BCB9F1A1B3800B87")
                 .post(requestBody)
                 .build()
 
             client.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     Log.e("BORZO", "Request failed: ${e.message}")
+                    updateUIOnFailure()
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    response.use {
-                        if (!response.isSuccessful) {
-                            Log.e("BORZO", "Error response: ${response}")
+                    try {
+                        val responseBody = response.body?.string()
+                        Log.d("BORZO", "Response: $responseBody")
+
+                        if (response.isSuccessful) {
+                            updateUIOnSuccess()
                         } else {
-                            val responseBody = response.body?.string()
-                            Log.d("BORZO", "Success! Response: $responseBody")
+                            updateUIOnFailure()
                         }
+                    } catch (e: Exception) {
+                        Log.e("BORZO", "Error parsing response", e)
+                        updateUIOnFailure()
+                    }
+                }
+
+                private fun updateUIOnSuccess() {
+                    itemView.post {
+                        travelers[adapterPosition].bookingStatus = "booked"
+                        notifyItemChanged(adapterPosition)
+                        Toast.makeText(
+                            itemView.context,
+                            "Booking successful!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                private fun updateUIOnFailure() {
+                    itemView.post {
+                        travelers[adapterPosition].bookingStatus = "available"
+                        notifyItemChanged(adapterPosition)
+                        Toast.makeText(
+                            itemView.context,
+                            "Booking failed. Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             })
         }
 
+        private fun buildFullAddress(
+            houseNumber: String?,
+            street: String?,
+            area: String?,
+            city: String?,
+            state: String?,
+            postalCode: String?
+        ): String {
+            return listOfNotNull(houseNumber, street, area, city, state, postalCode)
+                .joinToString(", ")
+        }
     }
 }

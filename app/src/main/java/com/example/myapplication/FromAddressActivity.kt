@@ -13,24 +13,11 @@ class FromAddressActivity : AppCompatActivity() {
     private lateinit var toPlace: Place
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val fromAddress = intent.getStringExtra("FROM_ADDRESS")
-        val toAddress = intent.getStringExtra("TO_ADDRESS")
-        val phoneNumber = intent.getStringExtra("PHONE_NUMBER")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editable_address)
-        findViewById<TextView>(R.id.addressHeading).text = "From Address"
-        val place = intent.getParcelableExtra<Place>("FROM_PLACE") ?: run {
-            Toast.makeText(this, "Error: No address data", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-        toPlace = intent.getParcelableExtra("TO_PLACE") ?: run {
-            Toast.makeText(this, "Error: No destination address", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
 
         // Initialize views
+        findViewById<TextView>(R.id.addressHeading).text = "From Address"
         val houseNumber = findViewById<EditText>(R.id.houseNumberEditText)
         val street = findViewById<EditText>(R.id.streetEditText)
         val area = findViewById<EditText>(R.id.areaEditText)
@@ -41,8 +28,28 @@ class FromAddressActivity : AppCompatActivity() {
             text = "Next"
         }
 
+        // Get places from intent
+        val fromPlace = intent.getParcelableExtra<Place>("FROM_PLACE") ?: run {
+            Toast.makeText(this, "Error: No address data", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        toPlace = intent.getParcelableExtra("TO_PLACE") ?: run {
+            Toast.makeText(this, "Error: No destination address", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        // Store basic info in AddressHolder
+        AddressHolder.apply {
+            phoneNumber = intent.getStringExtra("PHONE_NUMBER")
+            fromAddress = intent.getStringExtra("FROM_ADDRESS")
+            toAddress = intent.getStringExtra("TO_ADDRESS")
+        }
+
         // Parse and populate fields
-        parsePlace(place).apply {
+        parsePlace(fromPlace).apply {
             houseNumber.setText(getString("houseNumber"))
             street.setText(getString("street"))
             area.setText(getString("area"))
@@ -53,21 +60,20 @@ class FromAddressActivity : AppCompatActivity() {
 
         nextButton.setOnClickListener {
             if (validateFields()) {
-                val intent = Intent(this, ToAddressActivity::class.java).apply {
-                    putExtra("FROM_PLACE", intent.getParcelableExtra<Place>("FROM_PLACE"))
-                    putExtra("TO_PLACE", toPlace)
-                    putExtra("PHONE_NUMBER", phoneNumber)
-                    // Add detailed address components
-                    // Forward full addresses
-                    putExtra("FROM_ADDRESS", intent.getStringExtra("FROM_ADDRESS"))
-                    putExtra("TO_ADDRESS", intent.getStringExtra("TO_ADDRESS"))
-                    putExtra("FROM_HOUSE_NUMBER", houseNumber.text.toString())
-                    putExtra("FROM_STREET", street.text.toString())
-                    putExtra("FROM_AREA", area.text.toString())
-                    putExtra("FROM_POSTAL_CODE", postalCode.text.toString())
-                    putExtra("FROM_CITY", city.text.toString())
-                    putExtra("FROM_STATE", state.text.toString())
+                // Store all from address details in AddressHolder
+                AddressHolder.apply {
+                    fromHouseNumber = houseNumber.text.toString()
+                    fromStreet = street.text.toString()
+                    fromArea = area.text.toString()
+                    fromPostalCode = postalCode.text.toString()
+                    fromCity = city.text.toString()
+                    fromState = state.text.toString()
+                }
 
+                // Start next activity - only need to pass the Place objects now
+                val intent = Intent(this, ToAddressActivity::class.java).apply {
+                    putExtra("FROM_PLACE", fromPlace)
+                    putExtra("TO_PLACE", toPlace)
                 }
                 startActivity(intent)
             }
