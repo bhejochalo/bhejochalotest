@@ -18,7 +18,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-
+//new code
 class TravelerAdapter(private val travelers: MutableList<Traveler>) :
     RecyclerView.Adapter<TravelerAdapter.TravelerViewHolder>() {
 

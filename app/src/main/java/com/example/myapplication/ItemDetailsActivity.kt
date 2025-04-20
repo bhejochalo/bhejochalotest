@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.firestore.FirebaseFirestore
 
 class ItemDetailsActivity : AppCompatActivity() {
-
+//New code
     private lateinit var itemNameEditText: EditText
     private lateinit var weightSeekBar: SeekBar
     private lateinit var weightValueText: TextView

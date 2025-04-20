@@ -6,4 +6,4 @@ data class Traveler(
     val destination: String = "",
     val pnr: String = "",
     var bookingStatus: String = "available" // available/pending/booked
-)
+)//new code
