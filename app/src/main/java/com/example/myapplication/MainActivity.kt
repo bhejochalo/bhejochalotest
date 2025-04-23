@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
@@ -46,6 +47,13 @@ class MainActivity : AppCompatActivity() {
         verifyButton.setOnClickListener {
             val phoneNumber = phoneNumberEditText.text.toString().trim() // Get the input text
             if (phoneNumber.isNotEmpty()) {
+
+                val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                with(sharedPref.edit()) {
+                    putString("PHONE_NUMBER", phoneNumber)
+                    apply()
+                }
+
                 println("Phone number entered: $phoneNumber")
                 Toast.makeText(this, "Sending OTP to: $phoneNumber", Toast.LENGTH_SHORT).show()
                 sendOtpToPhoneNumber(phoneNumber)

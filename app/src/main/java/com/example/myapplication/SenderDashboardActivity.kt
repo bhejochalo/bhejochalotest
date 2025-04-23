@@ -42,7 +42,7 @@ class SenderDashboardActivity : AppCompatActivity() {
         })
     }
     private fun loadTravelers() {
-        val query = db.collection("users")
+        val query = db.collection("traveler")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .limit(10)
 
@@ -60,7 +60,7 @@ class SenderDashboardActivity : AppCompatActivity() {
 
     private fun loadMoreTravelers() {
         lastVisibleDocument?.let { lastDoc ->
-            val query = db.collection("users")
+            val query = db.collection("traveler")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .startAfter(lastDoc)
                 .limit(10)

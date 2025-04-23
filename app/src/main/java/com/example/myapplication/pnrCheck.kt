@@ -64,10 +64,12 @@ class pnrCheck : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: run {
+           /* val phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: run {
                 Toast.makeText(this, "Phone number not available", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
-            }
+            }*/
+
+            val phoneNumber = "8690999090" // need to remove this
 
             // Create user data map
             val userData = hashMapOf(

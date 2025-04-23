@@ -18,6 +18,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.senderButton).setOnClickListener {
             // No need to pass extras - next activity will use AddressHolder
+            println("in sender button ===>")
             startActivity(Intent(this, ItemDetailsActivity::class.java))
         }
 

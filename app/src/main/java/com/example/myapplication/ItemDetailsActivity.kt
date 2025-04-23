@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.firestore.FirebaseFirestore
 
 class ItemDetailsActivity : AppCompatActivity() {
-//New code
+    //New code
     private lateinit var itemNameEditText: EditText
     private lateinit var weightSeekBar: SeekBar
     private lateinit var weightValueText: TextView
@@ -22,7 +22,7 @@ class ItemDetailsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_item_details)
 
         initializeViews()
-        phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: ""
+      //  phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: ""
 
         setupWeightSeekBar()
         setupNextButton()
@@ -51,7 +51,7 @@ class ItemDetailsActivity : AppCompatActivity() {
     private fun setupNextButton() {
         nextButton.setOnClickListener {
             if (validateInputs()) {
-               // saveItemToFirestore()
+                // saveItemToFirestore()
                 navigateToSenderDashboard()
             }
         }
@@ -90,7 +90,7 @@ class ItemDetailsActivity : AppCompatActivity() {
 
     private fun navigateToSenderDashboard() {
         val intent = Intent(this, SenderDashboardActivity::class.java).apply {
-            putExtra("PHONE_NUMBER", phoneNumber)
+           // putExtra("PHONE_NUMBER","8696888060")
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)

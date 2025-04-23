@@ -1,7 +1,8 @@
 package com.example.myapplication
 
-import android.app.Activity
 import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -18,7 +19,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-//new code
+
 class TravelerAdapter(private val travelers: MutableList<Traveler>) :
     RecyclerView.Adapter<TravelerAdapter.TravelerViewHolder>() {
 
@@ -81,12 +82,20 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                     traveler.bookingStatus = "pending"
                     notifyItemChanged(adapterPosition)
                     placeBorzoOrder()
+
+                    val intent = Intent(itemView.context, SenderProfile::class.java).apply {
+                        //putExtra("TRAVELER_DATA", traveler) // If Traveler is Parcelable
+                    }
+                    itemView.context.startActivity(intent)
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
         }
 
         private fun placeBorzoOrder() {
+            val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
+
             val fromAddress = buildFullAddress(
                 AddressHolder.fromHouseNumber,
                 AddressHolder.fromStreet,
@@ -124,7 +133,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                     put(JSONObject().apply {
                         put("address", toAddress)
                         put("contact_person", JSONObject().apply {
-                            put("phone", AddressHolder.phoneNumber ?: "")
+                            put("phone", phoneNumber)
                             put("name", "Receiver")
                         })
                     })

@@ -1,7 +1,9 @@
 package com.example.myapplication
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -66,17 +68,24 @@ class ToAddressActivity : AppCompatActivity() {
         }
 
         nextButton.setOnClickListener {
+
+            val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            val phoneNumber = sharedPref.getString("PHONE_NUMBER", "")
+
             if (validateFields()) {
                 // Store all data in AddressHolder
                 AddressHolder.apply {
                     // From address components (carried over from previous activity)
-                    fromHouseNumber = intent.getStringExtra("FROM_HOUSE_NUMBER")
-                    fromStreet = intent.getStringExtra("FROM_STREET")
-                    fromArea = intent.getStringExtra("FROM_AREA")
-                    fromPostalCode = intent.getStringExtra("FROM_POSTAL_CODE")
-                    fromCity = intent.getStringExtra("FROM_CITY")
-                    fromState = intent.getStringExtra("FROM_STATE")
+                   // fromHouseNumber = intent.getStringExtra("FROM_HOUSE_NUMBER")
+                   // fromStreet = intent.getStringExtra("FROM_STREET")
+                   // fromArea = intent.getStringExtra("FROM_AREA")
+                   // fromPostalCode = intent.getStringExtra("FROM_POSTAL_CODE")
+                   // fromCity = intent.getStringExtra("FROM_CITY")
+                  //  fromState = intent.getStringExtra("FROM_STATE")
 
+                    //println("FROM_HOUSE_NUMBER ===> $fromHouseNumber")
+                    //println("fromStreet===> $fromStreet")
+                  //  println("fromArea ===> $fromArea")
                     // To address components (from current activity)
                     toHouseNumber = houseNumber.text.toString()
                     toStreet = street.text.toString()
@@ -85,10 +94,28 @@ class ToAddressActivity : AppCompatActivity() {
                     toCity = city.text.toString()
                     toState = state.text.toString()
 
+                    println("toHouseNumber ===> $toHouseNumber")
+                    println("toStreet===> $toStreet")
+                    println("toPostalCode ===> $toPostalCode")
                     // Basic address strings
                     fromAddress = intent.getStringExtra("FROM_ADDRESS")
                     toAddress = intent.getStringExtra("TO_ADDRESS")
-                    phoneNumber = intent.getStringExtra("PHONE_NUMBER")
+                    //phoneNumber = intent.getStringExtra("PHONE_NUMBER")
+                    println("phone number ===> $phoneNumber")
+                    println("fromAddress===> $fromAddress")
+                    println("toAddress ===> $toAddress")
+
+                   // println("AddressHolder ===> $AddressHolder)
+
+                    Log.d("AddressDebug", """
+            House: $fromHouseNumber
+            Street: $fromStreet
+            Area: $fromArea
+            Postal: $fromPostalCode
+            City: $fromCity
+            State: $fromState
+        """.trimIndent())
+
                 }
 
                 // Start next activity - no need to pass extras now
