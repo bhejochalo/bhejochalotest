@@ -34,37 +34,72 @@
         android:id="@+id/weightLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Item Weight (Max 15kg)"
+        android:text="Item Weight"
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/itemNameEditText"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="24dp"/>
 
-    <SeekBar
-        android:id="@+id/itemWeightSeekBar"
+    <!-- Weight Input Container -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/weightContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:max="15"
         app:layout_constraintTop_toBottomOf="@id/weightLabel"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"/>
+        android:layout_marginTop="8dp">
 
-    <TextView
-        android:id="@+id/weightValueText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Weight: 0 kg"
-        app:layout_constraintTop_toBottomOf="@id/itemWeightSeekBar"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginTop="8dp"/>
+        <!-- Kilogram Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/kgInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Kilograms (0-15)"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/gramInputLayout"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_weight="1"
+            android:layout_marginEnd="8dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/kgEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLength="2"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Gram Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/gramInputLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Grams (0-999)"
+            app:layout_constraintStart_toEndOf="@id/kgInputLayout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_weight="1">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/gramEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLength="3"/>
+        </com.google.android.material.textfield.TextInputLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <EditText
         android:id="@+id/instructionsEditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Instructions"
-        app:layout_constraintTop_toBottomOf="@id/weightValueText"
+        app:layout_constraintTop_toBottomOf="@id/weightContainer"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="24dp"/>
