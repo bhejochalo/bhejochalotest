@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -100,6 +101,7 @@ class webviewPnr : AppCompatActivity() {
         runOnUiThread {
             loaderContainer.visibility = View.GONE
             Toast.makeText(this, if (isValid) "✅ Valid PNR" else "❌ Invalid PNR", Toast.LENGTH_LONG).show()
+            moveToTravelerProfile()
             finish()
         }
     }
@@ -108,5 +110,12 @@ class webviewPnr : AppCompatActivity() {
         handler.removeCallbacksAndMessages(null)
         webView.destroy()
         super.onDestroy()
+    }
+
+    private fun moveToTravelerProfile(){
+        val intent = Intent(this, TravelerProfile::class.java).apply {
+        }
+        // from the current traveler get the complete record from the DB.
+        startActivity(intent)
     }
 }

@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -69,8 +70,9 @@ class pnrCheck : AppCompatActivity() {
                 return@setOnClickListener
             }*/
 
-            val phoneNumber = "8690999090" // need to remove this
-
+            //val phoneNumber = "8690999090" // need to remove this
+            val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
             // Create user data map
             val userData = hashMapOf(
                 "phoneNumber" to phoneNumber,
@@ -96,7 +98,9 @@ class pnrCheck : AppCompatActivity() {
                 "pnr" to pnr,
                 "lastName" to surname,
                 "airline" to selectedAirline,
-                "timestamp" to System.currentTimeMillis()
+                "timestamp" to System.currentTimeMillis(),
+                "SenderRequest" to false
+
             )
 
             // Save to Firestore
