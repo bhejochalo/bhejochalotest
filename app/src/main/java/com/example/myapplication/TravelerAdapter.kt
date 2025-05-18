@@ -207,6 +207,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
 
         private fun attachTravelerWithSender(){
             // in this method get the traveler on sender clicked on and update the traveler
+            //  created by Himanshu
             val senderId = "sender123"
             val travelerPhoneNumber = "8690999999"
             val db = FirebaseFirestore.getInstance()
@@ -247,6 +248,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
         }
 
         private fun attachSenderWithTraveler(){
+            // created by HImanshu
             // in this method get the current  sender  on and update sender with the taveler he clicked book
         }
         private fun buildFullAddress(

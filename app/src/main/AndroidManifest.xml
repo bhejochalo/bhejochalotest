@@ -33,10 +33,11 @@
         <activity
             android:name=".OTP_Verification"
             android:exported="false" /> <!-- Address Flow -->
+        <activity android:name=".SenderReceiverSelectionActivity" />
         <activity android:name=".AutoCompleteAddressActivity" />
         <activity android:name=".FromAddressActivity" />
         <activity android:name=".ToAddressActivity" />
-        <activity android:name=".SenderReceiverSelectionActivity" />
+        <!--activity android:name=".SenderReceiverSelectionActivity" / -->
         <activity android:name=".ItemDetailsActivity" />
         <activity android:name=".SenderDashboardActivity" /> <!-- PNR Flow -->
         <activity

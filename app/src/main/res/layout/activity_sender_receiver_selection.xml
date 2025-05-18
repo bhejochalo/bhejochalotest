@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:text="Sender"
         android:background="@drawable/bg_rounded_button"
-        app:layout_constraintBottom_toTopOf="@+id/receiverButton"
+        app:layout_constraintBottom_toTopOf="@+id/travelerButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:backgroundTint="@null"
         app:layout_constraintStart_toStartOf="parent"
@@ -24,7 +24,7 @@
         android:layout_marginBottom="32dp"/>
 
     <Button
-        android:id="@+id/receiverButton"
+        android:id="@+id/travelerButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_rounded_button"

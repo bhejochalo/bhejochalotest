@@ -2,29 +2,105 @@ package com.example.myapplication
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.firestore.FirebaseFirestore
 
-//new code
 class SenderReceiverSelectionActivity : AppCompatActivity() {
+    private var phoneNumber: String? = null
+    private val db = FirebaseFirestore.getInstance()
+    private val sharedPref by lazy { getSharedPreferences("UserPrefs", MODE_PRIVATE) }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sender_receiver_selection)
 
-        // Store basic info in AddressHolder if coming from previous activity
-        if (intent.hasExtra("PHONE_NUMBER")) {
-            AddressHolder.phoneNumber = intent.getStringExtra("PHONE_NUMBER")
+        phoneNumber = intent.getStringExtra("PHONE_NUMBER")?.also {
+            Log.d("SenderReceiver", "Received phone: $it")
+        } ?: run {
+            Toast.makeText(this, "Phone number not received", Toast.LENGTH_SHORT).show()
+            finish()
+            return
         }
 
         findViewById<Button>(R.id.senderButton).setOnClickListener {
-            // No need to pass extras - next activity will use AddressHolder
-            println("in sender button ===>")
-            startActivity(Intent(this, ItemDetailsActivity::class.java))
+            handleSender()
         }
 
-        findViewById<Button>(R.id.receiverButton).setOnClickListener {
-            // No need to pass extras - next activity will use AddressHolder
-            startActivity(Intent(this, pnrCheck::class.java))
+        findViewById<Button>(R.id.travelerButton).setOnClickListener {
+            handleTraveler()
         }
+    }
+
+    private fun handleTraveler() {
+        sharedPref.edit().putString("USER_TYPE", "TRAVELER").apply()
+
+        phoneNumber?.let { phone ->
+            db.collection("traveler")
+                .whereEqualTo("phoneNumber", phone)
+                .limit(1)
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    if (!querySnapshot.isEmpty) {
+                        println("existing traveler ")
+                        navigateToTravelerProfile(phone)
+                    } else {
+                        println("new traveler ")
+                        navigateToAutoComplete(phone)
+                    }
+                }
+                .addOnFailureListener { e ->
+                    showError("Failed to check traveler: ${e.message}")
+                }
+        } ?: showError("Phone number is null")
+    }
+
+    private fun handleSender() {
+        sharedPref.edit().putString("USER_TYPE", "SENDER").apply()
+        phoneNumber?.let { phone ->
+            db.collection("Sender")
+                .whereEqualTo("phoneNumber", phone)
+                .limit(1)
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    if (!querySnapshot.isEmpty) {
+                        navigateToSenderProfile(phone)
+                    } else {
+                        navigateToAutoComplete(phone)
+                    }
+                }
+                .addOnFailureListener { e ->
+                    showError("Failed to check sender: ${e.message}")
+                }
+        } ?: showError("Phone number is null")
+    }
+
+    private fun navigateToTravelerProfile(phone: String) {
+        Intent(this, TravelerProfile::class.java).apply {
+            putExtra("PHONE_NUMBER", phone)
+            startActivity(this)
+        }
+    }
+
+    private fun navigateToSenderProfile(phone: String) {
+        Intent(this, SenderProfile::class.java).apply {
+            putExtra("PHONE_NUMBER", phone)
+            startActivity(this)
+        }
+    }
+
+    private fun navigateToAutoComplete(phone: String) {
+        Intent(this, AutoCompleteAddressActivity::class.java).apply {
+            putExtra("PHONE_NUMBER", phone)
+            startActivity(this)
+        }
+    }
+
+    private fun showError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        Log.e("SenderReceiver", message)
     }
 }

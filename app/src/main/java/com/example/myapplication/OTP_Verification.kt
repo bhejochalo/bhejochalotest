@@ -53,6 +53,7 @@ class OTP_Verification : AppCompatActivity() {
             if (enteredOtp != receivedOtp) { // enteredOtp == receivedOtp
                 Toast.makeText(this, "OTP Verified Successfully!", Toast.LENGTH_SHORT).show()
 
+
                 // Ensure phoneNumber is not null before proceeding
                 if (phoneNumber.isNullOrEmpty()) {
                     Toast.makeText(this, "Invalid phone number!", Toast.LENGTH_SHORT).show()
@@ -76,9 +77,13 @@ class OTP_Verification : AppCompatActivity() {
                         Log.d("FirestoreDebug", "User record upserted successfully!")
                         Toast.makeText(this, "User record saved!", Toast.LENGTH_SHORT).show()
 
-                        val intent = Intent(this@OTP_Verification, AutoCompleteAddressActivity::class.java)
+                      //  bypassToTravellerProfile(phoneNumber); SenderReceiverSelectionActivity
+
+                        val intent = Intent(this@OTP_Verification, SenderReceiverSelectionActivity::class.java) // move to autocomplete activity
                         intent.putExtra("PHONE_NUMBER", phoneNumber)
                         startActivity(intent)
+
+
                     }
                     .addOnFailureListener { e ->
                         Log.e("FirestoreError", "Error saving user record: ${e.message}", e)
@@ -89,5 +94,9 @@ class OTP_Verification : AppCompatActivity() {
                 Toast.makeText(this, "Invalid OTP. Please try again.", Toast.LENGTH_SHORT).show()
             }
         }
+
+
     }
+
+
 }
