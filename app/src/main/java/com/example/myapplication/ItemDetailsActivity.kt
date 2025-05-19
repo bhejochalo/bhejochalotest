@@ -142,8 +142,8 @@ class ItemDetailsActivity : AppCompatActivity() {
 
         // Save to Sender -> Phone Number -> Items collection
         firestore.collection("Sender")
-            .document(phoneNumber)
-            .collection("Items")
+           // .document(phoneNumber)
+           // .collection("Items")
             .add(itemData)
             .addOnSuccessListener { documentReference ->
                 Toast.makeText(this, "Item saved successfully", Toast.LENGTH_SHORT).show()
