@@ -129,28 +129,56 @@ class ItemDetailsActivity : AppCompatActivity() {
         val totalWeightGrams = (itemWeightKg * 1000) + itemWeightGram
         val timestamp = System.currentTimeMillis()
 
-        // Create item data
-        val itemData = hashMapOf(
-            "itemName" to itemName,
-            "weightKg" to itemWeightKg,
-            "weightGram" to itemWeightGram,
-            "totalWeight" to totalWeightGrams,
-            "instructions" to instructions,
+        // Create a combined document with both addresses and item details
+        val senderData = hashMapOf(
+            // Basic info
+            "phoneNumber" to phoneNumber,
             "timestamp" to timestamp,
-            "status" to "Pending"
+
+            // From Address details
+            "fromAddress" to hashMapOf(
+                "houseNumber" to AddressHolder.fromHouseNumber,
+                "street" to AddressHolder.fromStreet,
+                "area" to AddressHolder.fromArea,
+                "postalCode" to AddressHolder.fromPostalCode,
+                "city" to AddressHolder.fromCity,
+                "state" to AddressHolder.fromState,
+                "fullAddress" to AddressHolder.fromAddress
+            ),
+
+            // To Address details
+            "toAddress" to hashMapOf(
+                "houseNumber" to AddressHolder.toHouseNumber,
+                "street" to AddressHolder.toStreet,
+                "area" to AddressHolder.toArea,
+                "postalCode" to AddressHolder.toPostalCode,
+                "city" to AddressHolder.toCity,
+                "state" to AddressHolder.toState,
+                "fullAddress" to AddressHolder.toAddress
+            ),
+
+            // Item details
+            "itemDetails" to hashMapOf(
+                "itemName" to itemName,
+                "weightKg" to itemWeightKg,
+                "weightGram" to itemWeightGram,
+                "totalWeight" to totalWeightGrams,
+                "instructions" to instructions,
+                "status" to "Pending",
+                "itemId" to "item_${System.currentTimeMillis()}" // Unique ID for each item
+            )
         )
 
-        // Save to Sender -> Phone Number -> Items collection
+        // Save to Sender collection using phoneNumber as document ID
         firestore.collection("Sender")
-           // .document(phoneNumber)
-           // .collection("Items")
-            .add(itemData)
-            .addOnSuccessListener { documentReference ->
-                Toast.makeText(this, "Item saved successfully", Toast.LENGTH_SHORT).show()
+            .document(phoneNumber)
+            .set(senderData)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Data saved successfully", Toast.LENGTH_SHORT).show()
                 navigateToSenderDashboard()
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Failed to save item: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Failed to save data: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
