@@ -2,9 +2,11 @@ package com.example.myapplication
 
 import android.content.Context
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -70,36 +72,36 @@ class TravelerProfile : AppCompatActivity() {
             return
         }
 println("currentUserId ===> $currentUserId")
-        db.collection("travelers").document(currentUserId)
+        db.collection("traveler").document(currentUserId)
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     // Populate the TextViews with data from Firestore
-                  /*  val tvFromAddress = findViewById<TextView>(R.id.tvFromAddress)
+                    println("document exists == >")
+                   val tvFromAddress = findViewById<TextView>(R.id.tvFromAddress)
                     val tvToAddress = findViewById<TextView>(R.id.tvToAddress)
 
                     val fromAddress = """
-                        ${document.getString("fromHouseNumber")}, 
-                        ${document.getString("fromStreet")}, 
-                        ${document.getString("fromArea")}, 
-                        ${document.getString("fromCity")}, 
-                        ${document.getString("fromState")} - ${document.getString("fromPostalCode")}
+                        ${document.getString("fromAddress.fullAddress")} 
+                     
                     """.trimIndent()
 
                     val toAddress = """
-                        ${document.getString("toHouseNumber")}, 
-                        ${document.getString("toStreet")}, 
-                        ${document.getString("toArea")}, 
-                        ${document.getString("toCity")}, 
-                        ${document.getString("toState")} - ${document.getString("toPostalCode")}
+                        ${document.getString("toAddress.fullAddress")}
+                      
                     """.trimIndent()
 
                     tvFromAddress.text = fromAddress
-                    tvToAddress.text = toAddress */
+                    tvToAddress.text = toAddress
 
-                    println("document ===> $document")
+                    println("document ===> ")
 
+                    val SenderIDPresent = "${document.getString("senderId")}"
+                    println("isSenderIDPresent ===> $SenderIDPresent")
 
+                    if (SenderIDPresent.isNotEmpty()) {
+                        showSenderRequest(SenderIDPresent)
+                    }
 
                 } else {
                     Toast.makeText(this, "Traveler data not found", Toast.LENGTH_SHORT).show()
@@ -117,5 +119,95 @@ println("currentUserId ===> $currentUserId")
         val phoneNumber = sharedPref.getString("PHONE_NUMBER", "")
 
         return phoneNumber //
+    }
+    private fun showSenderRequest(senderRef: String) {  // Removed context parameter since we're in Activity
+        println("inside showSenderRequest ===> $senderRef")
+
+
+            println("inside showSenderRequest ===> Hardcoded data for testing")
+
+            // Hardcoded sender data
+            val name = "John Doe"
+            val phone = "+1 555-123-4567"
+            val address = "123 Main St, New York, NY 10001"
+
+            runOnUiThread {
+                try {
+                    if (!isFinishing) {
+                        showSenderDialog(name, phone, address, senderRef)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(
+                        this@TravelerProfile,
+                        "Error showing dialog: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+
+
+    private fun showSenderDialog(name: String, phone: String, address: String, senderRef: String) {
+        try {
+            val dialogView = LayoutInflater.from(this@TravelerProfile).inflate(
+                R.layout.dialog_sender_details,
+                findViewById(android.R.id.content),
+                false
+            )
+
+            // Safe TextView access
+            dialogView.findViewById<TextView>(R.id.tvSenderName)?.text = name
+            dialogView.findViewById<TextView>(R.id.tvSenderPhone)?.text = phone
+            dialogView.findViewById<TextView>(R.id.tvSenderAddress)?.text = address
+
+            AlertDialog.Builder(this@TravelerProfile)
+                .setTitle("Sender Request")
+                .setView(dialogView)
+                .setPositiveButton("Accept") { dialog, _ ->
+                    onAcceptRequest(senderRef)
+                    dialog.dismiss()
+                }
+                .setNegativeButton("Reject") { dialog, _ ->
+                    onRejectRequest(senderRef)
+                    dialog.dismiss()
+                }
+                .setCancelable(false)
+                .create()
+                .show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this@TravelerProfile, "Error showing dialog", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun onAcceptRequest(senderRef: String) {
+        FirebaseFirestore.getInstance().document(senderRef)
+            .update("status", "Accepted")
+            .addOnSuccessListener {
+                runOnUiThread {
+                    Toast.makeText(this@TravelerProfile, "Request Accepted", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                runOnUiThread {
+                    Toast.makeText(this@TravelerProfile, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
+
+    private fun onRejectRequest(senderRef: String) {
+        FirebaseFirestore.getInstance().document(senderRef)
+            .update("status", "Rejected")
+            .addOnSuccessListener {
+                runOnUiThread {
+                    Toast.makeText(this@TravelerProfile, "Request Rejected", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                runOnUiThread {
+                    Toast.makeText(this@TravelerProfile, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
     }
 }
