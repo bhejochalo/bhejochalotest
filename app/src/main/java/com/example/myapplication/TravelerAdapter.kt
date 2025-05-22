@@ -251,7 +251,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
             // created by HImanshu
             // in this method get the current  sender  on and update sender with the taveler he clicked book
         }
-        private fun buildFullAddress(
+       /* private fun buildFullAddress(
             houseNumber: String?,
             street: String?,
             area: String?,
@@ -261,6 +261,6 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
         ): String {
             return listOfNotNull(houseNumber, street, area, city, state, postalCode)
                 .joinToString(", ")
-        }
+        } */
     }
 }
