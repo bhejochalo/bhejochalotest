@@ -224,8 +224,8 @@ class ToAddressActivity : AppCompatActivity() {
                     toCity = city.text.toString()
                     toState = state.text.toString()
 
-                    fromAddress = intent.getStringExtra("FROM_ADDRESS")
-                    toAddress = intent.getStringExtra("TO_ADDRESS")
+                    fromAddress = AddressHolder.fromAddress
+                    toAddress = AddressHolder.toAddress
                     this.phoneNumber = phoneNumber
 
                     Log.d("AddressDebug", """

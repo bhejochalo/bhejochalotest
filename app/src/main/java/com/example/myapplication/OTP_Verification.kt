@@ -61,15 +61,15 @@ class OTP_Verification : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                // Create a record in Firestore
+              /*  // Create a record in Firestore
                 val user = hashMapOf(
                     "phoneNumber" to phoneNumber,
                     "verified" to true,
                     "timestamp" to System.currentTimeMillis()
-                )
+                )*/
 
                 // Use phone number as the document ID to enable upsert
-                val userDocRef = db.collection("users").document(phoneNumber)
+                /*val userDocRef = db.collection("users").document(phoneNumber)
 
                 // Upsert: Update if exists, insert if not
                 userDocRef.set(user, SetOptions.merge())
@@ -88,8 +88,10 @@ class OTP_Verification : AppCompatActivity() {
                     .addOnFailureListener { e ->
                         Log.e("FirestoreError", "Error saving user record: ${e.message}", e)
                         Toast.makeText(this, "Error saving user record!", Toast.LENGTH_SHORT).show()
-                    }
-
+                    }*/
+                val intent = Intent(this@OTP_Verification, SenderReceiverSelectionActivity::class.java) // move to autocomplete activity
+                intent.putExtra("PHONE_NUMBER", phoneNumber)
+                startActivity(intent)
             } else {
                 Toast.makeText(this, "Invalid OTP. Please try again.", Toast.LENGTH_SHORT).show()
             }

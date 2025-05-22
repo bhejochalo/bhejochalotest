@@ -74,33 +74,33 @@ class pnrCheck : AppCompatActivity() {
             val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
             val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
             // Create user data map
+// Create user data map using AddressHolder instead of intent extras
             val userData = hashMapOf(
                 "phoneNumber" to phoneNumber,
                 "verified" to true,
                 "fromAddress" to mapOf(
-                    "houseNumber" to intent.getStringExtra("FROM_HOUSE_NUMBER"),
-                    "street" to intent.getStringExtra("FROM_STREET"),
-                    "area" to intent.getStringExtra("FROM_AREA"),
-                    "postalCode" to intent.getStringExtra("FROM_POSTAL_CODE"),
-                    "city" to intent.getStringExtra("FROM_CITY"),
-                    "state" to intent.getStringExtra("FROM_STATE"),
-                    "fullAddress" to intent.getStringExtra("FROM_ADDRESS")  // Now properly passed
+                    "houseNumber" to AddressHolder.fromHouseNumber,
+                    "street" to AddressHolder.fromStreet,
+                    "area" to AddressHolder.fromArea,
+                    "postalCode" to AddressHolder.fromPostalCode,
+                    "city" to AddressHolder.fromCity,
+                    "state" to AddressHolder.fromState,
+                    "fullAddress" to AddressHolder.fromAddress
                 ),
                 "toAddress" to mapOf(
-                    "houseNumber" to intent.getStringExtra("TO_HOUSE_NUMBER"),
-                    "street" to intent.getStringExtra("TO_STREET"),
-                    "area" to intent.getStringExtra("TO_AREA"),
-                    "postalCode" to intent.getStringExtra("TO_POSTAL_CODE"),
-                    "city" to intent.getStringExtra("TO_CITY"),
-                    "state" to intent.getStringExtra("TO_STATE"),
-                    "fullAddress" to intent.getStringExtra("TO_ADDRESS")  // Now properly passed
+                    "houseNumber" to AddressHolder.toHouseNumber,
+                    "street" to AddressHolder.toStreet,
+                    "area" to AddressHolder.toArea,
+                    "postalCode" to AddressHolder.toPostalCode,
+                    "city" to AddressHolder.toCity,
+                    "state" to AddressHolder.toState,
+                    "fullAddress" to AddressHolder.toAddress
                 ),
                 "pnr" to pnr,
                 "lastName" to surname,
                 "airline" to selectedAirline,
                 "timestamp" to System.currentTimeMillis(),
                 "SenderRequest" to false
-
             )
 
             // Save to Firestore
