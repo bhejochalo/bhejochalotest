@@ -44,6 +44,32 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
         private val tvPnr: TextView = itemView.findViewById(R.id.tvPnr)
         private val btnBook: Button = itemView.findViewById(R.id.btnBook)
 
+        private fun startPayment(traveler: Traveler) {
+            val activity = itemView.context as? android.app.Activity ?: return
+
+            val checkout = com.razorpay.Checkout()
+            checkout.setKeyID("rzp_test_4HNx49ek9VPhNQ") // Replace with your Razorpay key
+
+            val options = JSONObject()
+            try {
+                options.put("name", "Turant")
+                options.put("description", "Traveler Booking with ${traveler.name}")
+                options.put("currency", "INR")
+                options.put("amount", "150000") // amount in paise: ₹100 = 10000
+
+                val prefill = JSONObject()
+                prefill.put("email", "user@example.com")
+                prefill.put("contact", "9876543210") // You can use user's actual number
+
+                options.put("prefill", prefill)
+
+                checkout.open(activity, options)
+            } catch (e: Exception) {
+                Log.e("Razorpay", "Error in starting Razorpay Checkout", e)
+                Toast.makeText(itemView.context, "Payment failed to start", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         fun bind(traveler: Traveler) {
             tvName.text = traveler.name
             tvAirline.text = "Airline: ${traveler.airline}"
@@ -83,6 +109,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                     traveler.bookingStatus = "pending"
                     notifyItemChanged(adapterPosition)
                   //  placeBorzoOrder()
+                    startPayment(traveler)
                     attachTravelerWithSender();
                     attachSenderWithTraveler()
                     // update the respected traveler in the db and attach this sender details lookup if possible
