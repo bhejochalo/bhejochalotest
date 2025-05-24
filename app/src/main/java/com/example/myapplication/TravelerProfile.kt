@@ -27,6 +27,20 @@ import java.util.concurrent.TimeUnit
 
 class TravelerProfile : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
+   private var fromHouseNumber_Traveler = "";
+    private var fromStreet_Traveler = "";
+    private var fromArea_Traveler = "";
+    private var fromCity_Traveler = "";
+    private var fromPincode_Traveler = "";
+    private var fromState_Traveler = "";
+
+    private var fromHouseNumber_Sender = "";
+    private var fromStreet_Sender = "";
+    private var fromArea_Sender = "";
+    private var fromCity_Sender = "";
+    private var fromPincode_Sender = "";
+    private var fromState_Sender = "";
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +116,38 @@ println("currentUserId ===> $currentUserId")
                         ${document.getString("toAddress.fullAddress")}
                       
                     """.trimIndent()
+
+                     fromHouseNumber_Traveler = """
+                        ${document.getString("fromAddress.houseNumber")}
+                      
+                    """.trimIndent()
+
+                     fromStreet_Traveler = """
+                        ${document.getString("fromAddress.street")}
+                      
+                    """.trimIndent()
+
+                     fromArea_Traveler = """
+                        ${document.getString("fromAddress.area")}
+                      
+                    """.trimIndent()
+
+                     fromCity_Traveler = """
+                        ${document.getString("fromAddress.city")}
+                      
+                    """.trimIndent()
+
+                     fromPincode_Traveler = """
+                        ${document.getString("fromAddress.postalCode")}
+                      
+                    """.trimIndent()
+
+                    fromState_Traveler = """
+                        ${document.getString("fromAddress.state")}
+                      
+                    """.trimIndent()
+
+
 
                     tvFromAddress.text = fromAddress
                     tvToAddress.text = toAddress
@@ -194,7 +240,7 @@ println("currentUserId ===> $currentUserId")
     }
 
     private fun onAcceptRequest(senderRef: String) {
-        placeBorzoOrder()
+        placeBorzoOrder(senderRef) // need to pass the other details also, address of traveler
 
     }
 
@@ -214,14 +260,18 @@ println("currentUserId ===> $currentUserId")
     }
 
 
-    private fun placeBorzoOrder() {
+    private fun placeBorzoOrder(senderId: String) {
+        // Borzo order placement logic
+
+        getTheRelatedSenderData(senderId);
+
         println("in borzo place order")
         val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-        val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
+        val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: "" // isme current user means traveler a number aa rha hai
 
         // Format phone numbers according to Borzo requirements
-        val senderPhone = formatPhoneForBorzo("918696888060")
-        val receiverPhone = formatPhoneForBorzo("918696888060") // Your test receiver number
+        val senderPhone = formatPhoneForBorzo(senderId) // senderID me sender ka number hai
+        val receiverPhone = formatPhoneForBorzo(phoneNumber) // Your test receiver number
 
         if (senderPhone == null || receiverPhone == null) {
             runOnUiThread {
@@ -234,22 +284,40 @@ println("currentUserId ===> $currentUserId")
             return
         }
 
+        println("Debugging fromAddress components:")
+        println("House Number: $fromHouseNumber_Traveler")
+        println("Street: $fromStreet_Traveler")
+        println("Area: $fromArea_Traveler")
+        println("City: $fromCity_Traveler")
+        println("State: $fromState_Traveler")
+        println("Pincode: $fromPincode_Traveler")
+
         val fromAddress = buildFullAddress(
-            "904",
-            "gurudatta nagar",
-            "Hadapsar",
-            "Pune",
-            "maharashtra",
-            "412308"
+            fromHouseNumber_Traveler,
+            fromStreet_Traveler,
+            fromArea_Traveler,
+            fromCity_Traveler,
+            fromState_Traveler,
+            fromPincode_Traveler
         )
 
+        println("Debugging fromAddress components:")
+        println("House Number: $fromHouseNumber_Sender")
+        println("Street = : $fromStreet_Sender")
+        println("Area  =: $fromArea_Sender")
+        println("City  =: $fromCity_Sender")
+        println("State  =: $fromState_Sender")
+        println("Pincode = : $fromPincode_Sender")
+
+
+
         val toAddress = buildFullAddress(
-            "999 green crest",
-            "fursungi nagar",
-            "Hadapsar",
-            "Pune",
-            "maharashtra",
-            "412308"
+            fromHouseNumber_Sender,
+            fromStreet_Sender,
+            fromArea_Sender,
+            fromCity_Sender,
+            fromState_Sender,
+            fromPincode_Sender
         )
 
         val client = OkHttpClient.Builder()
@@ -361,5 +429,76 @@ println("currentUserId ===> $currentUserId")
         println("in build full address")
         return listOfNotNull(houseNumber, street, area, city, state, postalCode)
             .joinToString(", ")
+    }
+
+    private fun getTheRelatedSenderData(senderId: String) {
+        // get the required data like address,number etc from the firestore
+
+        println("currentUserId  in Sender ===> $senderId")
+        db.collection("Sender").document(senderId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    // Populate the TextViews with data from Firestore
+                    println("document exists == >")
+                    val tvFromAddress = findViewById<TextView>(R.id.tvFromAddress)
+                    val tvToAddress = findViewById<TextView>(R.id.tvToAddress)
+
+                    val fromAddress = """
+                        ${document.getString("fromAddress.fullAddress")} 
+                     
+                    """.trimIndent()
+
+                    val toAddress = """
+                        ${document.getString("toAddress.fullAddress")}
+                      
+                    """.trimIndent()
+
+                    fromHouseNumber_Sender = """
+                        ${document.getString("fromAddress.houseNumber")}
+                      
+                    """.trimIndent()
+
+                    fromStreet_Sender = """
+                        ${document.getString("fromAddress.street")}
+                      
+                    """.trimIndent()
+
+                    fromArea_Sender = """
+                        ${document.getString("fromAddress.area")}
+                      
+                    """.trimIndent()
+
+                    fromCity_Sender = """
+                        ${document.getString("fromAddress.city")}
+                      
+                    """.trimIndent()
+
+                    fromPincode_Sender = """
+                        ${document.getString("fromAddress.postalCode")}
+                      
+                    """.trimIndent()
+
+                    fromState_Sender = """
+                        ${document.getString("fromAddress.state")}
+                      
+                    """.trimIndent()
+
+
+                    tvFromAddress.text = fromAddress
+                    tvToAddress.text = toAddress
+
+                    println("document ===> ")
+
+
+
+
+                } else {
+                    Toast.makeText(this, "Sender data not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error fetching Sender data: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 }
