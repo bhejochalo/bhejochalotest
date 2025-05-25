@@ -19,6 +19,9 @@ class SenderDashboardActivity : AppCompatActivity() {
     private val travelersList = mutableListOf<Traveler>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val senderStreet = AddressHolder.fromStreet?.trim()?.lowercase()
+        val senderArea = AddressHolder.fromArea?.trim()?.lowercase()
+        val senderPostalCode = AddressHolder.fromPostalCode?.trim()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sender_dashboard)
 
@@ -78,23 +81,38 @@ class SenderDashboardActivity : AppCompatActivity() {
     }
 
     private fun processDocuments(documents: List<DocumentSnapshot>) {
+        val senderStreet = AddressHolder.fromStreet?.trim()?.lowercase()
+        val senderArea = AddressHolder.fromArea?.trim()?.lowercase()
+        val senderPostalCode = AddressHolder.fromPostalCode?.trim()
+
         for (doc in documents) {
             val name = doc.getString("lastName") ?: continue
             val airline = doc.getString("airline") ?: continue
             val destination = doc.getString("toAddress.fullAddress") ?: continue
             val pnr = doc.getString("pnr") ?: continue
 
-            travelersList.add(
-                Traveler(
-                    name = name,
-                    airline = airline,
-                    destination = destination,
-                    pnr = pnr,
-                    bookingStatus = "available"
+            val travelerStreet = doc.getString("fromAddress.street")?.trim()?.lowercase() ?: ""
+            val travelerArea = doc.getString("fromAddress.area")?.trim()?.lowercase() ?: ""
+            val travelerPostalCode = doc.getString("fromAddress.postalCode")?.trim()
+
+            val isNearby = (travelerStreet == senderStreet ||
+                    travelerArea == senderArea ||
+                    travelerPostalCode == senderPostalCode)
+
+            if (isNearby) {
+                travelersList.add(
+                    Traveler(
+                        name = name,
+                        airline = airline,
+                        destination = destination,
+                        pnr = pnr,
+                        bookingStatus = "available"
+                    )
                 )
-            )
+            }
         }
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
