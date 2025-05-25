@@ -40,7 +40,7 @@ class TravelerProfile : AppCompatActivity() {
     private var fromCity_Sender = "";
     private var fromPincode_Sender = "";
     private var fromState_Sender = "";
-
+    private var isFirstMile = false;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -240,6 +240,7 @@ println("currentUserId ===> $currentUserId")
     }
 
     private fun onAcceptRequest(senderRef: String) {
+        isFirstMile = true;
         placeBorzoOrder(senderRef) // need to pass the other details also, address of traveler
 
     }
@@ -260,150 +261,6 @@ println("currentUserId ===> $currentUserId")
     }
 
 
-    private fun placeBorzoOrder(senderId: String) {
-        // Borzo order placement logic
-
-        getTheRelatedSenderData(senderId);
-
-        println("in borzo place order")
-        val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-        val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: "" // isme current user means traveler a number aa rha hai
-
-        // Format phone numbers according to Borzo requirements
-        val senderPhone = formatPhoneForBorzo(senderId) // senderID me sender ka number hai
-        val receiverPhone = formatPhoneForBorzo(phoneNumber) // Your test receiver number
-
-        if (senderPhone == null || receiverPhone == null) {
-            runOnUiThread {
-                Toast.makeText(
-                    this@TravelerProfile,
-                    "Invalid phone number format",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-            return
-        }
-
-        println("Debugging fromAddress components:")
-        println("House Number: $fromHouseNumber_Traveler")
-        println("Street: $fromStreet_Traveler")
-        println("Area: $fromArea_Traveler")
-        println("City: $fromCity_Traveler")
-        println("State: $fromState_Traveler")
-        println("Pincode: $fromPincode_Traveler")
-
-        val fromAddress = buildFullAddress(
-            fromHouseNumber_Traveler,
-            fromStreet_Traveler,
-            fromArea_Traveler,
-            fromCity_Traveler,
-            fromState_Traveler,
-            fromPincode_Traveler
-        )
-
-        println("Debugging fromAddress components:")
-        println("House Number: $fromHouseNumber_Sender")
-        println("Street = : $fromStreet_Sender")
-        println("Area  =: $fromArea_Sender")
-        println("City  =: $fromCity_Sender")
-        println("State  =: $fromState_Sender")
-        println("Pincode = : $fromPincode_Sender")
-
-
-
-        val toAddress = buildFullAddress(
-            fromHouseNumber_Sender,
-            fromStreet_Sender,
-            fromArea_Sender,
-            fromCity_Sender,
-            fromState_Sender,
-            fromPincode_Sender
-        )
-
-        val client = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
-
-        val jsonBody = JSONObject().apply {
-            put("matter", "Documents")
-            put("vehicle_type_id", 2)
-            put("points", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("address", fromAddress)
-                    put("contact_person", JSONObject().apply {
-                        put("phone", senderPhone)
-                        put("name", "Sender")
-                    })
-                })
-                put(JSONObject().apply {
-                    put("address", toAddress)
-                    put("contact_person", JSONObject().apply {
-                        put("phone", receiverPhone)
-                        put("name", "Receiver")
-                    })
-                })
-            })
-        }.toString()
-
-        println("Request JSON: $jsonBody")
-
-        val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-
-        val request = Request.Builder()
-            .url("https://robotapitest-in.borzodelivery.com/api/business/1.6/create-order")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("X-DV-Auth-Token", "3F561C810EDAC4F9339582C4BCB9F1A1B3800B87")
-            .post(requestBody)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                println("in borzo place order failed")
-                Log.e("BORZO", "Request failed: ${e.message}")
-                runOnUiThread {
-                    Toast.makeText(
-                        this@TravelerProfile,
-                        "Booking failed. Please try again.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    val responseBody = response.body?.string()
-                    println("in borzo place order response")
-                    Log.d("BORZO", "Response: $responseBody")
-
-                    runOnUiThread {
-                        if (response.isSuccessful) {
-                            Toast.makeText(
-                                this@TravelerProfile,
-                                "Booking successful!",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        } else {
-                            Toast.makeText(
-                                this@TravelerProfile,
-                                "Booking failed: ${response.message}\n$responseBody",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("BORZO", "Error parsing response", e)
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@TravelerProfile,
-                            "Error processing booking",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            }
-        })
-    }
 
     private fun formatPhoneForBorzo(phone: String): String? {
         // Remove all non-digit characters
@@ -431,74 +288,181 @@ println("currentUserId ===> $currentUserId")
             .joinToString(", ")
     }
 
-    private fun getTheRelatedSenderData(senderId: String) {
-        // get the required data like address,number etc from the firestore
+    private fun placeBorzoOrder(senderId: String) {
+        // First get the sender data, then place the order
+        getTheRelatedSenderData(senderId) { senderData ->
+            println("in borzo place order")
+            val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
 
-        println("currentUserId  in Sender ===> $senderId")
+            // Format phone numbers according to Borzo requirements
+            val senderPhone = formatPhoneForBorzo(senderId)
+            val receiverPhone = formatPhoneForBorzo(phoneNumber)
+
+            if (senderPhone == null || receiverPhone == null) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@TravelerProfile,
+                        "Invalid phone number format",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                return@getTheRelatedSenderData
+            }
+
+            val fromAddress = buildFullAddress(
+                fromHouseNumber_Traveler,
+                fromStreet_Traveler,
+                fromArea_Traveler,
+                fromCity_Traveler,
+                fromState_Traveler,
+                fromPincode_Traveler
+            )
+
+            val toAddress = buildFullAddress(
+                senderData["houseNumber"] ?: "",
+                senderData["street"] ?: "",
+                senderData["area"] ?: "",
+                senderData["city"] ?: "",
+                senderData["state"] ?: "",
+                senderData["postalCode"] ?: ""
+            )
+
+            println("Debugging fromAddress components:")
+            println("House Number 1: ${senderData["houseNumber"]}")
+            println("Street1: ${senderData["street"]}")
+            println("Area1: ${senderData["area"]}")
+            println("City:1 ${senderData["city"]}")
+            println("State:1 ${senderData["state"]}")
+            println("Pincode1: ${senderData["postalCode"]}")
+
+            // Rest of your Borzo order placement code...
+            val client = OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build()
+
+            val jsonBody = JSONObject().apply {
+                put("matter", "Documents") // should be dynamic
+                put("vehicle_type_id", 2)
+                put("points", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("address", fromAddress)
+                        put("contact_person", JSONObject().apply {
+                            put("phone", senderPhone)
+                            put("name", "Sender")
+                        })
+                    })
+                    put(JSONObject().apply {
+                        put("address", toAddress)
+                        put("contact_person", JSONObject().apply {
+                            put("phone", receiverPhone)
+                            put("name", "Receiver")
+                        })
+                    })
+                })
+            }.toString()
+
+            println("Request JSON: $jsonBody")
+
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+            val request = Request.Builder()
+                .url("https://robotapitest-in.borzodelivery.com/api/business/1.6/create-order")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("X-DV-Auth-Token", "3F561C810EDAC4F9339582C4BCB9F1A1B3800B87")
+                .post(requestBody)
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    println("in borzo place order failed")
+                    Log.e("BORZO", "Request failed: ${e.message}")
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@TravelerProfile,
+                            "Booking failed. Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    try {
+                        val responseBody = response.body?.string()
+                        println("in borzo place order response")
+                        Log.d("BORZO", "Response: $responseBody")
+
+                        runOnUiThread {
+                            if (response.isSuccessful) {
+                                Toast.makeText(
+                                    this@TravelerProfile,
+                                    "Booking successful!",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            } else {
+                                Toast.makeText(
+                                    this@TravelerProfile,
+                                    "Booking failed: ${response.message}\n$responseBody",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("BORZO", "Error parsing response", e)
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@TravelerProfile,
+                                "Error processing booking",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    private fun getTheRelatedSenderData(senderId: String, callback: (Map<String, String?>) -> Unit) {
+        println("currentUserId in Sender ===> $senderId")
         db.collection("Sender").document(senderId)
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    // Populate the TextViews with data from Firestore
-                    println("document exists == >")
-                    val tvFromAddress = findViewById<TextView>(R.id.tvFromAddress)
-                    val tvToAddress = findViewById<TextView>(R.id.tvToAddress)
+                    val senderData = hashMapOf<String, String?>(
+                        "houseNumber" to document.getString("fromAddress.houseNumber"),
+                        "street" to document.getString("fromAddress.street"),
+                        "area" to document.getString("fromAddress.area"),
+                        "city" to document.getString("fromAddress.city"),
+                        "postalCode" to document.getString("fromAddress.postalCode"),
+                        "state" to document.getString("fromAddress.state")
+                    )
 
-                    val fromAddress = """
-                        ${document.getString("fromAddress.fullAddress")} 
-                     
-                    """.trimIndent()
+                    // Update the class fields
+                    this.fromHouseNumber_Sender = senderData["houseNumber"] ?: ""
+                    this.fromStreet_Sender = senderData["street"] ?: ""
+                    this.fromArea_Sender = senderData["area"] ?: ""
+                    this.fromCity_Sender = senderData["city"] ?: ""
+                    this.fromPincode_Sender = senderData["postalCode"] ?: ""
+                    this.fromState_Sender = senderData["state"] ?: ""
 
-                    val toAddress = """
-                        ${document.getString("toAddress.fullAddress")}
-                      
-                    """.trimIndent()
+                    println("Debugging sender fromAddress components:")
+                    println("House Number sender : ${senderData["houseNumber"]}")
+                    println("Streetsender = : ${senderData["street"]}")
+                    println("Areasender = : ${senderData["area"]}")
+                    println("Citysender = : ${senderData["city"]}")
+                    println("Statesender = : ${senderData["state"]}")
+                    println("Pincodesender = : ${senderData["postalCode"]}")
 
-                    fromHouseNumber_Sender = """
-                        ${document.getString("fromAddress.houseNumber")}
-                      
-                    """.trimIndent()
-
-                    fromStreet_Sender = """
-                        ${document.getString("fromAddress.street")}
-                      
-                    """.trimIndent()
-
-                    fromArea_Sender = """
-                        ${document.getString("fromAddress.area")}
-                      
-                    """.trimIndent()
-
-                    fromCity_Sender = """
-                        ${document.getString("fromAddress.city")}
-                      
-                    """.trimIndent()
-
-                    fromPincode_Sender = """
-                        ${document.getString("fromAddress.postalCode")}
-                      
-                    """.trimIndent()
-
-                    fromState_Sender = """
-                        ${document.getString("fromAddress.state")}
-                      
-                    """.trimIndent()
-
-
-                    tvFromAddress.text = fromAddress
-                    tvToAddress.text = toAddress
-
-                    println("document ===> ")
-
-
-
-
+                    callback(senderData)
                 } else {
                     Toast.makeText(this, "Sender data not found", Toast.LENGTH_SHORT).show()
+                    callback(emptyMap())
                 }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Error fetching Sender data: ${e.message}", Toast.LENGTH_SHORT).show()
+                callback(emptyMap())
             }
     }
 }
