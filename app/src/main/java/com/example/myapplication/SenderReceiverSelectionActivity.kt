@@ -67,6 +67,18 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
                 .get()
                 .addOnSuccessListener { querySnapshot ->
                     if (!querySnapshot.isEmpty) {
+
+                        val document = querySnapshot.documents[0]
+                        // Get the travelerID field
+                        val travelerID = document.getString("travelerID")
+                        println("travelerID: $travelerID")
+
+                        if (travelerID.isNullOrEmpty()) {
+                            println("travelerID === >")
+                           navigateToTravelerList(phone)
+                        }
+
+
                         navigateToSenderProfile(phone)
                     } else {
                         navigateToAutoComplete(phone)
@@ -96,6 +108,32 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
         Intent(this, AutoCompleteAddressActivity::class.java).apply {
             putExtra("PHONE_NUMBER", phone)
             startActivity(this)
+        }
+    }
+    /**
+     * Navigates to SenderDashboardActivity with the sender's phone number
+     * @param phone The authenticated sender's phone number (must be non-empty)
+     */
+    private fun navigateToTravelerList(phone: String) {
+        // Validate input
+        if (phone.isBlank()) {
+            Toast.makeText(this, "Phone number required", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Intent(this, SenderDashboardActivity::class.java).apply {
+            putExtra("PHONE_NUMBER", phone)
+
+            // Optional flags to control navigation behavior:
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP // Prevents multiple instances
+
+            // For fresh start (uncomment if needed):
+            // flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+            startActivity(this)
+
+            // Optional transition animation
+           // overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
     }
 
