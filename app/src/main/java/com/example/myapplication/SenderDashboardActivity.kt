@@ -55,20 +55,59 @@ class SenderDashboardActivity : AppCompatActivity() {
         })
     }
     private fun loadTravelers() {
-        val query = db.collection("traveler")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(10)
+        val senderFromCity = AddressHolder.fromCity?.trim()?.lowercase()
+        val senderToCity = AddressHolder.toCity?.trim()?.lowercase()
 
-        query.get().addOnSuccessListener { querySnapshot ->
-            if (!querySnapshot.isEmpty) {
-                lastVisibleDocument = querySnapshot.documents[querySnapshot.size() - 1]
+        if (senderFromCity == null || senderToCity == null) {
+            Log.e("LoadTravelers", "Sender fromCity or toCity is null")
+            return
+        }
+
+        db.collection("traveler")
+            .whereEqualTo("verified", true)
+            .whereEqualTo("SenderRequest", false)
+            .limit(30)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
                 travelersList.clear()
-                processDocuments(querySnapshot.documents) // Pass the documents list
+                lastVisibleDocument = querySnapshot.documents.lastOrNull()
+
+                for (doc in querySnapshot.documents) {
+                    val from = doc.get("fromAddress") as? Map<*, *>
+                    val to = doc.get("toAddress") as? Map<*, *>
+
+                    val travelerFromCity = (from?.get("city") as? String)?.trim()?.lowercase()
+                    val travelerToCity = (to?.get("city") as? String)?.trim()?.lowercase()
+
+                    val isExactMatch = travelerFromCity == senderFromCity && travelerToCity == senderToCity
+
+                    Log.d("TravelerMatchLog", "DocID=${doc.id}, Match=$isExactMatch | " +
+                            "Traveler From=$travelerFromCity, To=$travelerToCity | " +
+                            "Sender From=$senderFromCity, To=$senderToCity")
+
+                    if (isExactMatch) {
+                        val name = doc.getString("lastName") ?: continue
+                        val airline = doc.getString("airline") ?: continue
+                        val destination = to?.get("fullAddress") as? String ?: continue
+                        val pnr = doc.getString("pnr") ?: continue
+                        Log.d("TravelerAddLog", "Adding traveler: $name, PNR: $pnr, To: $destination")
+                        travelersList.add(
+                            Traveler(
+                                name = name,
+                                airline = airline,
+                                destination = destination,
+                                pnr = pnr,
+                                bookingStatus = "available"
+                            )
+                        )
+                    }
+                }
+
                 adapter.notifyDataSetChanged()
             }
-        }.addOnFailureListener { e ->
-            Log.e("FirestoreError", "Error loading travelers: ${e.message}")
-        }
+            .addOnFailureListener { e ->
+                Log.e("FirestoreError", "Error loading travelers: ${e.message}")
+            }
     }
 
     private fun loadMoreTravelers() {
@@ -91,27 +130,12 @@ class SenderDashboardActivity : AppCompatActivity() {
     }
 
     private fun processDocuments(documents: List<DocumentSnapshot>) {
-        val senderStreet = AddressHolder.fromStreet?.trim()?.lowercase()
-        val senderArea = AddressHolder.fromArea?.trim()?.lowercase()
-        val senderPostalCode = AddressHolder.fromPostalCode?.trim()
 
         for (doc in documents) {
             val name = doc.getString("lastName") ?: continue
             val airline = doc.getString("airline") ?: continue
-            val destination = doc.getString("toAddress.fullAddress") ?: continue
+            val destination = (doc.get("toAddress") as? Map<*, *>)?.get("fullAddress") as? String ?: continue
             val pnr = doc.getString("pnr") ?: continue
-
-            val travelerStreet = doc.getString("fromAddress.street")?.trim()?.lowercase() ?: ""
-            val travelerArea = doc.getString("fromAddress.area")?.trim()?.lowercase() ?: ""
-            val travelerPostalCode = doc.getString("fromAddress.postalCode")?.trim()
-
-            val isNearby = (travelerStreet == senderStreet ||
-                    travelerArea == senderArea ||
-                    travelerPostalCode == senderPostalCode)
-
-            if (isNearby) {
-
-                // add in the traveler list
                 travelersList.add(
                     Traveler(
                         name = name,
@@ -124,8 +148,6 @@ class SenderDashboardActivity : AppCompatActivity() {
                 )
             }
         }
-    }
-
 
     override fun onDestroy() {
         super.onDestroy()
