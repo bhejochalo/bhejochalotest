@@ -25,7 +25,7 @@ class SenderDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sender_dashboard)
 
-        // Initialize RecyclerView
+        // Initialize RecyclerView // Traveler adapter
         recyclerView = findViewById(R.id.travelersRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = TravelerAdapter(travelersList)
@@ -100,13 +100,16 @@ class SenderDashboardActivity : AppCompatActivity() {
                     travelerPostalCode == senderPostalCode)
 
             if (isNearby) {
+
+                // add in the traveler list
                 travelersList.add(
                     Traveler(
                         name = name,
                         airline = airline,
                         destination = destination,
                         pnr = pnr,
-                        bookingStatus = "available"
+                        bookingStatus = "available",
+                        documentSnapshot = doc
                     )
                 )
             }

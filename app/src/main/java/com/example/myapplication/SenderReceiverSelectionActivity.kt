@@ -75,8 +75,8 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
                         println("travelerID: $travelerID")
 
 
-                        updateToAddressOfAddressHolder(document)
-                        updateToFromAddressOfAddressHolder(document)
+                        updateToAddressOfAddressHolder(document) // sender to address
+                        updateToFromAddressOfAddressHolder(document) // sender from address
 
                         if (travelerID.isNullOrEmpty()) {
                             println("travelerID === >")
@@ -161,10 +161,6 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
         val toPincode = doc.getString("toAddress.postalCode")
         val toState = doc.getString("toAddress.state")
 
-
-
-
-
         toCity?.let { AddressHolder.toCity = it }
         toArea?.let { AddressHolder.toArea = it }
 
@@ -184,10 +180,6 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
         val fromHouseNumber = doc.getString("fromAddress.houseNumber")
         val fromPincode = doc.getString("fromAddress.postalCode")
         val fromState = doc.getString("fromAddress.state")
-
-
-
-
 
         fromCity?.let { AddressHolder.fromCity = it }
         fromArea?.let { AddressHolder.fromArea = it }

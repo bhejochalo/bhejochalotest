@@ -110,8 +110,8 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                     notifyItemChanged(adapterPosition)
                   //  placeBorzoOrder()
                     startPayment(traveler)
-                    attachTravelerWithSender();
-                    attachSenderWithTraveler()
+                    attachTravelerWithSender(traveler); // need to pass the traveler
+                    attachSenderWithTraveler(traveler)  //
                     // update the respected traveler in the db and attach this sender details lookup if possible
 
                     val intent = Intent(itemView.context, SenderProfile::class.java).apply {
@@ -232,49 +232,40 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
         }
 */
 
-        private fun attachTravelerWithSender(){
-            // in this method get the traveler on sender clicked on and update the traveler
+        private fun attachTravelerWithSender(traveler: Traveler){
+            // in this method get the traveler when sender clicked on and update the traveler
             //  created by Himanshu
-            val senderId = "sender123"
-            val travelerPhoneNumber = "8690999999"
-            val db = FirebaseFirestore.getInstance()
-
-            // Query traveler document by phoneNumber
-            db.collection("traveler")
+            //val senderId = "sender123"
+            //val travelerPhoneNumber = "8690999999"
+           // val db = FirebaseFirestore.getInstance()
+            // Create update map
+            val updates = hashMapOf<String, Any>(
+                "SenderRequest" to true,
+                "senderId" to "0000000000",
+                "matchedAt" to System.currentTimeMillis()
+            )
+            // Query traveler document by phoneNumber // check how we can remove this query. need to remove this query
+            /*db.collection("traveler")
                 .whereEqualTo("phoneNumber", travelerPhoneNumber)
                 .limit(1) // Since phone numbers should be unique
                 .get()
                 .addOnSuccessListener { querySnapshot ->
-                    if (!querySnapshot.isEmpty) {
-                        val travelerDoc = querySnapshot.documents[0]
+                    if (!querySnapshot.isEmpty) { */
+                       //val travelerDoc = traveler //querySnapshot.documents[0]
 
-                        // Create update map
-                        val updates = hashMapOf<String, Any>(
-                            "SenderRequest" to true,
-                            "senderId" to senderId,
-                            "matchedAt" to System.currentTimeMillis()
-                        )
-
-                        // Update the document
-                        travelerDoc.reference.update(updates)
-                            .addOnSuccessListener {
-                                Log.d("AttachTraveler", "Traveler $travelerPhoneNumber matched with sender $senderId")
-                                // Handle successful match here
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("AttachTraveler", "Error updating traveler", e)
-                            }
-                    } else {
-                        Log.d("AttachTraveler", "No traveler found with phone number $travelerPhoneNumber")
-                    }
+            traveler.documentSnapshot?.reference?.update(updates)
+                ?.addOnSuccessListener {
+                    Log.d("Firestore", "Fields updated successfully!")
                 }
-                .addOnFailureListener { e ->
-                    Log.e("AttachTraveler", "Error querying traveler", e)
+                ?.addOnFailureListener { e ->
+                    Log.e("Firestore", "Error updating fields", e)
                 }
 
-        }
 
-        private fun attachSenderWithTraveler(){
+                }
+
+
+        private fun attachSenderWithTraveler(traveler: Traveler){
             // created by HImanshu
             // in this method get the current  sender  on and update sender with the taveler he clicked book
         }
