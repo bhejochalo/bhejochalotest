@@ -131,7 +131,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
         }
 
         Intent(this, SenderDashboardActivity::class.java).apply {
-            putExtra("PHONE_NUMBER", phone)
+            putExtra("PHONE_NUMBER", phone) // passing the sender number
 
             // Optional flags to control navigation behavior:
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP // Prevents multiple instances

@@ -3,6 +3,7 @@ package com.example.myapplication
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -11,7 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 
 class SenderDashboardActivity : AppCompatActivity() {
-
+    private var senderPhoneNumber: String? = null
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: TravelerAdapter
     private val db = FirebaseFirestore.getInstance()
@@ -30,6 +31,15 @@ class SenderDashboardActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = TravelerAdapter(travelersList)
         recyclerView.adapter = adapter
+
+        senderPhoneNumber = intent.getStringExtra("PHONE_NUMBER")?.also {
+            Log.d("SenderReceiver", "Received phone: $it")
+        } ?: run {
+            Toast.makeText(this, "Phone number not received", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
 
         // Load initial data
         loadTravelers()

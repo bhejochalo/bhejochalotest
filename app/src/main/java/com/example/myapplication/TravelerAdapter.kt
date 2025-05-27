@@ -20,6 +20,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import android.content.SharedPreferences
 
 class TravelerAdapter(private val travelers: MutableList<Traveler>) :
     RecyclerView.Adapter<TravelerAdapter.TravelerViewHolder>() {
@@ -233,15 +234,12 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
 */
 
         private fun attachTravelerWithSender(traveler: Traveler){
-            // in this method get the traveler when sender clicked on and update the traveler
-            //  created by Himanshu
-            //val senderId = "sender123"
-            //val travelerPhoneNumber = "8690999999"
-           // val db = FirebaseFirestore.getInstance()
-            // Create update map
+            val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
+
             val updates = hashMapOf<String, Any>(
                 "SenderRequest" to true,
-                "senderId" to "0000000000",
+                "senderId" to senderPhoneNumber,  // Using actual sender's phone instead of hardcoded value
                 "matchedAt" to System.currentTimeMillis()
             )
             // Query traveler document by phoneNumber // check how we can remove this query. need to remove this query
