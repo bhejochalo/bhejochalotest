@@ -27,19 +27,19 @@ import java.util.concurrent.TimeUnit
 
 class TravelerProfile : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
-   private var fromHouseNumber_Traveler = "";
-    private var fromStreet_Traveler = "";
-    private var fromArea_Traveler = "";
-    private var fromCity_Traveler = "";
-    private var fromPincode_Traveler = "";
-    private var fromState_Traveler = "";
+    private var houseNumber_Traveler = "";
+    private var street_Traveler = "";
+    private var area_Traveler = "";
+    private var city_Traveler = "";
+    private var pincode_Traveler = "";
+    private var state_Traveler = "";
 
-    private var fromHouseNumber_Sender = "";
-    private var fromStreet_Sender = "";
-    private var fromArea_Sender = "";
-    private var fromCity_Sender = "";
-    private var fromPincode_Sender = "";
-    private var fromState_Sender = "";
+    private var houseNumber_Sender = "";
+    private var street_Sender = "";
+    private var area_Sender = "";
+    private var city_Sender = "";
+    private var pincode_Sender = "";
+    private var state_Sender = "";
     private var isFirstMile = false;
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,14 +97,14 @@ class TravelerProfile : AppCompatActivity() {
             finish()
             return
         }
-println("currentUserId ===> $currentUserId")
+        println("currentUserId ===> $currentUserId")
         db.collection("traveler").document(currentUserId)
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
                     // Populate the TextViews with data from Firestore
                     println("document exists == >")
-                   val tvFromAddress = findViewById<TextView>(R.id.tvFromAddress)
+                    val tvFromAddress = findViewById<TextView>(R.id.tvFromAddress)
                     val tvToAddress = findViewById<TextView>(R.id.tvToAddress)
 
                     val fromAddress = """
@@ -117,42 +117,16 @@ println("currentUserId ===> $currentUserId")
                       
                     """.trimIndent()
 
-                     fromHouseNumber_Traveler = """
-                        ${document.getString("fromAddress.houseNumber")}
-                      
-                    """.trimIndent()
-
-                     fromStreet_Traveler = """
-                        ${document.getString("fromAddress.street")}
-                      
-                    """.trimIndent()
-
-                     fromArea_Traveler = """
-                        ${document.getString("fromAddress.area")}
-                      
-                    """.trimIndent()
-
-                     fromCity_Traveler = """
-                        ${document.getString("fromAddress.city")}
-                      
-                    """.trimIndent()
-
-                     fromPincode_Traveler = """
-                        ${document.getString("fromAddress.postalCode")}
-                      
-                    """.trimIndent()
-
-                    fromState_Traveler = """
-                        ${document.getString("fromAddress.state")}
-                      
-                    """.trimIndent()
-
 
 
                     tvFromAddress.text = fromAddress
                     tvToAddress.text = toAddress
 
                     println("document ===> ")
+
+                    firstMileAddressTraveler(document); // added by himanshu for the first mile address of traveler
+
+
 
                     val SenderIDPresent = "${document.getString("senderId")}"
                     println("isSenderIDPresent ===> $SenderIDPresent")
@@ -182,28 +156,28 @@ println("currentUserId ===> $currentUserId")
         println("inside showSenderRequest ===> $senderRef")
 
 
-            println("inside showSenderRequest ===> Hardcoded data for testing")
+        println("inside showSenderRequest ===> Hardcoded data for testing")
 
-            // Hardcoded sender data
-            val name = "John Doe"
-            val phone = "+1 555-123-4567"
-            val address = "123 Main St, New York, NY 10001"
+        // Hardcoded sender data
+        val name = "John Doe"
+        val phone = "+1 555-123-4567"
+        val address = "123 Main St, New York, NY 10001"
 
-            runOnUiThread {
-                try {
-                    if (!isFinishing) {
-                        showSenderDialog(name, phone, address, senderRef)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    Toast.makeText(
-                        this@TravelerProfile,
-                        "Error showing dialog: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+        runOnUiThread {
+            try {
+                if (!isFinishing) {
+                    showSenderDialog(name, phone, address, senderRef)
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(
+                    this@TravelerProfile,
+                    "Error showing dialog: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+    }
 
 
     private fun showSenderDialog(name: String, phone: String, address: String, senderRef: String) {
@@ -311,12 +285,12 @@ println("currentUserId ===> $currentUserId")
             }
 
             val fromAddress = buildFullAddress(
-                fromHouseNumber_Traveler,
-                fromStreet_Traveler,
-                fromArea_Traveler,
-                fromCity_Traveler,
-                fromState_Traveler,
-                fromPincode_Traveler
+                houseNumber_Traveler,
+                street_Traveler,
+                area_Traveler,
+                city_Traveler,
+                state_Traveler,
+                pincode_Traveler
             )
 
             val toAddress = buildFullAddress(
@@ -438,13 +412,16 @@ println("currentUserId ===> $currentUserId")
                         "state" to document.getString("fromAddress.state")
                     )
 
+
+                    // last mile sender address will come here
+
                     // Update the class fields
-                    this.fromHouseNumber_Sender = senderData["houseNumber"] ?: ""
-                    this.fromStreet_Sender = senderData["street"] ?: ""
-                    this.fromArea_Sender = senderData["area"] ?: ""
-                    this.fromCity_Sender = senderData["city"] ?: ""
-                    this.fromPincode_Sender = senderData["postalCode"] ?: ""
-                    this.fromState_Sender = senderData["state"] ?: ""
+                  /*  this.houseNumber_Sender = senderData["houseNumber"] ?: ""
+                    this.street_Sender = senderData["street"] ?: ""
+                    this.area_Sender = senderData["area"] ?: ""
+                    this.city_Sender = senderData["city"] ?: ""
+                    this.pincode_Sender = senderData["postalCode"] ?: ""
+                    this.state_Sender = senderData["state"] ?: ""
 
                     println("Debugging sender fromAddress components:")
                     println("House Number sender : ${senderData["houseNumber"]}")
@@ -452,7 +429,7 @@ println("currentUserId ===> $currentUserId")
                     println("Areasender = : ${senderData["area"]}")
                     println("Citysender = : ${senderData["city"]}")
                     println("Statesender = : ${senderData["state"]}")
-                    println("Pincodesender = : ${senderData["postalCode"]}")
+                    println("Pincodesender = : ${senderData["postalCode"]}") */
 
                     callback(senderData)
                 } else {
@@ -464,5 +441,45 @@ println("currentUserId ===> $currentUserId")
                 Toast.makeText(this, "Error fetching Sender data: ${e.message}", Toast.LENGTH_SHORT).show()
                 callback(emptyMap())
             }
+    }
+
+    private fun firstMileAddressTraveler(document: DocumentSnapshot){
+
+        houseNumber_Traveler = """
+                        ${document.getString("fromAddress.houseNumber")}
+                      
+                    """.trimIndent()
+
+        street_Traveler = """
+                        ${document.getString("fromAddress.street")}
+                      
+                    """.trimIndent()
+
+        area_Traveler = """
+                        ${document.getString("fromAddress.area")}
+                      
+                    """.trimIndent()
+
+        city_Traveler = """
+                        ${document.getString("fromAddress.city")}
+                      
+                    """.trimIndent()
+
+        pincode_Traveler = """
+                        ${document.getString("fromAddress.postalCode")}
+                      
+                    """.trimIndent()
+
+        state_Traveler = """
+                        ${document.getString("fromAddress.state")}
+                      
+                    """.trimIndent()
+
+
+    }
+
+    private fun lastMileAddressTraveler(){
+      // traveler to address will be from address in last mile
+
     }
 }

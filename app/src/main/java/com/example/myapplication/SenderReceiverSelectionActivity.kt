@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 
 class SenderReceiverSelectionActivity : AppCompatActivity() {
@@ -73,13 +74,19 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
                         val travelerID = document.getString("travelerID")
                         println("travelerID: $travelerID")
 
+
+                        updateToAddressOfAddressHolder(document)
+                        updateToFromAddressOfAddressHolder(document)
+
                         if (travelerID.isNullOrEmpty()) {
                             println("travelerID === >")
                            navigateToTravelerList(phone)
+                        }else{
+                            navigateToSenderProfile(phone)
+
                         }
 
 
-                        navigateToSenderProfile(phone)
                     } else {
                         navigateToAutoComplete(phone)
                     }
@@ -115,6 +122,8 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
      * @param phone The authenticated sender's phone number (must be non-empty)
      */
     private fun navigateToTravelerList(phone: String) {
+
+
         // Validate input
         if (phone.isBlank()) {
             Toast.makeText(this, "Phone number required", Toast.LENGTH_SHORT).show()
@@ -140,5 +149,54 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         Log.e("SenderReceiver", message)
+    }
+
+    private fun updateToAddressOfAddressHolder(doc: DocumentSnapshot){
+
+
+        val toCity = doc.getString("toAddress.city")
+        val toArea = doc.getString("toAddress.area")
+        val toStreet = doc.getString("toAddress.street")
+        val toHouseNumber = doc.getString("toAddress.houseNumber")
+        val toPincode = doc.getString("toAddress.postalCode")
+        val toState = doc.getString("toAddress.state")
+
+
+
+
+
+        toCity?.let { AddressHolder.toCity = it }
+        toArea?.let { AddressHolder.toArea = it }
+
+        toStreet?.let { AddressHolder.toStreet = it }
+        toHouseNumber?.let { AddressHolder.toHouseNumber = it }
+
+        toPincode?.let { AddressHolder.toPostalCode = it }
+        toState?.let { AddressHolder.toState = it }
+
+    }
+
+    private fun updateToFromAddressOfAddressHolder(doc: DocumentSnapshot){
+
+        val fromCity = doc.getString("fromAddress.city")
+        val fromArea = doc.getString("fromAddress.area")
+        val fromStreet = doc.getString("fromAddress.street")
+        val fromHouseNumber = doc.getString("fromAddress.houseNumber")
+        val fromPincode = doc.getString("fromAddress.postalCode")
+        val fromState = doc.getString("fromAddress.state")
+
+
+
+
+
+        fromCity?.let { AddressHolder.fromCity = it }
+        fromArea?.let { AddressHolder.fromArea = it }
+
+        fromStreet?.let { AddressHolder.fromStreet = it }
+        fromHouseNumber?.let { AddressHolder.fromHouseNumber = it }
+
+        fromPincode?.let { AddressHolder.fromPostalCode = it }
+        fromState?.let { AddressHolder.fromState = it }
+
     }
 }
