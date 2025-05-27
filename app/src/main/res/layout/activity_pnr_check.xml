@@ -29,7 +29,8 @@
         app:layout_constraintTop_toBottomOf="@id/airlineLabel"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        app:layout_constraintWidth_percent="0.8" />
 
     <!-- PNR -->
     <EditText
@@ -73,6 +74,70 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintWidth_percent="0.8" />
 
+    <!-- Leaving Date -->
+    <EditText
+        android:id="@+id/etLeavingDate"
+        android:layout_width="0dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/rounded_edittext"
+        android:hint="Select Leaving Date"
+        android:focusable="false"
+        android:inputType="none"
+        android:gravity="center_vertical|start"
+        android:padding="12dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        android:elevation="4dp"
+        app:layout_constraintTop_toBottomOf="@id/etSurname"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.8" />
+
+    <!-- Leaving Time -->
+    <EditText
+        android:id="@+id/etLeavingTime"
+        android:layout_width="0dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/rounded_edittext"
+        android:hint="Select Leaving Time"
+        android:focusable="false"
+        android:inputType="none"
+        android:gravity="center_vertical|start"
+        android:padding="12dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        android:elevation="4dp"
+        app:layout_constraintTop_toBottomOf="@id/etLeavingDate"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.8" />
+
+    <!-- Weight Upto -->
+    <EditText
+        android:id="@+id/etWeightUpto"
+        android:layout_width="0dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/rounded_edittext"
+        android:hint="Weight Upto (kg)"
+        android:inputType="numberDecimal"
+        android:gravity="center_vertical|start"
+        android:padding="12dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="#888888"
+        android:textSize="16sp"
+        android:fontFamily="sans-serif-medium"
+        android:elevation="4dp"
+        app:layout_constraintTop_toBottomOf="@id/etLeavingTime"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.8" />
 
     <!-- Verify Button -->
     <Button
@@ -82,7 +147,7 @@
         android:text="Verify PNR"
         app:backgroundTint="@null"
         android:background="@drawable/bg_rounded_button"
-        app:layout_constraintTop_toBottomOf="@id/etSurname"
+        app:layout_constraintTop_toBottomOf="@id/etWeightUpto"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="24dp" />
