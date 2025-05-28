@@ -38,6 +38,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"/>
+        <TextView
+            android:id="@+id/tvLeavingTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Leaving Time: --"
+            android:textSize="14sp"
+            android:paddingTop="4dp" />
+
+        <TextView
+            android:id="@+id/tvWeightUpto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Weight Upto: --"
+            android:textSize="14sp"
+            android:paddingTop="2dp" />
 
         <Button
             android:id="@+id/btnBook"
@@ -47,5 +62,7 @@
             android:text="Book"
             android:backgroundTint="@color/green_500"
             android:textColor="@android:color/white"/>
+
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>
