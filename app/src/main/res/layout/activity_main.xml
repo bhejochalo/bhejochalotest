@@ -59,6 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@null"
+            android:maxLength="10"
             android:hint="+91 9900 XXXX XX"
             android:inputType="phone"
             android:paddingStart="4dp"
