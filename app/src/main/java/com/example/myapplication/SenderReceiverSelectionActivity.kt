@@ -80,7 +80,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
 
                         if (travelerID.isNullOrEmpty()) {
                             println("travelerID === >")
-                           navigateToTravelerList(phone)
+                           navigateToTravelerList(phone,document) // passing the sender
                         }else{
                             navigateToSenderProfile(phone)
 
@@ -121,7 +121,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
      * Navigates to SenderDashboardActivity with the sender's phone number
      * @param phone The authenticated sender's phone number (must be non-empty)
      */
-    private fun navigateToTravelerList(phone: String) {
+    private fun navigateToTravelerList(phone: String,doc: DocumentSnapshot) {
 
 
         // Validate input
@@ -132,6 +132,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
 
         Intent(this, SenderDashboardActivity::class.java).apply {
             putExtra("PHONE_NUMBER", phone) // passing the sender number
+           // putExtra("SenderObject",doc)
 
             // Optional flags to control navigation behavior:
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP // Prevents multiple instances

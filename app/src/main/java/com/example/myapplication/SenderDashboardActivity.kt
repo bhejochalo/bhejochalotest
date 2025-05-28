@@ -90,6 +90,7 @@ class SenderDashboardActivity : AppCompatActivity() {
                         val airline = doc.getString("airline") ?: continue
                         val destination = to?.get("fullAddress") as? String ?: continue
                         val pnr = doc.getString("pnr") ?: continue
+                        val phNumber = doc.getString("phoneNumber") ?: continue
                         Log.d("TravelerAddLog", "Adding traveler: $name, PNR: $pnr, To: $destination")
                         travelersList.add(
                             Traveler(
@@ -97,7 +98,9 @@ class SenderDashboardActivity : AppCompatActivity() {
                                 airline = airline,
                                 destination = destination,
                                 pnr = pnr,
-                                bookingStatus = "available"
+                                bookingStatus = "available" ,
+                                documentSnapshot = doc,
+                                phoneNumber = phNumber
                             )
                         )
                     }
@@ -136,6 +139,7 @@ class SenderDashboardActivity : AppCompatActivity() {
             val airline = doc.getString("airline") ?: continue
             val destination = (doc.get("toAddress") as? Map<*, *>)?.get("fullAddress") as? String ?: continue
             val pnr = doc.getString("pnr") ?: continue
+            val phNumber = doc.getString("phoneNumber") ?: continue
                 travelersList.add(
                     Traveler(
                         name = name,
@@ -143,7 +147,8 @@ class SenderDashboardActivity : AppCompatActivity() {
                         destination = destination,
                         pnr = pnr,
                         bookingStatus = "available",
-                        documentSnapshot = doc
+                        documentSnapshot = doc,
+                        phoneNumber = phNumber
                     )
                 )
             }

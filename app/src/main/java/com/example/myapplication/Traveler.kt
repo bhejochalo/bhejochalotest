@@ -8,5 +8,6 @@ data class Traveler(
     val destination: String = "",
     val pnr: String = "",
     var bookingStatus: String = "available", // available/pending/booke
+    var phoneNumber: String = "",
     var documentSnapshot: DocumentSnapshot? = null // To store the Firestore document snapshot
 )//new code

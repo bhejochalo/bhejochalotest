@@ -44,6 +44,9 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
         private val tvDestination: TextView = itemView.findViewById(R.id.tvDestination)
         private val tvPnr: TextView = itemView.findViewById(R.id.tvPnr)
         private val btnBook: Button = itemView.findViewById(R.id.btnBook)
+        val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+        val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
+        private val db = FirebaseFirestore.getInstance()
 
         private fun startPayment(traveler: Traveler) {
             val activity = itemView.context as? android.app.Activity ?: return
@@ -111,7 +114,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                     notifyItemChanged(adapterPosition)
                   //  placeBorzoOrder()
                     startPayment(traveler)
-                    attachTravelerWithSender(traveler); // need to pass the traveler
+                    attachTravelerWithSender(traveler); // need to pass the traveler // these has to be matched after the payment is successful
                     attachSenderWithTraveler(traveler)  //
                     // update the respected traveler in the db and attach this sender details lookup if possible
 
@@ -234,8 +237,8 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
 */
 
         private fun attachTravelerWithSender(traveler: Traveler){
-            val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-            val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
+           // val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+         //   val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
 
             val updates = hashMapOf<String, Any>(
                 "SenderRequest" to true,
@@ -263,9 +266,69 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                 }
 
 
-        private fun attachSenderWithTraveler(traveler: Traveler){
-            // created by HImanshu
-            // in this method get the current  sender  on and update sender with the taveler he clicked book
+        private fun attachSenderWithTraveler(traveler: Traveler) {
+            // Get sender phone number from SharedPreferences
+            val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+            val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", null)
+
+            if (senderPhoneNumber.isNullOrEmpty()) {
+                Toast.makeText(itemView.context, "Sender phone number not found", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Fetch and update sender document
+            db.collection("Sender")
+                .whereEqualTo("phoneNumber", senderPhoneNumber)
+                .limit(1)
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val querySnapshot = task.result
+                        if (!querySnapshot.isEmpty) {
+                            val document = querySnapshot.documents[0]
+
+                            val updates = hashMapOf<String, Any>(
+                                "travelerID" to traveler.phoneNumber,
+                               // "travelerPNR" to traveler.pnr,  // Adding PNR for reference
+                                "matchedAt" to System.currentTimeMillis()
+                              //  "travelerName" to traveler.name,
+                             //   "travelerDestination" to traveler.destination,
+                              //  "status" to "matched"  // Additional status field
+                            )
+
+                            document.reference.update(updates)
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        itemView.context,
+                                        "Successfully matched with traveler!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    Log.d("Firestore", "Sender ${document.id} updated with traveler info")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("Firestore", "Update failed", e)
+                                    Toast.makeText(
+                                        itemView.context,
+                                        "Failed to update your profile",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                        } else {
+                            Toast.makeText(
+                                itemView.context,
+                                "Your sender profile not found",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        Log.e("Firestore", "Query failed", task.exception)
+                        Toast.makeText(
+                            itemView.context,
+                            "Failed to verify your profile: ${task.exception?.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
         }
        /* private fun buildFullAddress(
             houseNumber: String?,
