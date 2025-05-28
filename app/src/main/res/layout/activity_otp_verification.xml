@@ -44,6 +44,7 @@
         android:layout_width="280dp"
         android:layout_height="55dp"
         android:layout_marginTop="32dp"
+        android:maxLength="6"
         android:background="@drawable/rounded_edittext"
         android:hint="Enter 6-digit OTP"
         android:inputType="number"
