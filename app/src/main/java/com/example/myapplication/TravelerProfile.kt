@@ -369,6 +369,10 @@ class TravelerProfile : AppCompatActivity() {
 
                         runOnUiThread {
                             if (response.isSuccessful) {
+
+                                updateBookingDetailsOnSender(response)
+                                updateBookingDetailsOnTraveler(response)
+
                                 Toast.makeText(
                                     this@TravelerProfile,
                                     "Booking successful!",
@@ -480,6 +484,47 @@ class TravelerProfile : AppCompatActivity() {
 
     private fun lastMileAddressTraveler(){
       // traveler to address will be from address in last mile
+
+    }
+
+    private fun updateBookingDetailsOnSender(response: Response){
+
+        try {
+            val responseBody = response.body?.string()
+            if (response.isSuccessful && !responseBody.isNullOrEmpty()) {
+                // Parse JSON response (example using Kotlin's JSON parsing)
+                val json = JSONObject(responseBody)
+
+                // Extract data from response
+                val bookingId = json.optString("order.order_id")
+             //   order name = order_name
+                   //     "vehicle_type_id":2,
+              //  created_datetime":"2025-05-31T12:07:13+05:30","finish_datetime":null,"status":"new","status_description":"Created","matter":"Documents","total_weight_kg":500,"is_client_notification_enabled":false,"is_contact_person_notification_enabled":false,"loaders_count":0,"backpayment_details":null
+                val status = json.optString("status")
+                val trackingUrl = json.optString("tracking_url")
+
+                // Update UI or perform other actions
+                runOnUiThread {
+                    // Example: Update TextViews
+                   // ? findViewById<TextView>(R.id.tvBookingId).text = bookingId
+                   // ? findViewById<TextView>(R.id.tvStatus).text = status
+
+                    // You can also update Sender.senderRecord if needed
+                    // (Assuming you have a way to convert this to a DocumentSnapshot)
+                }
+
+                Log.d("UPDATE_SENDER", "Successfully updated sender details")
+            } else {
+                Log.e("UPDATE_SENDER", "Unsuccessful response: ${response.code}")
+            }
+        } catch (e: Exception) {
+            Log.e("UPDATE_SENDER", "Error updating sender details", e)
+        }
+
+    }
+
+
+    private fun updateBookingDetailsOnTraveler(response: Response){
 
     }
 }

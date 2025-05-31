@@ -69,7 +69,17 @@
                 android:textSize="16sp"
                 android:textColor="#333333" />
 
+
+
         </LinearLayout>
+
+
+
     </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/bookingStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

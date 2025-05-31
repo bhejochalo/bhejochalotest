@@ -134,7 +134,7 @@ class ItemDetailsActivity : AppCompatActivity() {
             // Basic info
             "phoneNumber" to phoneNumber,
             "timestamp" to timestamp,
-
+            "status" to "Pending",
             // From Address details
             "fromAddress" to hashMapOf(
                 "houseNumber" to AddressHolder.fromHouseNumber,
@@ -164,7 +164,7 @@ class ItemDetailsActivity : AppCompatActivity() {
                 "weightGram" to itemWeightGram,
                 "totalWeight" to totalWeightGrams,
                 "instructions" to instructions,
-                "status" to "Pending",
+
                 "itemId" to "item_${System.currentTimeMillis()}" // Unique ID for each item
             )
         )

@@ -114,7 +114,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                     notifyItemChanged(adapterPosition)
                   //  placeBorzoOrder()
                     startPayment(traveler)
-                    attachTravelerWithSender(traveler); // need to pass the traveler // these has to be matched after the payment is successful
+                    attachTravelerWithSender(traveler); // need to pass the traveler // these has to be matched after the payment is successful2
                     attachSenderWithTraveler(traveler)  //
                     // update the respected traveler in the db and attach this sender details lookup if possible
 

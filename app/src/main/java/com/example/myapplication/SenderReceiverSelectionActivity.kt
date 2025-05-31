@@ -83,7 +83,8 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
                            navigateToTravelerList(phone,document) // passing the sender
                         }else{
                             navigateToSenderProfile(phone)
-
+                          //  val sender = Sender() // put the sender document in sender class
+                            Sender.senderRecord = document;
                         }
 
 
