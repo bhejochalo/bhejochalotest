@@ -21,6 +21,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import android.content.SharedPreferences
+import java.security.MessageDigest
 
 class TravelerAdapter(private val travelers: MutableList<Traveler>) :
     RecyclerView.Adapter<TravelerAdapter.TravelerViewHolder>() {
@@ -235,14 +236,36 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
             })
         }
 */
+// Function to compute SHA-256 hash with an optional prefix
+       fun generateUniqueKey(senderPhone: String, travelerPhone: String, prefix: String = ""): String {
+           // 1. Normalize phone numbers (remove non-digits)
+           val cleanSender = senderPhone.replace("[^0-9]".toRegex(), "")
+           val cleanTraveler = travelerPhone.replace("[^0-9]".toRegex(), "")
+
+           // 2. Sort and combine to ensure consistency
+           val combined = if (cleanSender < cleanTraveler) "$cleanSender|$cleanTraveler"
+           else "$cleanTraveler|$cleanSender"
+
+           // 3. Compute SHA-256 hash
+           val bytes = MessageDigest.getInstance("SHA-256").digest(combined.toByteArray())
+           val hexHash = bytes.joinToString("") { "%02x".format(it) }
+
+           // 4. Add prefix (e.g., "TX_") and return
+           return prefix + hexHash
+       }
 
         private fun attachTravelerWithSender(traveler: Traveler){
            // val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
          //   val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
 
+            val uniqueKey = generateUniqueKey(senderPhoneNumber, traveler.phoneNumber, prefix = "TX_")
+
+
+            println("uniqueKey ===> $uniqueKey")
+
             val updates = hashMapOf<String, Any>(
                 "SenderRequest" to true,
-                "senderId" to senderPhoneNumber,  // Using actual sender's phone instead of hardcoded value
+                "uniqueKey" to uniqueKey,  // Using actual sender's phone instead of hardcoded value
                 "matchedAt" to System.currentTimeMillis()
             )
             // Query traveler document by phoneNumber // check how we can remove this query. need to remove this query
@@ -268,8 +291,11 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
 
         private fun attachSenderWithTraveler(traveler: Traveler) {
             // Get sender phone number from SharedPreferences
-            val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-            val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", null)
+           // val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+           // val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", null)
+
+            val uniqueKey = generateUniqueKey(senderPhoneNumber, traveler.phoneNumber, prefix = "TX_")
+
 
             if (senderPhoneNumber.isNullOrEmpty()) {
                 Toast.makeText(itemView.context, "Sender phone number not found", Toast.LENGTH_SHORT).show()
@@ -288,7 +314,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                             val document = querySnapshot.documents[0]
 
                             val updates = hashMapOf<String, Any>(
-                                "travelerID" to traveler.phoneNumber,
+                                "uniqueKey" to uniqueKey,
                                // "travelerPNR" to traveler.pnr,  // Adding PNR for reference
                                 "matchedAt" to System.currentTimeMillis()
                               //  "travelerName" to traveler.name,
