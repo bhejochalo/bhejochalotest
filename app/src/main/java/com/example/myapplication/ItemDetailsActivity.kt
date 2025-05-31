@@ -116,13 +116,15 @@ class ItemDetailsActivity : AppCompatActivity() {
 
     private fun setupNextButton() {
         nextButton.setOnClickListener {
-            if (validateInputs()) {
-                if (imageUri == null) {
-                    Toast.makeText(this, "Please choose an image", Toast.LENGTH_SHORT).show()
-                } else {
-                    uploadImageAndSaveData()
-                }
-            }
+            saveDataToFirestore("")
+          //  uploadImageAndSaveData()
+//            if (!validateInputs()) { //to enable upload please remove negation
+//                if (imageUri == null) {
+//                    Toast.makeText(this, "Please choose an image", Toast.LENGTH_SHORT).show()
+//                } else {
+//                  //  uploadImageAndSaveData()
+//                }
+//            }
         }
     }
 
