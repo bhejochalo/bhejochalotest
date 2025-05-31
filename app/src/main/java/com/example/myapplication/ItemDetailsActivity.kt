@@ -1,37 +1,48 @@
 package com.example.myapplication
 
+import android.app.Activity
+import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.text.Editable
 import android.text.TextWatcher
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 
 class ItemDetailsActivity : AppCompatActivity() {
-
+    private lateinit var progressDialog: ProgressDialog
     private lateinit var itemNameEditText: EditText
     private lateinit var kgEditText: TextInputEditText
     private lateinit var gramEditText: TextInputEditText
     private lateinit var instructionsEditText: EditText
     private lateinit var nextButton: Button
+    private lateinit var uploadImageButton: Button
+    private lateinit var itemImageView: ImageView
+
     private lateinit var firestore: FirebaseFirestore
+    private val storageRef = FirebaseStorage.getInstance().reference
 
     private var itemWeightKg = 0
     private var itemWeightGram = 0
     private lateinit var phoneNumber: String
+    private var imageUri: Uri? = null
+
+    private val PICK_IMAGE_REQUEST = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_item_details)
-
+        progressDialog = ProgressDialog(this)
+        progressDialog.setMessage("Please wait...")
+        progressDialog.setCancelable(false)
         firestore = FirebaseFirestore.getInstance()
 
-        // Get phone number from SharedPreferences
         val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: run {
             Toast.makeText(this, "Phone number not found", Toast.LENGTH_SHORT).show()
@@ -39,12 +50,14 @@ class ItemDetailsActivity : AppCompatActivity() {
             return
         }
 
-        // Optional: Log the phone number for debugging
-        println("Retrieved phone number from SharedPreferences: $phoneNumber")
-
         initializeViews()
         setupWeightInputs()
         setupNextButton()
+
+        uploadImageButton.setOnClickListener {
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            startActivityForResult(intent, PICK_IMAGE_REQUEST)
+        }
     }
 
     private fun initializeViews() {
@@ -53,6 +66,8 @@ class ItemDetailsActivity : AppCompatActivity() {
         gramEditText = findViewById(R.id.gramEditText)
         instructionsEditText = findViewById(R.id.instructionsEditText)
         nextButton = findViewById(R.id.nextButton)
+        uploadImageButton = findViewById(R.id.uploadImageButton)
+        itemImageView = findViewById(R.id.itemImageView)
     }
 
     private fun setupWeightInputs() {
@@ -102,7 +117,11 @@ class ItemDetailsActivity : AppCompatActivity() {
     private fun setupNextButton() {
         nextButton.setOnClickListener {
             if (validateInputs()) {
-                saveItemUnderPhoneNumber()
+                if (imageUri == null) {
+                    Toast.makeText(this, "Please choose an image", Toast.LENGTH_SHORT).show()
+                } else {
+                    uploadImageAndSaveData()
+                }
             }
         }
     }
@@ -123,19 +142,34 @@ class ItemDetailsActivity : AppCompatActivity() {
         return isValid
     }
 
-    private fun saveItemUnderPhoneNumber() {
+    private fun uploadImageAndSaveData() {
+        progressDialog.show()  // Show loader here
+
+        val imageRef = storageRef.child("item_images/${System.currentTimeMillis()}.png")
+        imageRef.putFile(imageUri!!)
+            .addOnSuccessListener {
+                imageRef.downloadUrl.addOnSuccessListener { uri ->
+                    saveDataToFirestore(uri.toString())
+                }
+            }
+            .addOnFailureListener {
+                progressDialog.dismiss() // Hide loader on failure
+                Toast.makeText(this, "Image upload failed", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+
+    private fun saveDataToFirestore(imageUrl: String) {
         val itemName = itemNameEditText.text.toString().trim()
         val instructions = instructionsEditText.text.toString().trim()
         val totalWeightGrams = (itemWeightKg * 1000) + itemWeightGram
         val timestamp = System.currentTimeMillis()
 
-        // Create a combined document with both addresses and item details
         val senderData = hashMapOf(
-            // Basic info
             "phoneNumber" to phoneNumber,
             "timestamp" to timestamp,
             "status" to "Pending",
-            // From Address details
+            "imageUrl" to imageUrl,
             "fromAddress" to hashMapOf(
                 "houseNumber" to AddressHolder.fromHouseNumber,
                 "street" to AddressHolder.fromStreet,
@@ -145,8 +179,6 @@ class ItemDetailsActivity : AppCompatActivity() {
                 "state" to AddressHolder.fromState,
                 "fullAddress" to AddressHolder.fromAddress
             ),
-
-            // To Address details
             "toAddress" to hashMapOf(
                 "houseNumber" to AddressHolder.toHouseNumber,
                 "street" to AddressHolder.toStreet,
@@ -156,35 +188,41 @@ class ItemDetailsActivity : AppCompatActivity() {
                 "state" to AddressHolder.toState,
                 "fullAddress" to AddressHolder.toAddress
             ),
-
-            // Item details
             "itemDetails" to hashMapOf(
                 "itemName" to itemName,
                 "weightKg" to itemWeightKg,
                 "weightGram" to itemWeightGram,
                 "totalWeight" to totalWeightGrams,
                 "instructions" to instructions,
-
-                "itemId" to "item_${System.currentTimeMillis()}" // Unique ID for each item
+                "itemId" to "item_$timestamp"
             )
         )
 
-        // Save to Sender collection using phoneNumber as document ID
         firestore.collection("Sender")
             .document(phoneNumber)
             .set(senderData)
             .addOnSuccessListener {
+                progressDialog.dismiss() // Hide loader on success
                 Toast.makeText(this, "Data saved successfully", Toast.LENGTH_SHORT).show()
                 navigateToSenderDashboard()
             }
             .addOnFailureListener { e ->
+                progressDialog.dismiss() // Hide loader on failure
                 Toast.makeText(this, "Failed to save data: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
+            imageUri = data.data
+            itemImageView.setImageURI(imageUri)
+        }
+    }
+
     private fun navigateToSenderDashboard() {
         val intent = Intent(this, SenderDashboardActivity::class.java).apply {
-            // You can still pass the phone number if needed, or let the dashboard get it from SharedPreferences
             putExtra("PHONE_NUMBER", phoneNumber)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         }
