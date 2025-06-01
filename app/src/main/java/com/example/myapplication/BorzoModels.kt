@@ -75,10 +75,10 @@ object BorzoModels {
         val estimatedArrivalDatetime: String? = null,
         val courierVisitDatetime: String? = null,
         val contactPerson: ContactPerson,
-       // val takingAmount: Double,
-       // val buyoutAmount: Double,
+        val takingAmount: Double = 0.0,
+        val buyoutAmount: Double = 0.0,
         val note: String? = null,
-      //  val previousPointDrivingDistanceMeters: Int,
+        val previousPointDrivingDistanceMeters: Int = 0,
         val packages: List<Package> = emptyList(),
         val isCodCashVoucherRequired: Boolean = false,
         val placePhotoUrl: String? = null,
@@ -100,7 +100,8 @@ object BorzoModels {
     // Contact person model
     data class ContactPerson(
         val name: String,
-        val phone: String
+        val phone: String,
+        val email: String? = null
     )
 
     // Package model
@@ -110,17 +111,21 @@ object BorzoModels {
         val lengthCm: Double? = null,
         val widthCm: Double? = null,
         val heightCm: Double? = null,
-        val description: String? = null
+        val description: String? = null,
+        val barcode: String? = null,
+        val declaredValue: Double? = null
     )
 
     // Delivery status model
     data class DeliveryStatus(
         val status: String,
         val description: String? = null,
-        val updatedAt: String? = null
+        val updatedAt: String? = null,
+        val code: String? = null,
+        val substatus: String? = null
     )
 
-    // Courier model
+    // Courier model with location tracking
     data class Courier(
         val courierId: String? = null,
         val name: String? = null,
@@ -128,7 +133,18 @@ object BorzoModels {
         val vehicleType: String? = null,
         val vehicleNumber: String? = null,
         val photoUrl: String? = null,
-        val rating: Double? = null
+        val rating: Double? = null,
+        val currentLocation: CourierLocation? = null,
+        val isOnline: Boolean? = null
+    )
+
+    // Courier location model
+    data class CourierLocation(
+        val latitude: Double,
+        val longitude: Double,
+        val timestamp: String? = null,
+        val accuracy: Float? = null,
+        val speed: Float? = null
     )
 
     // Request model for creating orders
@@ -137,17 +153,36 @@ object BorzoModels {
         val matter: String,
         val vehicleTypeId: Int,
         val points: List<OrderPointRequest>,
-        val orderId: String? = null,
-        val scheduledAt: String? = null,
-        val note: String? = null
+        val totalWeightKg: Double? = null,
+        val isClientNotificationEnabled: Boolean = true,
+        val isContactPersonNotificationEnabled: Boolean = true,
+        val paymentMethod: String = "balance",
+        val promoCode: String? = null,
+        val backpaymentAmount: Double? = null,
+        val isMotoboxRequired: Boolean = false,
+        val isThermoboxRequired: Boolean = false
     )
 
     // Order point request model
     data class OrderPointRequest(
+        val pointType: String = "destination",
         val address: String,
         val contactPerson: ContactPerson,
         val requiredStartDatetime: String? = null,
         val requiredFinishDatetime: String? = null,
-        val note: String? = null
+        val note: String? = null,
+        val takingAmount: Double? = null,
+        val buyoutAmount: Double? = null,
+        val isOrderPaymentHere: Boolean = false,
+        val buildingNumber: String? = null,
+        val floorNumber: String? = null,
+        val apartmentNumber: String? = null
+    )
+
+    // Error response model
+    data class ErrorResponse(
+        val errorCode: String,
+        val message: String,
+        val details: Map<String, String>? = null
     )
 }
