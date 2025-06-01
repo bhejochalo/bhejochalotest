@@ -24,6 +24,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import com.example.myapplication.BorzoOrderHelper
+
 
 class TravelerProfile : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
@@ -41,10 +43,13 @@ class TravelerProfile : AppCompatActivity() {
     private var pincode_Sender = "";
     private var state_Sender = "";
     private var isFirstMile = false;
+    //private var uniqueKey = "";
+    private lateinit var borzoHelper: BorzoOrderHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sender_profile)
+        borzoHelper = BorzoOrderHelper(this)
         enableEdgeToEdge()
 
         // Set up window insets
@@ -128,11 +133,11 @@ class TravelerProfile : AppCompatActivity() {
 
 
 
-                    val SenderIDPresent = "${document.getString("senderId")}"
-                    println("isSenderIDPresent ===> $SenderIDPresent")
+                    val uniqueKey = "${document.getString("uniqueKey")}"
+                    println("isSenderIDPresent ===> $uniqueKey")
 
-                    if (SenderIDPresent.isNotEmpty()) {
-                        showSenderRequest(SenderIDPresent)
+                    if (uniqueKey.isNotEmpty()) {
+                        showSenderRequest(uniqueKey)
                     }
 
                 } else {
@@ -214,10 +219,39 @@ class TravelerProfile : AppCompatActivity() {
     }
 
     private fun onAcceptRequest(senderRef: String) {
-        isFirstMile = true;
-        placeBorzoOrder(senderRef) // need to pass the other details also, address of traveler
+       // isFirstMile = true;
+        //placeBorzoOrder(senderRef) // need to pass the other details also, address of traveler
+           isFirstMile = true
 
-    }
+           // Prepare traveler address data
+           val travelerAddress = mapOf(
+               "houseNumber" to houseNumber_Traveler,
+               "street" to street_Traveler,
+               "area" to area_Traveler,
+               "city" to city_Traveler,
+               "state" to state_Traveler,
+               "postalCode" to pincode_Traveler
+           )
+
+           borzoHelper.placeOrder(
+               senderId = senderRef,
+               travelerAddress = travelerAddress,
+               onSuccess = {
+                   runOnUiThread {
+                     //  updateBookingDetailsOnSender()
+                     //  updateBookingDetailsOnTraveler()
+                       Toast.makeText(this, "Booking successful!", Toast.LENGTH_LONG).show()
+                   }
+               },
+               onFailure = { errorMessage ->
+                   runOnUiThread {
+                       Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+                   }
+               }
+           )
+       }
+
+
 
     private fun onRejectRequest(senderRef: String) {
         FirebaseFirestore.getInstance().document(senderRef)
@@ -236,6 +270,7 @@ class TravelerProfile : AppCompatActivity() {
 
 
 
+/*
     private fun formatPhoneForBorzo(phone: String): String? {
         // Remove all non-digit characters
         val digitsOnly = phone.replace("[^0-9]".toRegex(), "")
@@ -270,7 +305,7 @@ class TravelerProfile : AppCompatActivity() {
             val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
 
             // Format phone numbers according to Borzo requirements
-            val senderPhone = formatPhoneForBorzo(senderId)
+            val senderPhone = formatPhoneForBorzo(senderData["phoneNumber"] ?: "")// formatPhoneForBorzo(senderId)
             val receiverPhone = formatPhoneForBorzo(phoneNumber)
 
             if (senderPhone == null || receiverPhone == null) {
@@ -284,7 +319,7 @@ class TravelerProfile : AppCompatActivity() {
                 return@getTheRelatedSenderData
             }
 
-            val fromAddress = buildFullAddress(
+            val toAddress = buildFullAddress(
                 houseNumber_Traveler,
                 street_Traveler,
                 area_Traveler,
@@ -293,13 +328,14 @@ class TravelerProfile : AppCompatActivity() {
                 pincode_Traveler
             )
 
-            val toAddress = buildFullAddress(
+            val fromAddress = buildFullAddress(
                 senderData["houseNumber"] ?: "",
                 senderData["street"] ?: "",
                 senderData["area"] ?: "",
                 senderData["city"] ?: "",
                 senderData["state"] ?: "",
-                senderData["postalCode"] ?: ""
+                senderData["postalCode"] ?: "",
+               // senderData["phoneNumber"]?: ""
             )
 
             println("Debugging fromAddress components:")
@@ -319,6 +355,10 @@ class TravelerProfile : AppCompatActivity() {
             val jsonBody = JSONObject().apply {
                 put("matter", "Documents") // should be dynamic
                 put("vehicle_type_id", 2)
+              //  put("client_order_id", senderId) // Add client order ID
+              //  put("required_start_time", "2023-05-15T14:30:00Z")// Add required start time (format depends on API)
+              //  put("note", "full address dalgenge") // Add note
+             //   put("delivery_id", senderId) // Add delivery ID
                 put("points", JSONArray().apply {
                     put(JSONObject().apply {
                         put("address", fromAddress)
@@ -335,6 +375,9 @@ class TravelerProfile : AppCompatActivity() {
                         })
                     })
                 })
+             //   put("client_order_id", senderId)  // Your internal order ID (formerly client_order_id)
+              //  put("required_start_datetime", "2025-06-01T14:30:00+05:30")  // ISO 8601 format (for scheduled orders)
+             //   put("note", "Fragile items")  // General order note
             }.toString()
 
             println("Request JSON: $jsonBody")
@@ -402,25 +445,34 @@ class TravelerProfile : AppCompatActivity() {
     }
 
     private fun getTheRelatedSenderData(senderId: String, callback: (Map<String, String?>) -> Unit) {
-        println("currentUserId in Sender ===> $senderId")
-        db.collection("Sender").document(senderId)
+      //  println("uniqueKey   ===> $uniqueKey")
+        db.collection("Sender")
+            .whereEqualTo("uniqueKey", senderId) // Filters documents w
             .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    // Get the first matching document (assuming userId is unique)
+                    val document = querySnapshot.documents[0]
+
+                    // Extract nested address fields safely
+                    val address = document.get("fromAddress") as? Map<String, String>
+
                     val senderData = hashMapOf<String, String?>(
-                        "houseNumber" to document.getString("fromAddress.houseNumber"),
-                        "street" to document.getString("fromAddress.street"),
-                        "area" to document.getString("fromAddress.area"),
-                        "city" to document.getString("fromAddress.city"),
-                        "postalCode" to document.getString("fromAddress.postalCode"),
-                        "state" to document.getString("fromAddress.state")
+                        "houseNumber" to address?.get("houseNumber"),
+                        "street" to address?.get("street"),
+                        "area" to address?.get("area"),
+                        "city" to address?.get("city"),
+                        "postalCode" to address?.get("postalCode"),
+                        "state" to address?.get("state"),
+                        "phoneNumber" to document.getString("phoneNumber")
                     )
 
 
                     // last mile sender address will come here
 
                     // Update the class fields
-                  /*  this.houseNumber_Sender = senderData["houseNumber"] ?: ""
+                  */
+/*  this.houseNumber_Sender = senderData["houseNumber"] ?: ""
                     this.street_Sender = senderData["street"] ?: ""
                     this.area_Sender = senderData["area"] ?: ""
                     this.city_Sender = senderData["city"] ?: ""
@@ -433,7 +485,8 @@ class TravelerProfile : AppCompatActivity() {
                     println("Areasender = : ${senderData["area"]}")
                     println("Citysender = : ${senderData["city"]}")
                     println("Statesender = : ${senderData["state"]}")
-                    println("Pincodesender = : ${senderData["postalCode"]}") */
+                    println("Pincodesender = : ${senderData["postalCode"]}") *//*
+
 
                     callback(senderData)
                 } else {
@@ -446,8 +499,12 @@ class TravelerProfile : AppCompatActivity() {
                 callback(emptyMap())
             }
     }
+*/
 
     private fun firstMileAddressTraveler(document: DocumentSnapshot){
+// unique key would be same for traveler and sender in a journey
+
+
 
         houseNumber_Traveler = """
                         ${document.getString("fromAddress.houseNumber")}
