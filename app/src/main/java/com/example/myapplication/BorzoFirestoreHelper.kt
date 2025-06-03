@@ -8,9 +8,10 @@ import com.google.firebase.firestore.SetOptions
 object BorzoFirestoreHelper {
     private val db = FirebaseFirestore.getInstance()
     private const val TAG = "BORZO_FIRESTORE"
-
-    fun saveOrderResponse(response: BorzoModels.BorzoOrderResponse) {
+    private var uniKey = ""
+    fun saveOrderResponse(response: BorzoModels.BorzoOrderResponse, uniqueKey: String) {
         try {
+            uniKey = uniqueKey;
             val batch = db.batch()
             val orderRef = db.collection("borzo_orders").document(response.order.orderId.toString())
 
@@ -50,7 +51,8 @@ object BorzoFirestoreHelper {
             "isSuccessful" to response.isSuccessful,
             "status" to response.order.status,
             "firestoreTimestamp" to FieldValue.serverTimestamp(),
-            "failedAt" to System.currentTimeMillis()
+            "failedAt" to System.currentTimeMillis(),
+            "uniqueKey" to uniKey
         )
 
         db.collection("borzo_orders_emergency")
@@ -63,6 +65,7 @@ object BorzoFirestoreHelper {
 
     private fun convertOrderResponseToMap(response: BorzoModels.BorzoOrderResponse): Map<String, Any> {
         return mapOf<String, Any>(
+            "uniqueKey" to uniKey,
             "isSuccessful" to response.isSuccessful,
             "errors" to (response.errors ?: emptyList<String>()),
             "parameterErrors" to (response.parameterErrors ?: emptyMap<String, List<String>>()),

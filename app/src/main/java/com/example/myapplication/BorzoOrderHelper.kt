@@ -13,13 +13,14 @@ import java.util.concurrent.TimeUnit
 
 class BorzoOrderHelper(private val context: Context) {
     private val db = FirebaseFirestore.getInstance()
-
+    private var uniqueKey = ""
     fun placeOrder(
         senderId: String,
         travelerAddress: Map<String, String>,
         onSuccess: () -> Unit,
         onFailure: (String) -> Unit
     ) {
+        uniqueKey = senderId;
         getTheRelatedSenderData(senderId) { senderData ->
             try {
                 val (senderPhone, receiverPhone) = getValidatedPhoneNumbers(senderData)
@@ -139,7 +140,7 @@ class BorzoOrderHelper(private val context: Context) {
     ) {
         try {
             val orderResponse = parseBorzoResponse(json) ?: throw Exception("Invalid response format")
-            BorzoFirestoreHelper.saveOrderResponse(orderResponse)
+            BorzoFirestoreHelper.saveOrderResponse(orderResponse,uniqueKey)
             onSuccess()
         } catch (e: Exception) {
             Log.e("BORZO", "Failed to parse/save response", e)
