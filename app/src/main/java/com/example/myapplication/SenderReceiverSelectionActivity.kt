@@ -71,14 +71,14 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
 
                         val document = querySnapshot.documents[0]
                         // Get the travelerID field
-                        val travelerID = document.getString("travelerID")
-                        println("travelerID: $travelerID")
+                        val key = document.getString("uniqueKey")
+                        println("travelerID: $key")
 
 
                         updateToAddressOfAddressHolder(document) // sender to address
                         updateToFromAddressOfAddressHolder(document) // sender from address
 
-                        if (travelerID.isNullOrEmpty()) {
+                        if (key.isNullOrEmpty()) {
                             println("travelerID === >")
                            navigateToTravelerList(phone,document) // passing the sender
                         }else{

@@ -2,8 +2,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.WriteBatch
 import android.util.Log
+import android.widget.TextView
 import com.example.myapplication.BorzoModels
+import com.example.myapplication.R
 import com.google.firebase.firestore.SetOptions
+//import android.widget.TextView  // For TextView class
 
 object BorzoFirestoreHelper {
     private val db = FirebaseFirestore.getInstance()
@@ -186,4 +189,6 @@ object BorzoFirestoreHelper {
             } ?: emptyMap<String, Any>())
         )
     }
+
+
 }
