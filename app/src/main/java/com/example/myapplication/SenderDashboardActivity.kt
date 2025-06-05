@@ -93,6 +93,8 @@ class SenderDashboardActivity : AppCompatActivity() {
                        // val destination = to?.get("fullAddress") as? String ?: continue
                         val pnr = doc.getString("pnr") ?: continue
                         val phNumber = doc.getString("phoneNumber") ?: continue
+                        val leavingTime =  doc.getString("leavingTime") ?: continue
+                        val weightUpto = doc.getString("weightUpto") ?: continue
                      //   Log.d("TravelerAddLog", "Adding traveler: $name, PNR: $pnr, To: $destination")
                         travelersList.add(
                             Traveler(
@@ -102,7 +104,10 @@ class SenderDashboardActivity : AppCompatActivity() {
                                 pnr = pnr,
                                 bookingStatus = "available" ,
                                 documentSnapshot = doc,
-                                phoneNumber = phNumber
+                                phoneNumber = phNumber,
+                                leavingTime = leavingTime,
+                                weightUpto = weightUpto
+
                             )
                         )
                     }
@@ -141,7 +146,8 @@ class SenderDashboardActivity : AppCompatActivity() {
                                 val airline = doc.getString("airline") ?: continue
                                 val pnr = doc.getString("pnr") ?: continue
                                 val phNumber = doc.getString("phoneNumber") ?: continue
-
+                                val leavingTime = doc.getString("leavingTime") ?: "Not specified"
+                                val weightUpto = doc.getString("weightUpto") ?: "Not specified"
                                 travelersList.add(
                                     Traveler(
                                         name = name,
@@ -149,7 +155,9 @@ class SenderDashboardActivity : AppCompatActivity() {
                                         pnr = pnr,
                                         bookingStatus = "available",
                                         documentSnapshot = doc,
-                                        phoneNumber = phNumber
+                                        phoneNumber = phNumber,
+                                        leavingTime = leavingTime,
+                                        weightUpto = weightUpto
                                     )
                                 )
                             }

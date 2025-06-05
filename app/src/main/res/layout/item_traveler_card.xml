@@ -42,7 +42,6 @@
             android:id="@+id/tvLeavingTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Leaving Time: --"
             android:textSize="14sp"
             android:paddingTop="4dp" />
 
@@ -50,7 +49,6 @@
             android:id="@+id/tvWeightUpto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Weight Upto: --"
             android:textSize="14sp"
             android:paddingTop="2dp" />
 

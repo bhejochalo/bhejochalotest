@@ -45,6 +45,8 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
         private val tvDestination: TextView = itemView.findViewById(R.id.tvDestination)
         private val tvPnr: TextView = itemView.findViewById(R.id.tvPnr)
         private val btnBook: Button = itemView.findViewById(R.id.btnBook)
+        private val tvLeavingTime: TextView = itemView.findViewById(R.id.tvLeavingTime) // Add this
+        private val tvWeightUpto: TextView = itemView.findViewById(R.id.tvWeightUpto)
         val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
         private val db = FirebaseFirestore.getInstance()
@@ -80,6 +82,8 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
             tvAirline.text = "Airline: ${traveler.airline}"
             tvDestination.text = "To: ${traveler.destination}"
             tvPnr.text = "PNR: ${traveler.pnr}"
+            tvLeavingTime.text = "Leaving Time: ${traveler.leavingTime}"
+            tvWeightUpto.text = "Weight Upto: ${traveler.weightUpto} kg"
 
             when (traveler.bookingStatus) {
                 "available" -> {
