@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.myapplication.Sender // Replace with your actual package
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 
 class SenderProfile : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -171,68 +172,115 @@ class SenderProfile : AppCompatActivity() {
         val trackingUrlTextView = findViewById<TextView>(R.id.trackingUrl)
         val startTimeSender = findViewById<TextView>(R.id.startTimeSender)
         val endTimeSender = findViewById<TextView>(R.id.endTimeSender)
+        val mainStatus = findViewById<TextView>(R.id.bookingStatus)
 
         val db = FirebaseFirestore.getInstance()
+        Log.d("Firestore", "Fetching order with uniqueKey: $uniqueKey")
 
         db.collection("borzo_orders")
             .whereEqualTo("uniqueKey", uniqueKey)
-            .whereNotEqualTo("status", "finished")
+            .whereNotEqualTo("order.status", "finished")
             .limit(1)
             .get()
             .addOnSuccessListener { querySnapshot ->
                 try {
                     if (!querySnapshot.isEmpty) {
                         val document = querySnapshot.documents[0]
+                        Log.d("Firestore", "Found document: ${document.id}")
 
                         // 1. Get and display status
-                        val status = document.getString("status") ?: "N/A"
+                        val status =
+                            (document.get("order") as? Map<*, *>)?.get("status")?.toString()
+                                ?: document.getString("status") ?: "N/A"
+                        mainStatus.text = "Status: $status"
                         subStatus.text = "Status: $status"
 
-                        // 2. Process points array
-                        @Suppress("UNCHECKED_CAST")
-                        val points = document.get("points") as? List<Map<String, Any>> ?: emptyList()
+                        // 2. Get points subcollection
+                        document.reference.collection("points")
+                            .get()
+                            .addOnSuccessListener { pointsSnapshot ->
+                                val points = pointsSnapshot.documents.map {
+                                    it.data ?: emptyMap<String, Any>()
+                                }
 
-                        if (points.isEmpty()) {
-                            subStatus.text = "No points data available"
-                            return@addOnSuccessListener
-                        }
+                                if (points.isEmpty()) {
+                                    subStatus.text = "No points data available"
+                                    Log.w("Firestore", "Empty points subcollection")
+                                    return@addOnSuccessListener
+                                }
 
-                        // 3. Find and process SENDER point
-                        points.firstOrNull { point ->
-                            point["contactPerson.name"]?.toString()?.contains("Sender") == true
-                        }?.let { senderPoint ->
-                            // Tracking URL
-                            senderPoint["trackingUrl"]?.toString()?.let { url ->
-                                trackingUrlTextView.text = "Tracking: $url"
+                                // 3. Find and process SENDER point
+                                points.firstOrNull { point ->
+                                    try {
+                                        // Handle both dot notation and nested map
+                                        val contactName = point["contactPerson.name"]?.toString()
+                                            ?: (point["contactPerson"] as? Map<*, *>)?.get("name")
+                                                ?.toString()
+                                        contactName?.contains("Sender", ignoreCase = true) == true
+                                    } catch (e: Exception) {
+                                        Log.e("Firestore", "Error checking contact person", e)
+                                        false
+                                    }
+                                }?.let { senderPoint ->
+                                    // Tracking URL
+                                    senderPoint["trackingUrl"]?.toString()?.let { url ->
+                                        trackingUrlTextView.text =
+                                            "Tracking: ${url.takeIf { it.isNotBlank() } ?: "Not available"}"
+                                    } ?: run {
+                                        trackingUrlTextView.text = "Tracking: Not available"
+                                    }
+
+                                    // Format and display times
+                                    fun formatDateTime(raw: Any?): String {
+                                        return try {
+                                            raw?.toString()
+                                                ?.replace("T", " ")
+                                                ?.substringBefore("+")
+                                                ?: "Not specified"
+                                        } catch (e: Exception) {
+                                            Log.e("Firestore", "Error formatting date", e)
+                                            "Invalid date"
+                                        }
+                                    }
+
+                                    startTimeSender.text =
+                                        "Pickup: ${formatDateTime(senderPoint["requiredStartDatetime"])}"
+                                    endTimeSender.text =
+                                        "Delivery: ${formatDateTime(senderPoint["requiredFinishDatetime"])}"
+                                } ?: run {
+                                    subStatus.text =
+                                        "No sender point found in ${points.size} points"
+                                    Log.w(
+                                        "Firestore",
+                                        "Sender point not found. Points: ${points.map { it.keys }}"
+                                    )
+                                }
                             }
-
-                            // Format and display times
-                            fun formatDateTime(raw: String?): String {
-                                return raw?.replace("T", " ")?.substringBefore("+") ?: "Not specified"
+                            .addOnFailureListener { e ->
+                                subStatus.text = "Failed to load points"
+                                Log.e("Firestore", "Error getting points subcollection", e)
                             }
-
-                            senderPoint["requiredStartDatetime"]?.toString()?.let {
-                                startTimeSender.text = "Pickup: ${formatDateTime(it)}"
-                            }
-
-                            senderPoint["requiredFinishDatetime"]?.toString()?.let {
-                                endTimeSender.text = "Delivery: ${formatDateTime(it)}"
-                            }
-                        } ?: run {
-                            subStatus.text = "No sender point found"
-                        }
                     } else {
                         subStatus.text = "No active order found"
                         Log.d("Firestore", "No document found with key: $uniqueKey")
                     }
                 } catch (e: Exception) {
-                    subStatus.text = "Error loading data"
-                    Log.e("Firestore", "Error processing document", e)
+                    subStatus.text = "Error processing data"
+                    Log.e("Firestore", "Document processing error", e)
                 }
             }
             .addOnFailureListener { exception ->
-                subStatus.text = "Failed to connect"
-                Log.e("Firestore", "Error fetching order", exception)
+                subStatus.text = when {
+                    exception is FirebaseFirestoreException && exception.code == FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+                        "Permission denied"
+
+                    exception is FirebaseFirestoreException && exception.code == FirebaseFirestoreException.Code.NOT_FOUND ->
+                        "Data not found"
+
+                    else -> "Connection failed: ${exception.localizedMessage}"
+                }
+                Log.e("Firestore", "Query failed", exception)
             }
     }
 }
+
