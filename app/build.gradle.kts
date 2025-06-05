@@ -61,6 +61,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
     implementation ("com.razorpay:checkout:1.6.33")
+    implementation("com.google.android.material:material")
     // Firebase dependencies
     implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
     implementation("com.google.firebase:firebase-analytics")

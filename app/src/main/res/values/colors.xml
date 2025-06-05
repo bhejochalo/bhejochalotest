@@ -5,4 +5,7 @@
     <color name="labelTextColor">#888888</color>
     <color name="green_500">#4CAF50</color>
     <color name="grey_500">#9E9E9E</color>
+    <color name="green_600">#43A047</color> <!-- Nice green for Book button -->
+    <color name="gray_700">#616161</color> <!-- Text secondary -->
+    <color name="gray_200">#EEEEEE</color> <!-- Card border -->
 </resources>

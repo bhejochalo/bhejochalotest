@@ -1,56 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:layout_margin="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="6dp"
+    app:strokeColor="@color/gray_200"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="@android:color/white">
 
+        <!-- Traveler Name -->
         <TextView
             android:id="@+id/tvTravelerName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+            android:text="Traveler Name"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"/>
 
-        <TextView
-            android:id="@+id/tvAirline"
+        <!-- Airline -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"/>
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
 
-        <TextView
-            android:id="@+id/tvDestination"
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_airplane"
+                app:tint="@color/gray_700" />
+
+            <TextView
+                android:id="@+id/tvAirline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Airline Name"
+                android:textSize="16sp"/>
+        </LinearLayout>
+
+        <!-- Destination -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"/>
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
 
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_location"
+                app:tint="@color/gray_700" />
+
+            <TextView
+                android:id="@+id/tvDestination"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Destination"
+                android:textSize="16sp"/>
+        </LinearLayout>
+
+        <!-- PNR -->
         <TextView
             android:id="@+id/tvPnr"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="4dp"
+            android:textSize="15sp"
+            android:textColor="@color/gray_700"/>
+
+        <!-- Leaving Time -->
         <TextView
             android:id="@+id/tvLeavingTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:paddingTop="4dp" />
+            android:layout_marginTop="4dp"
+            android:textSize="15sp"
+            android:textColor="@color/gray_700"/>
 
+        <!-- Weight Upto -->
         <TextView
             android:id="@+id/tvWeightUpto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:paddingTop="2dp" />
+            android:textSize="15sp"
+            android:textColor="@color/gray_700"/>
 
         <Button
             android:id="@+id/btnBook"
@@ -62,5 +107,8 @@
             android:textColor="@android:color/white"/>
 
 
+
+
+
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
