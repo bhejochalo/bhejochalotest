@@ -14,7 +14,10 @@ import java.util.concurrent.TimeUnit
 class BorzoOrderHelper(private val context: Context) {
     private val db = FirebaseFirestore.getInstance()
     private var uniqueKey = ""
+
+
     fun placeOrder(
+       // travelerActioned: Boolean,
         senderId: String,
         travelerAddress: Map<String, String>,
         onSuccess: () -> Unit,
@@ -265,7 +268,6 @@ class BorzoOrderHelper(private val context: Context) {
         }
     }
 
-    // Rest of your existing helper methods remain unchanged
     private fun getTheRelatedSenderData(senderId: String, callback: (Map<String, String?>) -> Unit) {
         db.collection("Sender")
             .whereEqualTo("uniqueKey", senderId)

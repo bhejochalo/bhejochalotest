@@ -123,7 +123,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
                     attachSenderWithTraveler(traveler)  //
                     // update the respected traveler in the db and attach this sender details lookup if possible
 
-                    val intent = Intent(itemView.context, SenderProfile::class.java).apply {
+                    val intent = Intent(itemView.context, TravelerProfile::class.java).apply {
                         //putExtra("TRAVELER_DATA", traveler) // If Traveler is Parcelable
                     }
                     itemView.context.startActivity(intent)
@@ -269,8 +269,9 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
 
             val updates = hashMapOf<String, Any>(
                 "SenderRequest" to true,
-                "uniqueKey" to uniqueKey,  // Using actual sender's phone instead of hardcoded value
+                "uniqueKey" to uniqueKey,
                 "matchedAt" to System.currentTimeMillis()
+
             )
             // Query traveler document by phoneNumber // check how we can remove this query. need to remove this query
             /*db.collection("traveler")

@@ -99,6 +99,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
     }
 
     private fun navigateToTravelerProfile(phone: String) {
+
         Intent(this, TravelerProfile::class.java).apply {
             putExtra("PHONE_NUMBER", phone)
             startActivity(this)

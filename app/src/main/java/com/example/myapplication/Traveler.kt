@@ -11,5 +11,5 @@ data class Traveler(
     var phoneNumber: String = "",
     var leavingTime: String = "",
     var weightUpto: String = "",
-    var documentSnapshot: DocumentSnapshot? = null // To store the Firestore document snapshot
+    var documentSnapshot: DocumentSnapshot? = null // To store the Firestore document snapshot // setting this from senderdashboaravtivity loadmore method and load method
 )//new code

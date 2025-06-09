@@ -2,6 +2,7 @@ package com.example.myapplication
 
 import android.content.Context
 import android.os.Bundle
+import android.provider.SyncStateContract.Helpers.update
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.TextView
@@ -25,6 +26,8 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import com.example.myapplication.BorzoOrderHelper
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestoreException
 
 
 class TravelerProfile : AppCompatActivity() {
@@ -47,24 +50,28 @@ class TravelerProfile : AppCompatActivity() {
     private lateinit var borzoHelper: BorzoOrderHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+
+
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_sender_profile)
-        borzoHelper = BorzoOrderHelper(this)
+        setContentView(R.layout.activity_traveler_profile)
         enableEdgeToEdge()
+            borzoHelper = BorzoOrderHelper(this)
 
         // Set up window insets
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        // Use the root view of your layout instead of R.id.main
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
         // Check if AddressHolder has data
         if (AddressHolder.fromHouseNumber != null) {
-            displayAddressFromHolder()
+            displayAddressFromHolder() // fresh traveler
         } else {
             // If AddressHolder is null, fetch from database
-            getTheCurrentTravelerData()
+            getTheCurrentTravelerData() //  registered travelers
+
         }
     }
 
@@ -134,11 +141,17 @@ class TravelerProfile : AppCompatActivity() {
 
 
                     val uniqueKey = "${document.getString("uniqueKey")}"
+                    val status = "${document.getString("status")}"
+                   // val hasReq = "${document.getString("SenderRequest")}"
                     println("isSenderIDPresent ===> $uniqueKey")
 
-                    if (uniqueKey.isNotEmpty()) {
-                        showSenderRequest(uniqueKey)
+                    if (uniqueKey.isNotEmpty() && status != "Request Accepted By Traveler") {
+                        showSenderRequest(uniqueKey,document) // method to show the sender request to Traveler
+                    }else {
+                        fetchTheAcceptedOrder(uniqueKey) // show the order details to the traveler
+
                     }
+
 
                 } else {
                     Toast.makeText(this, "Traveler data not found", Toast.LENGTH_SHORT).show()
@@ -157,7 +170,7 @@ class TravelerProfile : AppCompatActivity() {
 
         return phoneNumber //
     }
-    private fun showSenderRequest(senderRef: String) {  // Removed context parameter since we're in Activity
+    private fun showSenderRequest(senderRef: String, document: DocumentSnapshot) {  // Removed context parameter since we're in Activity
         println("inside showSenderRequest ===> $senderRef")
 
 
@@ -171,7 +184,7 @@ class TravelerProfile : AppCompatActivity() {
         runOnUiThread {
             try {
                 if (!isFinishing) {
-                    showSenderDialog(name, phone, address, senderRef)
+                    showSenderDialog(name, phone, address, senderRef,document)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -185,7 +198,7 @@ class TravelerProfile : AppCompatActivity() {
     }
 
 
-    private fun showSenderDialog(name: String, phone: String, address: String, senderRef: String) {
+    private fun showSenderDialog(name: String, phone: String, address: String, senderRef: String, document: DocumentSnapshot) {
         try {
             val dialogView = LayoutInflater.from(this@TravelerProfile).inflate(
                 R.layout.dialog_sender_details,
@@ -202,11 +215,11 @@ class TravelerProfile : AppCompatActivity() {
                 .setTitle("Sender Request")
                 .setView(dialogView)
                 .setPositiveButton("Accept") { dialog, _ ->
-                    onAcceptRequest(senderRef)
+                    onAcceptRequest(senderRef,document)
                     dialog.dismiss()
                 }
                 .setNegativeButton("Reject") { dialog, _ ->
-                    onRejectRequest(senderRef)
+                    onRejectRequest(senderRef,document)
                     dialog.dismiss()
                 }
                 .setCancelable(false)
@@ -218,10 +231,24 @@ class TravelerProfile : AppCompatActivity() {
         }
     }
 
-    private fun onAcceptRequest(senderRef: String) {
+    private fun onAcceptRequest(senderRef: String, document: DocumentSnapshot) {
+        // in document we have current traveler
        // isFirstMile = true;
         //placeBorzoOrder(senderRef) // need to pass the other details also, address of traveler
            isFirstMile = true
+
+
+        document.reference.update("status", "Request Accepted By Traveler") // // updating the traveler status
+            .addOnSuccessListener {
+                runOnUiThread {
+                    Toast.makeText(this@TravelerProfile, "Request Accepted", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                runOnUiThread {
+                    Toast.makeText(this@TravelerProfile, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
 
            // Prepare traveler address data
            val travelerAddress = mapOf(
@@ -249,13 +276,15 @@ class TravelerProfile : AppCompatActivity() {
                    }
                }
            )
+
+            fetchTheAcceptedOrder(senderRef) // show the order details to the traveler
        }
 
 
 
-    private fun onRejectRequest(senderRef: String) {
-        FirebaseFirestore.getInstance().document(senderRef)
-            .update("status", "Rejected")
+    private fun onRejectRequest(senderRef: String,document: DocumentSnapshot) { // in document we have current traveler
+
+        document.reference.update("status", "Request Rejected By Traveler") // updating the traveler status
             .addOnSuccessListener {
                 runOnUiThread {
                     Toast.makeText(this@TravelerProfile, "Request Rejected", Toast.LENGTH_SHORT).show()
@@ -584,4 +613,122 @@ class TravelerProfile : AppCompatActivity() {
     private fun updateBookingDetailsOnTraveler(response: Response){
 
     }
+
+    private fun fetchTheAcceptedOrder(uniqueKey: String) {
+        val subStatus = findViewById<TextView>(R.id.subStatus)
+        val trackingUrlTextView = findViewById<TextView>(R.id.trackingUrl)
+       // val startTimeSender = findViewById<TextView>(R.id.startTimeSender)
+        val endTimeSender = findViewById<TextView>(R.id.endTimeSender)
+        val mainStatus = findViewById<TextView>(R.id.bookingStatus)
+
+        val db = FirebaseFirestore.getInstance()
+        Log.d("Firestore", "Fetching order with uniqueKey: $uniqueKey")
+
+        db.collection("borzo_orders")
+            .whereEqualTo("uniqueKey", uniqueKey)
+            .whereNotEqualTo("order.status", "finished")
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                try {
+                    if (!querySnapshot.isEmpty) {
+                        val document = querySnapshot.documents[0]
+                        Log.d("Firestore", "Found document: ${document.id}")
+
+                        // 1. Get and display status
+                        val status =
+                            (document.get("order") as? Map<*, *>)?.get("status")?.toString()
+                                ?: document.getString("status") ?: "N/A"
+                        mainStatus.text = "Status: $status"
+                        subStatus.text = "Status: $status"
+
+                        // 2. Get points subcollection
+                        document.reference.collection("points")
+                            .get()
+                            .addOnSuccessListener { pointsSnapshot ->
+                                val points = pointsSnapshot.documents.map {
+                                    it.data ?: emptyMap<String, Any>()
+                                }
+
+                                if (points.isEmpty()) {
+                                    subStatus.text = "No points data available"
+                                    Log.w("Firestore", "Empty points subcollection")
+                                    return@addOnSuccessListener
+                                }
+
+                                // 3. Find and process SENDER point
+                                points.firstOrNull { point ->
+                                    try {
+                                        // Handle both dot notation and nested map
+                                        val contactName = point["contactPerson.name"]?.toString()
+                                            ?: (point["contactPerson"] as? Map<*, *>)?.get("name")
+                                                ?.toString()
+                                        contactName?.contains("Sender", ignoreCase = true) == true
+                                    } catch (e: Exception) {
+                                        Log.e("Firestore", "Error checking contact person", e)
+                                        false
+                                    }
+                                }?.let { senderPoint ->
+                                    // Tracking URL
+                                    senderPoint["trackingUrl"]?.toString()?.let { url ->
+                                        trackingUrlTextView.text =
+                                            "Tracking: ${url.takeIf { it.isNotBlank() } ?: "Not available"}"
+                                    } ?: run {
+                                        trackingUrlTextView.text = "Tracking: Not available"
+                                    }
+
+                                    // Format and display times
+                                    fun formatDateTime(raw: Any?): String {
+                                        return try {
+                                            raw?.toString()
+                                                ?.replace("T", " ")
+                                                ?.substringBefore("+")
+                                                ?: "Not specified"
+                                        } catch (e: Exception) {
+                                            Log.e("Firestore", "Error formatting date", e)
+                                            "Invalid date"
+                                        }
+                                    }
+
+                                  /*  startTimeSender.text =
+                                        "Pickup: ${formatDateTime(senderPoint["requiredStartDatetime"])}"*/
+                                    endTimeSender.text =
+                                        "Parcel Arrival Time: ${formatDateTime(senderPoint["requiredFinishDatetime"])}"
+                                } ?: run {
+                                    subStatus.text =
+                                        "No sender point found in ${points.size} points"
+                                    Log.w(
+                                        "Firestore",
+                                        "Sender point not found. Points: ${points.map { it.keys }}"
+                                    )
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                subStatus.text = "Failed to load points"
+                                Log.e("Firestore", "Error getting points subcollection", e)
+                            }
+                    } else {
+                        subStatus.text = "No active order found"
+                        Log.d("Firestore", "No document found with key: $uniqueKey")
+                    }
+                } catch (e: Exception) {
+                    subStatus.text = "Error processing data"
+                    Log.e("Firestore", "Document processing error", e)
+                }
+            }
+            .addOnFailureListener { exception ->
+                subStatus.text = when {
+                    exception is FirebaseFirestoreException && exception.code == FirebaseFirestoreException.Code.PERMISSION_DENIED ->
+                        "Permission denied"
+
+                    exception is FirebaseFirestoreException && exception.code == FirebaseFirestoreException.Code.NOT_FOUND ->
+                        "Data not found"
+
+                    else -> "Connection failed: ${exception.localizedMessage}"
+                }
+                Log.e("Firestore", "Query failed", exception)
+            }
+    }
+
+
 }
