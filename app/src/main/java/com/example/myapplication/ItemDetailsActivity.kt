@@ -23,6 +23,10 @@ class ItemDetailsActivity : AppCompatActivity() {
     private lateinit var instructionsEditText: EditText
     private lateinit var nextButton: Button
     private lateinit var uploadImageButton: Button
+    private lateinit var deliveryOptionRadioGroup: RadioGroup
+    private lateinit var priceTextView: TextView
+    private var selectedPrice = 0
+
     private lateinit var itemImageView: ImageView
 
     private lateinit var firestore: FirebaseFirestore
@@ -58,6 +62,7 @@ class ItemDetailsActivity : AppCompatActivity() {
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             startActivityForResult(intent, PICK_IMAGE_REQUEST)
         }
+        setupDeliveryOptionListener();
     }
 
     private fun initializeViews() {
@@ -68,6 +73,22 @@ class ItemDetailsActivity : AppCompatActivity() {
         nextButton = findViewById(R.id.nextButton)
         uploadImageButton = findViewById(R.id.uploadImageButton)
         itemImageView = findViewById(R.id.itemImageView)
+        deliveryOptionRadioGroup = findViewById(R.id.deliveryOptionRadioGroup)
+        priceTextView = findViewById(R.id.priceTextView)
+    }
+    private fun setupDeliveryOptionListener() {
+        deliveryOptionRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.selfPickupRadioButton -> {
+                    selectedPrice = 750
+                    priceTextView.text = "Price: ₹$selectedPrice"
+                }
+                R.id.autoPickupRadioButton -> {
+                    selectedPrice = 1500
+                    priceTextView.text = "Price: ₹$selectedPrice"
+                }
+            }
+        }
     }
 
     private fun setupWeightInputs() {
@@ -181,6 +202,7 @@ class ItemDetailsActivity : AppCompatActivity() {
                 "state" to AddressHolder.fromState,
                 "fullAddress" to AddressHolder.fromAddress
             ),
+            "deliveryOptionPrice" to selectedPrice,
             "toAddress" to hashMapOf(
                 "houseNumber" to AddressHolder.toHouseNumber,
                 "street" to AddressHolder.toStreet,

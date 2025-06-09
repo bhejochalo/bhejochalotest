@@ -108,7 +108,7 @@
         android:id="@+id/nextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="272dp"
+        android:layout_marginTop="320dp"
         android:background="@drawable/bg_rounded_button"
         android:text="Next"
         app:backgroundTint="@null"
@@ -119,8 +119,8 @@
 
     <ImageView
         android:id="@+id/itemImageView"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="99dp"
+        android:layout_height="83dp"
         android:layout_marginTop="84dp"
         android:background="@drawable/bg_image_border"
         android:scaleType="centerCrop"
@@ -136,6 +136,57 @@
         android:layout_height="wrap_content"
         android:text="Choose Image"
         app:layout_constraintTop_toBottomOf="@id/itemImageView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+    <TextView
+        android:id="@+id/deliveryOptionLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Choose Delivery Option"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintTop_toBottomOf="@id/uploadImageButton"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="24dp"/>
+
+    <RadioGroup
+        android:id="@+id/deliveryOptionRadioGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/deliveryOptionLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"
+        android:gravity="center">
+
+        <RadioButton
+            android:id="@+id/selfPickupRadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Self Pickup/Drop"
+            android:textSize="16sp"/>
+
+        <RadioButton
+            android:id="@+id/autoPickupRadioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto Pickup/Drop"
+            android:textSize="16sp"
+            android:layout_marginStart="16dp"/>
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/priceTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Price: ₹0"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:textColor="@color/quantum_orange"
+        app:layout_constraintTop_toBottomOf="@id/deliveryOptionRadioGroup"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"/>
