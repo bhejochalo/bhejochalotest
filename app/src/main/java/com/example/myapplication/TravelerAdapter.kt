@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
 import android.content.SharedPreferences
 import java.security.MessageDigest
 
-class TravelerAdapter(private val travelers: MutableList<Traveler>) :
+class TravelerAdapter(private val travelers: MutableList<Traveler>, private val selectedPrice: Int) :
     RecyclerView.Adapter<TravelerAdapter.TravelerViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TravelerViewHolder {
@@ -53,16 +53,18 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>) :
 
         private fun startPayment(traveler: Traveler) {
             val activity = itemView.context as? android.app.Activity ?: return
-
             val checkout = com.razorpay.Checkout()
             checkout.setKeyID("rzp_test_4HNx49ek9VPhNQ") // Replace with your Razorpay key
+
+            // Convert selected price to paise (₹1 = 100 paise)
+            val amountInPaise = selectedPrice * 100
 
             val options = JSONObject()
             try {
                 options.put("name", "Turant")
                 options.put("description", "Traveler Booking with ${traveler.name}")
                 options.put("currency", "INR")
-                options.put("amount", "150000") // amount in paise: ₹100 = 10000
+                options.put("amount", amountInPaise.toString()) // Use the selected price
 
                 val prefill = JSONObject()
                 prefill.put("email", "user@example.com")

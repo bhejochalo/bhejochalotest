@@ -23,13 +23,14 @@ class SenderDashboardActivity : AppCompatActivity() {
         val senderStreet = AddressHolder.fromStreet?.trim()?.lowercase()
         val senderArea = AddressHolder.fromArea?.trim()?.lowercase()
         val senderPostalCode = AddressHolder.fromPostalCode?.trim()
+        val selectedPrice = intent.getIntExtra("SELECTED_PRICE", 1500) // Default to 1500 if not found
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sender_dashboard)
 
         // Initialize RecyclerView // Traveler adapter
         recyclerView = findViewById(R.id.travelersRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = TravelerAdapter(travelersList)
+        adapter = TravelerAdapter(travelersList, selectedPrice)
         recyclerView.adapter = adapter
 
         senderPhoneNumber = intent.getStringExtra("PHONE_NUMBER")?.also {

@@ -82,10 +82,20 @@ class ItemDetailsActivity : AppCompatActivity() {
                 R.id.selfPickupRadioButton -> {
                     selectedPrice = 750
                     priceTextView.text = "Price: ₹$selectedPrice"
+                    // Save to SharedPreferences
+                    getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .putInt("SELECTED_PRICE", selectedPrice)
+                        .apply()
                 }
                 R.id.autoPickupRadioButton -> {
                     selectedPrice = 1500
                     priceTextView.text = "Price: ₹$selectedPrice"
+                    // Save to SharedPreferences
+                    getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .putInt("SELECTED_PRICE", selectedPrice)
+                        .apply()
                 }
             }
         }
@@ -248,6 +258,7 @@ class ItemDetailsActivity : AppCompatActivity() {
     private fun navigateToSenderDashboard() {
         val intent = Intent(this, SenderDashboardActivity::class.java).apply {
             putExtra("PHONE_NUMBER", phoneNumber)
+            putExtra("SELECTED_PRICE", selectedPrice)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         }
         startActivity(intent)
