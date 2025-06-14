@@ -33,6 +33,7 @@
         <activity
             android:name=".OTP_Verification"
             android:exported="false" /> <!-- Address Flow -->
+        <activity android:name=".UserVerificationActivity" />
         <activity android:name=".SenderReceiverSelectionActivity" />
         <activity android:name=".AutoCompleteAddressActivity" />
         <activity android:name=".FromAddressActivity" />

@@ -89,7 +89,7 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
 
 
                     } else {
-                        navigateToAutoComplete(phone)
+                        navigateToUserVerificationActivity(phone)
                     }
                 }
                 .addOnFailureListener { e ->
@@ -115,6 +115,13 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
 
     private fun navigateToAutoComplete(phone: String) {
         Intent(this, AutoCompleteAddressActivity::class.java).apply {
+            putExtra("PHONE_NUMBER", phone)
+            startActivity(this)
+        }
+    }
+
+    private fun navigateToUserVerificationActivity(phone: String) {
+        Intent(this, UserVerificationActivity::class.java).apply {
             putExtra("PHONE_NUMBER", phone)
             startActivity(this)
         }
