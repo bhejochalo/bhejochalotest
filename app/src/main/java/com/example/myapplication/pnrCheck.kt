@@ -117,7 +117,9 @@ class pnrCheck : AppCompatActivity() {
                     "postalCode" to AddressHolder.fromPostalCode,
                     "city" to AddressHolder.fromCity,
                     "state" to AddressHolder.fromState,
-                    "fullAddress" to AddressHolder.fromAddress
+                    "fullAddress" to AddressHolder.fromAddress,
+                    "latitude" to AddressHolder.fromLatitude,
+                    "longitude" to AddressHolder.fromLongitude
                 ),
                 "toAddress" to mapOf(
                     "houseNumber" to AddressHolder.toHouseNumber,
@@ -126,7 +128,9 @@ class pnrCheck : AppCompatActivity() {
                     "postalCode" to AddressHolder.toPostalCode,
                     "city" to AddressHolder.toCity,
                     "state" to AddressHolder.toState,
-                    "fullAddress" to AddressHolder.toAddress
+                    "fullAddress" to AddressHolder.toAddress,
+                    "latitude" to AddressHolder.toLatitude,
+                    "longitude" to AddressHolder.toLongitude
                 )
             )
 

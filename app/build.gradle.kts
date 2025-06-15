@@ -65,6 +65,8 @@ dependencies {
     // Firebase dependencies
     implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
 
     implementation ("com.google.android.libraries.places:places:3.3.0")
 

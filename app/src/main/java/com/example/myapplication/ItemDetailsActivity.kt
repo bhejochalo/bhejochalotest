@@ -213,7 +213,9 @@ class ItemDetailsActivity : AppCompatActivity() {
                 "postalCode" to AddressHolder.fromPostalCode,
                 "city" to AddressHolder.fromCity,
                 "state" to AddressHolder.fromState,
-                "fullAddress" to AddressHolder.fromAddress
+                "fullAddress" to AddressHolder.fromAddress,
+                "latitude" to AddressHolder.fromLatitude,  // Added
+                "longitude" to AddressHolder.fromLongitude  // Added
             ),
             "deliveryOptionPrice" to selectedPrice,
             "toAddress" to hashMapOf(
@@ -223,7 +225,9 @@ class ItemDetailsActivity : AppCompatActivity() {
                 "postalCode" to AddressHolder.toPostalCode,
                 "city" to AddressHolder.toCity,
                 "state" to AddressHolder.toState,
-                "fullAddress" to AddressHolder.toAddress
+                "fullAddress" to AddressHolder.toAddress,
+                "latitude" to AddressHolder.toLatitude,    // Added
+                "longitude" to AddressHolder.toLongitude   // Added
             ),
             "itemDetails" to hashMapOf(
                 "itemName" to itemName,
@@ -239,12 +243,12 @@ class ItemDetailsActivity : AppCompatActivity() {
             .document(phoneNumber)
             .set(senderData)
             .addOnSuccessListener {
-                progressDialog.dismiss() // Hide loader on success
+                progressDialog.dismiss()
                 Toast.makeText(this, "Data saved successfully", Toast.LENGTH_SHORT).show()
                 navigateToSenderDashboard()
             }
             .addOnFailureListener { e ->
-                progressDialog.dismiss() // Hide loader on failure
+                progressDialog.dismiss()
                 Toast.makeText(this, "Failed to save data: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }

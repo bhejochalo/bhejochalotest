@@ -15,7 +15,6 @@ class FromAddressActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editable_address)
-
         // Initialize views
         findViewById<TextView>(R.id.addressHeading).text = "From Address"
         val houseNumber = findViewById<EditText>(R.id.houseNumberEditText)
@@ -46,6 +45,8 @@ class FromAddressActivity : AppCompatActivity() {
             phoneNumber = intent.getStringExtra("PHONE_NUMBER")
             fromAddress = intent.getStringExtra("FROM_ADDRESS")
             toAddress = intent.getStringExtra("TO_ADDRESS")
+            fromLatitude = fromPlace.latLng?.latitude   // Store latitude
+            fromLongitude = fromPlace.latLng?.longitude // Store longitude
         }
 
         // Parse and populate fields

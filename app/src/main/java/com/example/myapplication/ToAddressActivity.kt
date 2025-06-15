@@ -24,6 +24,8 @@ object AddressHolder {
     var fromPostalCode: String? = null
     var fromCity: String? = null
     var fromState: String? = null
+    var fromLatitude: Double? = null  // Added
+    var fromLongitude: Double? = null // Added
 
     // To address components
     var toHouseNumber: String? = null
@@ -32,6 +34,8 @@ object AddressHolder {
     var toPostalCode: String? = null
     var toCity: String? = null
     var toState: String? = null
+    var toLatitude: Double? = null    // Added
+    var toLongitude: Double? = null   // Added
 }
 /*
 class ToAddressActivity : AppCompatActivity() {
@@ -223,6 +227,8 @@ class ToAddressActivity : AppCompatActivity() {
                     toPostalCode = postalCode.text.toString()
                     toCity = city.text.toString()
                     toState = state.text.toString()
+                    toLatitude = place.latLng?.latitude    // Store latitude
+                    toLongitude = place.latLng?.longitude // Store longitude
 
                     fromAddress = AddressHolder.fromAddress
                     toAddress = AddressHolder.toAddress
