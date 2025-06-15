@@ -203,6 +203,9 @@ class ItemDetailsActivity : AppCompatActivity() {
             "timestamp" to timestamp,
             "status" to "Pending",
             "imageUrl" to imageUrl,
+            "panNumber" to getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                .getString("PAN_NUMBER", ""),
+            "isVerified" to true,
             "fromAddress" to hashMapOf(
                 "houseNumber" to AddressHolder.fromHouseNumber,
                 "street" to AddressHolder.fromStreet,

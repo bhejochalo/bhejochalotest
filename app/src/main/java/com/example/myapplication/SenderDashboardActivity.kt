@@ -89,26 +89,49 @@ class SenderDashboardActivity : AppCompatActivity() {
                         //    "Sender From=$senderFromCity, To=$senderToCity")
 
                     if (doc != null) {
-                        val name = doc.getString("lastName") ?: continue
-                        val airline = doc.getString("airline") ?: continue
-                       // val destination = to?.get("fullAddress") as? String ?: continue
-                        val pnr = doc.getString("pnr") ?: continue
-                        val phNumber = doc.getString("phoneNumber") ?: continue
-                        val leavingTime =  doc.getString("leavingTime") ?: continue
-                        val weightUpto = doc.getString("weightUpto") ?: continue
-                     //   Log.d("TravelerAddLog", "Adding traveler: $name, PNR: $pnr, To: $destination")
+                        val name = doc.getString("lastName") ?: ""
+                        val airline = doc.getString("airline") ?: "Unknown Airline"
+                        val pnr = doc.getString("pnr") ?: "N/A"
+                        val phNumber = doc.getString("phoneNumber") ?: ""
+                        val leavingTime = doc.getString("leavingTime") ?: "Not specified"
+                        val weightUpto = try {
+                            doc.getLong("weightUpto")?.toInt() ?: 0
+                        } catch (e: Exception) {
+                            try {
+                                doc.getString("weightUpto")?.toIntOrNull() ?: 0
+                            } catch (e: Exception) {
+                                0
+                            }
+                        }
+
+                        val flightNumber = doc.getString("flightNumber") ?: "N/A"
+                        val arrivalTime = doc.getString("arrivalTime") ?: "Not specified"
+                        val destination = doc.getString("destination") ?: "Not specified"
+                        val flightDuration = doc.getString("flightDuration") ?: "Not specified"
+                        val price = doc.getLong("price")?.toInt() ?: 0
+
+                        val notAcceptedItems = try {
+                            doc.get("notAcceptedItems") as? List<String> ?: emptyList()
+                        } catch (e: Exception) {
+                            emptyList()
+                        }
+
                         travelersList.add(
                             Traveler(
                                 name = name,
                                 airline = airline,
-                               // destination = destination,
+                                destination = destination,
                                 pnr = pnr,
-                                bookingStatus = "available" ,
+                                bookingStatus = "available",
                                 documentSnapshot = doc,
                                 phoneNumber = phNumber,
                                 leavingTime = leavingTime,
-                                weightUpto = weightUpto
-
+                                weightUpto = weightUpto,
+                                flightNumber = flightNumber,
+                                arrivalTime = arrivalTime,
+                                flightDuration = flightDuration,
+                                price = price,
+                                notAcceptedItems = notAcceptedItems
                             )
                         )
                     }
@@ -143,22 +166,49 @@ class SenderDashboardActivity : AppCompatActivity() {
 
                         for (doc in querySnapshot.documents) {
                             if (doc != null) {
-                                val name = doc.getString("lastName") ?: continue
-                                val airline = doc.getString("airline") ?: continue
-                                val pnr = doc.getString("pnr") ?: continue
-                                val phNumber = doc.getString("phoneNumber") ?: continue
+                                val name = doc.getString("lastName") ?: ""
+                                val airline = doc.getString("airline") ?: "Unknown Airline"
+                                val pnr = doc.getString("pnr") ?: "N/A"
+                                val phNumber = doc.getString("phoneNumber") ?: ""
                                 val leavingTime = doc.getString("leavingTime") ?: "Not specified"
-                                val weightUpto = doc.getString("weightUpto") ?: "Not specified"
+                                val weightUpto = try {
+                                    doc.getLong("weightUpto")?.toInt() ?: 0
+                                } catch (e: Exception) {
+                                    try {
+                                        doc.getString("weightUpto")?.toIntOrNull() ?: 0
+                                    } catch (e: Exception) {
+                                        0
+                                    }
+                                }
+
+                                val flightNumber = doc.getString("flightNumber") ?: "N/A"
+                                val arrivalTime = doc.getString("arrivalTime") ?: "Not specified"
+                                val destination = doc.getString("destination") ?: "Not specified"
+                                val flightDuration = doc.getString("flightDuration") ?: "Not specified"
+                                val price = doc.getLong("price")?.toInt() ?: 0
+
+                                val notAcceptedItems = try {
+                                    doc.get("notAcceptedItems") as? List<String> ?: emptyList()
+                                } catch (e: Exception) {
+                                    emptyList()
+                                }
+
                                 travelersList.add(
                                     Traveler(
                                         name = name,
                                         airline = airline,
+                                        destination = destination,
                                         pnr = pnr,
                                         bookingStatus = "available",
                                         documentSnapshot = doc,
                                         phoneNumber = phNumber,
                                         leavingTime = leavingTime,
-                                        weightUpto = weightUpto
+                                        weightUpto = weightUpto,
+                                        flightNumber = flightNumber,
+                                        arrivalTime = arrivalTime,
+                                        flightDuration = flightDuration,
+                                        price = price,
+                                        notAcceptedItems = notAcceptedItems
                                     )
                                 )
                             }

@@ -1,114 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardTraveler"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="6dp"
-    app:strokeColor="@color/gray_200"
-    app:strokeWidth="1dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="16dp"
-        android:background="@android:color/white">
+        android:orientation="vertical">
 
         <!-- Traveler Name -->
         <TextView
             android:id="@+id/tvTravelerName"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Traveler Name"
-            android:textSize="20sp"
+            android:text="Rahul Sharma"
+            android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@android:color/black"/>
+            android:textColor="@android:color/black" />
 
         <!-- Airline -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tvAirline"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_airplane"
-                app:tint="@color/gray_700" />
-
-            <TextView
-                android:id="@+id/tvAirline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Airline Name"
-                android:textSize="16sp"/>
-        </LinearLayout>
+            android:text="Airline: IndiGo"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:paddingTop="4dp" />
 
         <!-- Destination -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tvDestination"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="4dp">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_location"
-                app:tint="@color/gray_700" />
-
-            <TextView
-                android:id="@+id/tvDestination"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="Destination"
-                android:textSize="16sp"/>
-        </LinearLayout>
+            android:text="To: Mumbai"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:paddingTop="2dp" />
 
         <!-- PNR -->
         <TextView
             android:id="@+id/tvPnr"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="15sp"
-            android:textColor="@color/gray_700"/>
+            android:text="PNR: ABC123"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:paddingTop="2dp" />
 
         <!-- Leaving Time -->
         <TextView
             android:id="@+id/tvLeavingTime"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="15sp"
-            android:textColor="@color/gray_700"/>
+            android:text="Leaving Time: 10:30 AM"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:paddingTop="2dp" />
 
         <!-- Weight Upto -->
         <TextView
             android:id="@+id/tvWeightUpto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Weight Upto: 20 kg"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:paddingTop="2dp" />
+
+        <!-- Buttons Row -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:textColor="@color/gray_700"/>
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="12dp">
 
-        <Button
-            android:id="@+id/btnBook"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Book"
-            android:backgroundTint="@color/green_500"
-            android:textColor="@android:color/white"/>
+            <Button
+                android:id="@+id/btnMoreDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="More Details"
+                android:layout_marginEnd="8dp"
+                android:textColor="@android:color/white"/>
 
-
-
-
+            <Button
+                android:id="@+id/btnBook"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Book"
+                android:backgroundTint="@color/green_500"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
 
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+</androidx.cardview.widget.CardView>

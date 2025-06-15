@@ -21,6 +21,8 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import android.content.SharedPreferences
+import android.widget.CheckBox
+import android.widget.ImageButton
 import java.security.MessageDigest
 
 class TravelerAdapter(private val travelers: MutableList<Traveler>, private val selectedPrice: Int) :
@@ -49,6 +51,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
         private val tvWeightUpto: TextView = itemView.findViewById(R.id.tvWeightUpto)
         val sharedPref = itemView.context.getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
+        private val btnMoreDetails: Button = itemView.findViewById(R.id.btnMoreDetails)
         private val db = FirebaseFirestore.getInstance()
 
         private fun startPayment(traveler: Traveler) {
@@ -104,14 +107,89 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
                     btnBook.setBackgroundColor(ContextCompat.getColor(itemView.context, R.color.grey_500))
                 }
             }
-
+            btnMoreDetails.setOnClickListener {
+                showMoreDetailsDialog(traveler)
+            }
             btnBook.setOnClickListener {
                 if (traveler.bookingStatus == "available") {
                     showConfirmationDialog(traveler)
                 }
             }
         }
+        private fun showMoreDetailsDialog(traveler: Traveler) {
+            val dialogView = LayoutInflater.from(itemView.context)
+                .inflate(R.layout.dialog_traveler_details, null)
 
+            // Initialize views
+            val tvDialogName: TextView = dialogView.findViewById(R.id.tvDialogName)
+            val tvDialogRoute: TextView = dialogView.findViewById(R.id.tvDialogRoute)
+            val tvDialogAirline: TextView = dialogView.findViewById(R.id.tvDialogAirline)
+            val tvDialogPnr: TextView = dialogView.findViewById(R.id.tvDialogPnr)
+            val tvDialogLeavingTime: TextView = dialogView.findViewById(R.id.tvDialogLeavingTime)
+            val tvDialogWeight: TextView = dialogView.findViewById(R.id.tvDialogWeight)
+            val tvDialogFlightNumber: TextView = dialogView.findViewById(R.id.tvDialogFlightNumber)
+            val tvDialogArrivalTime: TextView = dialogView.findViewById(R.id.tvDialogArrivalTime)
+            val tvDialogDuration: TextView = dialogView.findViewById(R.id.tvDialogDuration)
+            val tvDialogPrice: TextView = dialogView.findViewById(R.id.tvDialogPrice)
+            val tvNotAcceptedItems: TextView = dialogView.findViewById(R.id.tvNotAcceptedItems)
+            val cbTerms: CheckBox = dialogView.findViewById(R.id.cbTerms)
+            val btnBookInDialog: Button = dialogView.findViewById(R.id.btnBookInDialog)
+            val btnClose: ImageButton = dialogView.findViewById(R.id.btnClose)
+
+            // Set traveler details
+            tvDialogName.text = traveler.name
+            tvDialogRoute.text = "${traveler.destination}"
+            tvDialogAirline.text = "Airline: ${traveler.airline}"
+            tvDialogPnr.text = "PNR: ${traveler.pnr}"
+            tvDialogLeavingTime.text = "Departure: ${traveler.leavingTime}"
+            tvDialogArrivalTime.text = "Arrival: ${traveler.arrivalTime}"
+            tvDialogWeight.text = "Available Weight: ${traveler.weightUpto} kg"
+            tvDialogFlightNumber.text = "Flight: ${traveler.flightNumber}"
+            tvDialogDuration.text = "Duration: ${traveler.flightDuration}"
+            tvDialogPrice.text = "Price: ₹${traveler.price}"
+
+            // Set not accepted items
+            tvNotAcceptedItems.text = if (traveler.notAcceptedItems.isNotEmpty()) {
+                traveler.notAcceptedItems.joinToString(", ")
+            } else {
+                "None specified"
+            }
+
+            // Terms checkbox listener
+            cbTerms.setOnCheckedChangeListener { _, isChecked ->
+                btnBookInDialog.isEnabled = isChecked
+                btnBookInDialog.backgroundTintList = if (isChecked) {
+                    ContextCompat.getColorStateList(itemView.context, R.color.green_500)
+                } else {
+                    ContextCompat.getColorStateList(itemView.context, R.color.grey_500)
+                }
+            }
+
+            // Set initial state
+            btnBookInDialog.isEnabled = false
+            btnBookInDialog.backgroundTintList = ContextCompat.getColorStateList(itemView.context, R.color.grey_500)
+
+            val dialog = AlertDialog.Builder(itemView.context)
+                .setView(dialogView)
+                .create()
+
+            // Close button click
+            btnClose.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            // Book button click
+            btnBookInDialog.setOnClickListener {
+                dialog.dismiss()
+                traveler.bookingStatus = "pending"
+                notifyItemChanged(adapterPosition)
+                startPayment(traveler)
+                attachTravelerWithSender(traveler)
+                attachSenderWithTraveler(traveler)
+            }
+
+            dialog.show()
+        }
         private fun showConfirmationDialog(traveler: Traveler) {
             AlertDialog.Builder(itemView.context)
                 .setTitle("Confirm Booking")
