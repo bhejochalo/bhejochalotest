@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.crashlytics.buildtools)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -71,5 +72,14 @@ dependencies {
     implementation ("com.google.android.libraries.places:places:3.3.0")
 
     implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    
+
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0") // or latest
+
+    implementation ("com.squareup.okhttp3:okhttp:4.9.3")
+   // implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0'
+
+    implementation ("com.google.android.material:material:1.6.0")
+
+
+
 }

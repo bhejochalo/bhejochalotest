@@ -60,17 +60,37 @@ class SenderProfile : AppCompatActivity() {
     private fun displaySenderBookingDetails() {
         val tvStatus = findViewById<TextView>(R.id.bookingStatus)
         val document = Sender.senderRecord
-        if (document != null && document.exists()) {
-            // Extract data from Firestore document
-            val key = document.getString("uniqueKey") ?: ""
-            fetchTheCurrentSenderBorzoOrder(key, "Sender")
+        if (document?.exists() == true) {
+            var selfOrAuto = ""
+            val deliveryPrice = document.getLong("deliveryOptionPrice") ?: 0L
 
-            val status = "" // document.getString("status") ?: "N/A"
-            tvStatus.text = "Status: $status"
-            Log.d("SenderProfile", "Loaded booking details:  $status")
-        } else {
-            tvStatus.text = "No booking data found!"
-            Log.e("SenderProfile", "Sender document is null or doesn't exist")
+            if (deliveryPrice == 750L) {
+                selfOrAuto = "self"
+            } else {
+                selfOrAuto = "auto"
+
+            }
+
+
+            // only get the borzo delivery details on Auto pick drop
+            if (document != null && document.exists() && selfOrAuto == "auto") {
+                // Extract data from Firestore document
+                val key = document.getString("uniqueKey") ?: ""
+                fetchTheCurrentSenderBorzoOrder(key, "Sender")
+
+                val status = "" // document.getString("status") ?: "N/A"
+                tvStatus.text = "Status: $status"
+                Log.d("SenderProfile", "Loaded booking details:  $status")
+            } else {
+
+                if (selfOrAuto == "auto") {
+                    tvStatus.text = "No booking data found!"
+                } else {
+                    tvStatus.text = "Self Pick And Drop !"
+                }
+
+                Log.e("SenderProfile", "Sender document is null or doesn't exist")
+            }
         }
     }
 

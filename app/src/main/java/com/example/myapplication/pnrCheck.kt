@@ -100,6 +100,7 @@ class pnrCheck : AppCompatActivity() {
             val phone = sharedPref.getString("PHONE_NUMBER", "") ?: ""
 
             val userData = hashMapOf(
+                "pickAndDropMode" to null,
                 "phoneNumber" to phone,
                 "verified" to true,
                 "pnr" to pnr,
@@ -138,11 +139,15 @@ class pnrCheck : AppCompatActivity() {
                 .set(userData, SetOptions.merge())
                 .addOnSuccessListener {
                     Toast.makeText(this, "Data saved successfully!", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this, webviewPnr::class.java).apply {
+                 /*   val intent = Intent(this, webviewPnr::class.java).apply { // not required now because verifying pnr manually
                         putExtra("PNR", pnr)
                         putExtra("SURNAME", surname)
                         putExtra("AIRLINE", selectedAirline)
                     }
+                    startActivity(intent)*/
+                    val intent = Intent(this, TravelerProfile::class.java).apply {
+                    }
+                    // from the current traveler get the complete record from the DB.
                     startActivity(intent)
                 }
                 .addOnFailureListener { e ->
@@ -150,4 +155,5 @@ class pnrCheck : AppCompatActivity() {
                 }
         }
     }
+
 }

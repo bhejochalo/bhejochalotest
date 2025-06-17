@@ -53,6 +53,11 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
         val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
         private val btnMoreDetails: Button = itemView.findViewById(R.id.btnMoreDetails)
         private val db = FirebaseFirestore.getInstance()
+        val mode =sharedPref.getInt("SELECTED_PRICE", 0) ?: ""
+        //    val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+        //   val mode = sharedPref.getString("SELECTED_PRICE", "")
+
+
 
         private fun startPayment(traveler: Traveler) {
             val activity = itemView.context as? android.app.Activity ?: return
@@ -344,13 +349,28 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
 
             val uniqueKey = generateUniqueKey(senderPhoneNumber, traveler.phoneNumber, prefix = "TX_")
 
+            var modeOfPickAndDrop = ""
+
+            println("mode ===> $mode") // 750 means self, 1500 means auto
+
+            if(mode == 750){
+                modeOfPickAndDrop = "self"
+
+            }else{
+
+                modeOfPickAndDrop = "auto"
+            }
+
+
 
             println("uniqueKey ===> $uniqueKey")
 
             val updates = hashMapOf<String, Any>(
                 "SenderRequest" to true,
                 "uniqueKey" to uniqueKey,
-                "matchedAt" to System.currentTimeMillis()
+                "matchedAt" to System.currentTimeMillis(),
+                "pickAndDropMode" to modeOfPickAndDrop
+                //"mode" to "self" // for  self pickup & drop
 
             )
             // Query traveler document by phoneNumber // check how we can remove this query. need to remove this query
