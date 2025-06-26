@@ -10,6 +10,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class SenderDashboardActivity : AppCompatActivity() {
     private var senderPhoneNumber: String? = null
@@ -56,6 +60,15 @@ class SenderDashboardActivity : AppCompatActivity() {
         })
     }
     private fun loadTravelers() {
+        val senderFromLat = AddressHolder.fromLatitude ?: return
+        val senderFromLng = AddressHolder.fromLongitude ?: return
+
+        // Add validation for sender coordinates
+        if (senderFromLat == 0.0 || senderFromLng == 0.0) {
+            Log.e("InvalidCoords", "Sender coordinates are (0,0)")
+            return
+        }
+        Log.d("SenderCoords", "Sender Location: (${senderFromLat}, ${senderFromLng})")
        // val senderFromCity = AddressHolder.fromCity?.trim()?.lowercase()
        // val senderToCity = AddressHolder.toCity?.trim()?.lowercase()
         val senderToPincode = AddressHolder.toPostalCode?.trim()?.lowercase()
@@ -76,6 +89,13 @@ class SenderDashboardActivity : AppCompatActivity() {
                 lastVisibleDocument = querySnapshot.documents.lastOrNull()
 
                 for (doc in querySnapshot.documents) {
+                    val travelerLat = doc.getDouble("fromAddress.latitude") ?: 0.0
+                    val travelerLng = doc.getDouble("fromAddress.longitude") ?: 0.0
+                    Log.d("TravelerCoords", "Traveler ${doc.id}: (${travelerLat}, ${travelerLng})")
+                    val distance = calculateDistance(
+                        senderFromLat, senderFromLng,
+                        travelerLat, travelerLng
+                    )
                   //  val from = doc.get("fromAddress") as? Map<*, *>
                  //   val to = doc.get("toAddress") as? Map<*, *>
 
@@ -131,7 +151,8 @@ class SenderDashboardActivity : AppCompatActivity() {
                                 arrivalTime = arrivalTime,
                                 flightDuration = flightDuration,
                                 price = price,
-                                notAcceptedItems = notAcceptedItems
+                                notAcceptedItems = notAcceptedItems,
+                                distance = distance
                             )
                         )
                     }
@@ -142,6 +163,20 @@ class SenderDashboardActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Log.e("FirestoreError", "Error loading travelers: ${e.message}")
             }
+    }
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val earthRadius = 6371 // Earth's radius in km
+
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return earthRadius * c
     }
     private fun loadMoreTravelers() {
         val senderToPincode = AddressHolder.toPostalCode?.trim()?.lowercase()

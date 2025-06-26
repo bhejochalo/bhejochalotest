@@ -24,6 +24,7 @@ import android.content.SharedPreferences
 import android.widget.CheckBox
 import android.widget.ImageButton
 import java.security.MessageDigest
+import android.location.Location
 
 class TravelerAdapter(private val travelers: MutableList<Traveler>, private val selectedPrice: Int) :
     RecyclerView.Adapter<TravelerAdapter.TravelerViewHolder>() {
@@ -53,11 +54,10 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
         val senderPhoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
         private val btnMoreDetails: Button = itemView.findViewById(R.id.btnMoreDetails)
         private val db = FirebaseFirestore.getInstance()
+        private val tvDistance: TextView = itemView.findViewById(R.id.tvDistance)
         val mode =sharedPref.getInt("SELECTED_PRICE", 0) ?: ""
         //    val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         //   val mode = sharedPref.getString("SELECTED_PRICE", "")
-
-
 
         private fun startPayment(traveler: Traveler) {
             val activity = itemView.context as? android.app.Activity ?: return
@@ -94,7 +94,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
             tvPnr.text = "PNR: ${traveler.pnr}"
             tvLeavingTime.text = "Leaving Time: ${traveler.leavingTime}"
             tvWeightUpto.text = "Weight Upto: ${traveler.weightUpto} kg"
-
+            tvDistance.text = "%.1f km".format(traveler.distance)
             when (traveler.bookingStatus) {
                 "available" -> {
                     btnBook.text = "Book"
