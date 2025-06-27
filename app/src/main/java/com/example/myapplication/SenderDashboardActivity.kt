@@ -62,6 +62,8 @@ class SenderDashboardActivity : AppCompatActivity() {
     private fun loadTravelers() {
         val senderFromLat = AddressHolder.fromLatitude ?: return
         val senderFromLng = AddressHolder.fromLongitude ?: return
+        val senderToLat = AddressHolder.toLatitude ?: return
+        val senderToLng = AddressHolder.toLongitude ?: return
 
         // Add validation for sender coordinates
         if (senderFromLat == 0.0 || senderFromLng == 0.0) {
@@ -91,11 +93,14 @@ class SenderDashboardActivity : AppCompatActivity() {
                 for (doc in querySnapshot.documents) {
                     val travelerLat = doc.getDouble("fromAddress.latitude") ?: 0.0
                     val travelerLng = doc.getDouble("fromAddress.longitude") ?: 0.0
+                    val travelerToLat = doc.getDouble("toAddress.latitude") ?: 0.0
+                    val travelerToLng = doc.getDouble("toAddress.longitude") ?: 0.0
                     Log.d("TravelerCoords", "Traveler ${doc.id}: (${travelerLat}, ${travelerLng})")
                     val distance = calculateDistance(
                         senderFromLat, senderFromLng,
                         travelerLat, travelerLng
                     )
+                    val todistance = calculateDistance(senderToLat, senderToLng, travelerToLat, travelerToLng)
                   //  val from = doc.get("fromAddress") as? Map<*, *>
                  //   val to = doc.get("toAddress") as? Map<*, *>
 
@@ -152,7 +157,8 @@ class SenderDashboardActivity : AppCompatActivity() {
                                 flightDuration = flightDuration,
                                 price = price,
                                 notAcceptedItems = notAcceptedItems,
-                                distance = distance
+                                distance = distance,
+                                todistance = todistance
                             )
                         )
                     }

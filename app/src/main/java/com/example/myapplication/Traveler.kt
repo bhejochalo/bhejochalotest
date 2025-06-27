@@ -17,5 +17,6 @@ data class Traveler(
     val flightDuration: String? = null, // Add this
     val price: Int = 0, // Add this
     val notAcceptedItems: List<String> = emptyList(),
-    val distance: Double = 0.0
+    val distance: Double = 0.0,
+    val todistance: Double = 0.0
 )

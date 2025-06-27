@@ -13,6 +13,7 @@
         android:layout_height="wrap_content"
         android:padding="16dp"
         android:orientation="vertical">
+
         <TextView
             android:id="@+id/tvDistance"
             android:layout_width="wrap_content"
@@ -23,7 +24,19 @@
             android:text="5.2 km"
             android:textColor="@color/black"
             android:textSize="12sp" />
+
         <!-- Traveler Name -->
+        <TextView
+            android:id="@+id/tvToDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="9.2 km"
+            android:textColor="@color/black"
+            android:textSize="12sp" />
+
         <TextView
             android:id="@+id/tvTravelerName"
             android:layout_width="wrap_content"
@@ -74,6 +87,7 @@
             android:paddingTop="2dp" />
 
         <!-- Weight Upto -->
+
         <TextView
             android:id="@+id/tvWeightUpto"
             android:layout_width="wrap_content"
