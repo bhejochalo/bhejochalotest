@@ -6,121 +6,191 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="6dp">
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#FAFAFA">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:orientation="vertical">
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvDistance"
+        <!-- Distance Badges (Top Right) - More visible -->
+        <LinearLayout
+            android:id="@+id/distanceContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_marginEnd="8dp"
-            android:layout_marginTop="8dp"
-            android:text="5.2 km"
-            android:textColor="@color/black"
-            android:textSize="12sp" />
+            android:orientation="vertical"
+            android:gravity="end"
+            android:background="@drawable/distance_container_bg"
+            android:padding="8dp">
 
-        <!-- Traveler Name -->
-        <TextView
-            android:id="@+id/tvToDistance"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:text="9.2 km"
-            android:textColor="@color/black"
-            android:textSize="12sp" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
 
-        <TextView
-            android:id="@+id/tvTravelerName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Rahul Sharma"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/black" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="From:"
+                    android:textColor="#5D5D5D"
+                    android:textSize="12sp"
+                    android:layout_marginEnd="4dp"
+                    android:textStyle="bold"/>
 
-        <!-- Airline -->
-        <TextView
-            android:id="@+id/tvAirline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Airline: IndiGo"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:paddingTop="4dp" />
+                <TextView
+                    android:id="@+id/tvDistance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5.2 km"
+                    android:background="@drawable/distance_badge_visible"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"/>
+            </LinearLayout>
 
-        <!-- Destination -->
-        <TextView
-            android:id="@+id/tvDestination"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="To: Mumbai"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:paddingTop="2dp" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-        <!-- PNR -->
-        <TextView
-            android:id="@+id/tvPnr"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="PNR: ABC123"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:paddingTop="2dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="To:"
+                    android:textColor="#5D5D5D"
+                    android:textSize="12sp"
+                    android:layout_marginEnd="4dp"
+                    android:textStyle="bold"/>
 
-        <!-- Leaving Time -->
-        <TextView
-            android:id="@+id/tvLeavingTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Leaving Time: 10:30 AM"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:paddingTop="2dp" />
+                <TextView
+                    android:id="@+id/tvToDistance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="9.2 km"
+                    android:background="@drawable/distance_badge_visible"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
 
-        <!-- Weight Upto -->
-
-        <TextView
-            android:id="@+id/tvWeightUpto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Weight Upto: 20 kg"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:paddingTop="2dp" />
-
-        <!-- Buttons Row -->
+        <!-- Traveler Info -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end"
-            android:layout_marginTop="12dp">
+            android:orientation="vertical"
+            android:layout_below="@id/distanceContainer"
+            android:layout_marginTop="16dp">
 
-            <Button
-                android:id="@+id/btnMoreDetails"
-                android:layout_width="wrap_content"
+            <!-- Traveler Name -->
+            <TextView
+                android:id="@+id/tvTravelerName"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="More Details"
-                android:layout_marginEnd="8dp"
-                android:textColor="@android:color/white"/>
+                android:text="Rahul Sharma"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#333333" />
 
-            <Button
-                android:id="@+id/btnBook"
-                android:layout_width="wrap_content"
+            <!-- Details Container -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Book"
-                android:backgroundTint="@color/green_500"
-                android:textColor="@android:color/white"/>
+                android:orientation="vertical"
+                android:layout_marginTop="12dp"
+                android:padding="12dp"
+                android:background="@drawable/details_bg_visible">
+
+                <!-- Airline -->
+                <TextView
+                    android:id="@+id/tvAirline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✈ Airline: IndiGo"
+                    android:textSize="14sp"
+                    android:textColor="#424242" />
+
+                <!-- Destination -->
+                <TextView
+                    android:id="@+id/tvDestination"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍 Destination: Mumbai"
+                    android:textSize="14sp"
+                    android:textColor="#424242"
+                    android:layout_marginTop="8dp" />
+
+                <!-- PNR -->
+                <TextView
+                    android:id="@+id/tvPnr"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📄 PNR: ABC123"
+                    android:textSize="14sp"
+                    android:textColor="#424242"
+                    android:layout_marginTop="8dp" />
+
+                <!-- Leaving Time -->
+                <TextView
+                    android:id="@+id/tvLeavingTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🕒 Departure: 10:30 AM"
+                    android:textSize="14sp"
+                    android:textColor="#424242"
+                    android:layout_marginTop="8dp" />
+
+                <!-- Weight Upto -->
+                <TextView
+                    android:id="@+id/tvWeightUpto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚖ Weight Allowance: 20 kg"
+                    android:textSize="14sp"
+                    android:textColor="#424242"
+                    android:layout_marginTop="8dp" />
+            </LinearLayout>
+
+            <!-- Buttons Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="16dp">
+
+                <Button
+                    android:id="@+id/btnMoreDetails"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="DETAILS"
+                    android:backgroundTint="#E0E0E0"
+                    android:textColor="#424242"
+                    android:textAllCaps="false"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:paddingHorizontal="16dp"
+                    android:textSize="12sp"/>
+
+                <Button
+                    android:id="@+id/btnBook"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="BOOK NOW"
+                    android:backgroundTint="#4285F4"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:paddingHorizontal="16dp"
+                    android:textSize="12sp"/>
+            </LinearLayout>
         </LinearLayout>
-
-    </LinearLayout>
+    </RelativeLayout>
 </androidx.cardview.widget.CardView>
