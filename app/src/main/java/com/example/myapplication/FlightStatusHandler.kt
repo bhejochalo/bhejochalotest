@@ -11,7 +11,9 @@ class FlightStatusHandler(private val apiKey: String) {
             val arrivalTime: String,
             val delay: Int,
             val departureAirport: String,
-            val arrivalAirport: String
+            val arrivalAirport: String,
+            val departureAirportCode: String,
+            val arrivalAirportCode: String
         ) : FlightStatusResult() {
             fun isDelayed() = delay > 0
         }
@@ -53,6 +55,9 @@ class FlightStatusHandler(private val apiKey: String) {
             val delay = departure.optInt("delay", 0)
             val departureAirport = departure.getString("airport")
             val arrivalAirport = arrival.getString("airport")
+            val departureAirportCode = departure.getString("iata")
+            val arrivalAirportCode = arrival.getString("iata")
+
 
             FlightStatusResult.Success(
                 status = flightStatus,
@@ -60,7 +65,9 @@ class FlightStatusHandler(private val apiKey: String) {
                 arrivalTime = arrivalTime,
                 delay = delay,
                 departureAirport = departureAirport,
-                arrivalAirport = arrivalAirport
+                arrivalAirport = arrivalAirport,
+                departureAirportCode = departureAirportCode,
+                arrivalAirportCode = arrivalAirportCode
             )
         } catch (e: Exception) {
             e.printStackTrace()

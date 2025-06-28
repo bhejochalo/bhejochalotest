@@ -15,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Horizontal Flight Info Section -->
+        <!-- Flight Info Section -->
         <LinearLayout
             android:id="@+id/flightInfoRow"
             android:layout_width="0dp"
@@ -41,6 +41,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvFromCode"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="[DEL]"
@@ -49,6 +50,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvFromCity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="New Delhi"
@@ -56,6 +58,7 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/tvFromTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="16:00, 16 June 2025"
@@ -89,6 +92,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvToCode"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="[BOM]"
@@ -97,6 +101,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvToCity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Mumbai"
@@ -104,6 +109,7 @@
                     android:textSize="14sp" />
 
                 <TextView
+                    android:id="@+id/tvToTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="18:20, 16 June 2025"
@@ -112,7 +118,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Flight Status Text -->
+        <!-- Flight Status -->
         <TextView
             android:id="@+id/tvFlightStatus"
             android:layout_width="0dp"
@@ -126,6 +132,397 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="8dp"/>
 
+        <!-- Delay Info -->
+        <TextView
+            android:id="@+id/tvDelay"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="#FF5722"
+            android:textSize="14sp"
+            android:textStyle="normal"
+            app:layout_constraintTop_toBottomOf="@id/tvFlightStatus"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="4dp"/>
+
+        <!-- Flight Details Section - Display Mode -->
+        <LinearLayout
+            android:id="@+id/flightDetailsDisplay"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@id/tvDelay"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Flight Details"
+                    android:textColor="#F25C05"
+                    android:textSize="18sp"
+                    android:textStyle="bold"/>
+
+                <Button
+                    android:id="@+id/btnEditFlightDetails"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Edit"
+                    android:layout_marginStart="16dp"
+                    android:backgroundTint="#F25C05"
+                    android:textColor="@android:color/white"/>
+            </LinearLayout>
+
+            <!-- Details Content -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp"
+                android:padding="8dp"
+                android:background="#F9F9F9"
+                android:paddingBottom="16dp">
+
+                <!-- Airline -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Airline:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvAirline"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="IndiGo"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+
+                <!-- Last Name -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Last Name:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvLastName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Smith"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+
+                <!-- Leaving Date -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Leaving Date:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvLeavingDate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="16 June 2025"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+
+                <!-- Leaving Time -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Leaving Time:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvLeavingTime"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="16:00"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+
+                <!-- Phone Number -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Phone:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvPhoneNumber"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="+91 9876543210"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+
+                <!-- PNR -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="PNR:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvPnr"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="ABC123"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Space Availabe In:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvsAIn"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="cabin luggage"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+                <!-- Weight Allowance -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Weight Allowance:"
+                        android:textColor="#444444"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:id="@+id/tvWeightUpto"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="15 kg"
+                        android:textColor="#000000"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Flight Details Section - Edit Mode -->
+        <LinearLayout
+            android:id="@+id/flightDetailsEdit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@id/tvDelay"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Flight Details"
+                android:textColor="#F25C05"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <!-- Edit Fields -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Airline">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etAirline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Last Name">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etLastName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Leaving Date">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etLeavingDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Leaving Time">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etLeavingTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Phone Number">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPhoneNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="phone"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="PNR">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPnr"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Weight Allowance (kg)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etWeightUpto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:gravity="end">
+
+                <Button
+                    android:id="@+id/btnCancelEdit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancel"
+                    android:backgroundTint="#9E9E9E"
+                    android:textColor="@android:color/white"/>
+
+                <Button
+                    android:id="@+id/btnSaveFlightDetails"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Save"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="#F25C05"
+                    android:textColor="@android:color/white"/>
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- From Address Section -->
         <LinearLayout
             android:id="@+id/fromAddressHeader"
@@ -133,7 +530,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            app:layout_constraintTop_toBottomOf="@id/tvFlightStatus"
+            app:layout_constraintTop_toBottomOf="@id/flightDetailsDisplay"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="16dp">
@@ -161,7 +558,7 @@
             android:id="@+id/tvFromAddress"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Ettit\nFursumpi Bheker"
+            android:text="123 Main Street\nNew Delhi, India"
             android:textColor="#444444"
             android:textSize="16sp"
             app:layout_constraintTop_toBottomOf="@id/fromAddressHeader"
@@ -204,7 +601,7 @@
             android:id="@+id/tvToAddress"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Ettit\ngard"
+            android:text="456 Marine Drive\nMumbai, India"
             android:textColor="#444444"
             android:textSize="16sp"
             app:layout_constraintTop_toBottomOf="@id/toAddressHeader"

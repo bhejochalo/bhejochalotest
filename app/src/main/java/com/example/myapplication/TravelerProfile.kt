@@ -1,7 +1,11 @@
 package com.example.myapplication
 
 import FlightStatusHandler
+import android.app.DatePickerDialog
+import android.app.Dialog
+import android.app.TimePickerDialog
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.provider.SyncStateContract.Helpers.update
 import android.util.Log
@@ -32,14 +36,19 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import com.example.myapplication.BorzoOrderHelper
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestoreException
-
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.ZoneId
+import java.util.Calendar
 
 class TravelerProfile : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
@@ -58,7 +67,11 @@ class TravelerProfile : AppCompatActivity() {
     private var state_Sender = "";
     private var isFirstMile = false;
     //private var uniqueKey = "";
+
     private lateinit var borzoHelper: BorzoOrderHelper
+    private val apiFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
+    private val displayFormatter = DateTimeFormatter.ofPattern("h:mm a, dd MMM yyyy", Locale.getDefault())
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -874,89 +887,412 @@ class TravelerProfile : AppCompatActivity() {
 
 
    }
-
     private fun fetchFlightDetails(document: DocumentSnapshot) {
-        // Get verified status (assuming it's a boolean field named "pnrVerified")
-        val verified = document.getBoolean("pnrVerified") ?: false
+        try {
+            // Create flight data map with proper types
+            val flightData = hashMapOf<String, Any>(
+                "pnrVerified" to (document.getBoolean("verified") ?: false),
+                "pnr" to (document.getString("pnr") ?: ""),
+                "flightNumber" to (document.getString("flightNumber") ?: ""),
+                "airline" to (document.getString("airline") ?: ""),
+                "lastName" to (document.getString("lastName") ?: ""),
+                "phoneNumber" to (document.getString("phoneNumber") ?: ""),
+                "weightUpto" to (document.getString("weightUpto") ?: ""),
+                "spaceAvailableIn" to (document.getString("spaceAvailableIn") ?: ""),
+                "documentId" to document.id,
+                // Add separate date and time fields
+                "leavingDate" to (document.getString("leavingDate") ?: ""),
+                "leavingTime" to (document.getString("leavingTime") ?: "")
+            )
 
-        // Get PNR number (assuming it's a string field named "pnr")
-        val pnr = document.getString("pnr") ?: ""
+            // Maintain backward compatibility with departureTime
+            document.getString("departureTime")?.let {
+                flightData["departureTime"] = it
+                // Parse into separate fields if needed
+                if (flightData["leavingDate"].toString().isEmpty()) {
+                    flightData["leavingDate"] = formatDate(it)
+                }
+                if (flightData["leavingTime"].toString().isEmpty()) {
+                    flightData["leavingTime"] = formatTime(it)
+                }
+            }
 
-        // Get flight number (assuming it's a string field named "flightNumber")
-        val flightNumber = document.getString("flightNumber") ?: ""
+            // Update UI on main thread
+            runOnUiThread {
+                try {
+                    flightData["airline"]?.let { findViewById<TextView>(R.id.tvAirline)?.text = it.toString() }
+                    flightData["lastName"]?.let { findViewById<TextView>(R.id.tvLastName)?.text = it.toString() }
+                    // Use separate date and time fields
+                    flightData["leavingDate"]?.let {
+                        findViewById<TextView>(R.id.tvLeavingDate)?.text = it.toString()
+                    }
+                    flightData["leavingTime"]?.let {
+                        findViewById<TextView>(R.id.tvLeavingTime)?.text = it.toString()
+                    }
+                    flightData["phoneNumber"]?.let { findViewById<TextView>(R.id.tvPhoneNumber)?.text = it.toString() }
+                    flightData["pnr"]?.let { findViewById<TextView>(R.id.tvPnr)?.text = it.toString() }
+                    flightData["weightUpto"]?.let { findViewById<TextView>(R.id.tvWeightUpto)?.text = "$it kg" }
 
-        // Get airline (assuming it's a string field named "airline")
-        val airline = document.getString("airline") ?: ""
+                    flightData["spaceAvailableIn"]?.let { findViewById<TextView>(R.id.tvsAIn)?.text = it.toString() }
 
-        // Get arrival time (could be Timestamp or String - adjust accordingly)
-        val arrivalTime = document.getString("arrivalTime")?:""
-        // or if it's stored as string:
-        // val arrivalTime = document.getString("arrivalTime") ?: ""
+                    // Set up edit button with dialog
+                    setupFlightDetailsEditDialog(flightData)
+                } catch (e: Exception) {
+                    Log.e("FlightDetails", "UI update error", e)
+                    showToast("Error displaying flight details")
+                }
+            }
 
-        // Get departure time (could be Timestamp or String - adjust accordingly)
-        val departureTime = document.getString("departureTime")?:""
-        // or if it's stored as string:
-        // val departureTime = document.getString("departureTime") ?: ""
+            // Fetch flight status if available
+            (flightData["flightNumber"] as? String)?.takeIf { it.isNotEmpty() }?.let { flightNumber ->
+                fetchFlightStatus(flightNumber)
+            }
 
-        val comments = document.getString("comments")?:""
-
-        // Now you can use these values as needed
-        // For example:
-        println("Verified: $verified")
-        println("PNR: $pnr")
-        println("Flight Number: $flightNumber")
-        println("Airline: $airline")
-        println("Arrival Time: $arrivalTime")
-        println("Departure Time: $departureTime")
-        println("comments: $comments")
-
-        // If you need to fetch flight status with the flight number
-        if (flightNumber.isNotEmpty()) {
-            fetchFlightStatus(flightNumber)
+        } catch (e: Exception) {
+            Log.e("FlightDetails", "Error fetching document", e)
+            showToast("Error loading flight details")
         }
     }
+
+    private fun setupFlightDetailsEditDialog(flightData: Map<String, Any>) {
+        findViewById<Button>(R.id.btnEditFlightDetails)?.setOnClickListener {
+            showEditFlightDetailsDialog(flightData)
+        }
+    }
+
+    private fun showEditFlightDetailsDialog(flightData: Map<String, Any>) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_flight_details, null)
+
+        // Initialize dialog views
+        val etAirline = dialogView.findViewById<TextInputEditText>(R.id.etAirline)
+        val etLastName = dialogView.findViewById<TextInputEditText>(R.id.etLastName)
+        val etLeavingDate = dialogView.findViewById<TextInputEditText>(R.id.etLeavingDate)
+        val etLeavingTime = dialogView.findViewById<TextInputEditText>(R.id.etLeavingTime)
+        val etPhoneNumber = dialogView.findViewById<TextInputEditText>(R.id.etPhoneNumber)
+        val etPnr = dialogView.findViewById<TextInputEditText>(R.id.etPnr)
+        val etWeightUpto = dialogView.findViewById<TextInputEditText>(R.id.etWeightUpto)
+        val etspaceAvailableIn = dialogView.findViewById<TextInputEditText>(R.id.etspaceAvailableIn)
+        // Set current values
+        etAirline.setText(flightData["airline"].toString())
+        etLastName.setText(flightData["lastName"].toString())
+        // Use separate date and time fields
+        etLeavingDate.setText(flightData["leavingDate"].toString())
+        etLeavingTime.setText(flightData["leavingTime"].toString())
+        etPhoneNumber.setText(flightData["phoneNumber"].toString())
+        etPnr.setText(flightData["pnr"].toString())
+        etWeightUpto.setText(flightData["weightUpto"].toString())
+        etspaceAvailableIn.setText(flightData["spaceAvailableIn"].toString())
+        // Setup date picker (keep existing implementation)
+        etLeavingDate.setOnClickListener {
+            showDatePickerDialog(etLeavingDate)
+        }
+
+        // Setup time picker (keep existing implementation)
+        etLeavingTime.setOnClickListener {
+            showTimePickerDialog(etLeavingTime)
+        }
+
+        // Create and show dialog
+        val dialog = Dialog(this).apply {
+            setContentView(dialogView)
+            window?.setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT
+            )
+            setCancelable(true)
+        }
+
+        // Set up button click listeners
+        dialogView.findViewById<Button>(R.id.btnCancelEdit).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<Button>(R.id.btnSaveFlightDetails).setOnClickListener {
+            try {
+                val updates = hashMapOf<String, Any>(
+                    "airline" to etAirline.text.toString(),
+                    "lastName" to etLastName.text.toString(),
+                    "phoneNumber" to etPhoneNumber.text.toString(),
+                    "pnr" to etPnr.text.toString(),
+                    "weightUpto" to etWeightUpto.text.toString(),
+                    // Store separate date and time
+                    "leavingDate" to etLeavingDate.text.toString(),
+                    "leavingTime" to etLeavingTime.text.toString(),
+                    "spaceAvailableIn" to etspaceAvailableIn.text.toString()
+                )
+
+                // Maintain backward compatibility with departureTime
+                if (etLeavingDate.text?.isNotEmpty() == true && etLeavingTime.text?.isNotEmpty() == true) {
+                    updates["departureTime"] = combineDateTime(
+                        etLeavingDate.text.toString(),
+                        etLeavingTime.text.toString()
+                    )
+                }
+
+                if (validateFlightDetails(updates)) {
+                    updateFlightDetailsInFirestore(flightData["documentId"].toString(), updates) { success ->
+                        if (success) {
+                            runOnUiThread {
+                                // Update UI with new values
+                                updates["airline"]?.let { findViewById<TextView>(R.id.tvAirline)?.text = it.toString() }
+                                updates["lastName"]?.let { findViewById<TextView>(R.id.tvLastName)?.text = it.toString() }
+                                updates["phoneNumber"]?.let { findViewById<TextView>(R.id.tvPhoneNumber)?.text = it.toString() }
+                                updates["pnr"]?.let { findViewById<TextView>(R.id.tvPnr)?.text = it.toString() }
+                                updates["weightUpto"]?.let { findViewById<TextView>(R.id.tvWeightUpto)?.text = "$it kg" }
+                                // Update separate date/time fields
+                                updates["leavingDate"]?.let {
+                                    findViewById<TextView>(R.id.tvLeavingDate)?.text = it.toString()
+                                }
+                                updates["leavingTime"]?.let {
+                                    findViewById<TextView>(R.id.tvLeavingTime)?.text = it.toString()
+                                }
+                                updates["spaceAvailabelIn"]?.let { findViewById<TextView>(R.id.tvsAIn)?.text = it.toString() }
+
+                                showToast("Details updated successfully")
+                                dialog.dismiss()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FlightDetails", "Error saving flight details", e)
+                showToast("Error saving details: ${e.message}")
+            }
+        }
+
+        dialog.show()
+    }
+    private fun showDatePickerDialog(editText: TextInputEditText) {
+        val calendar = Calendar.getInstance()
+        DatePickerDialog(
+            this,
+            { _, year, month, day ->
+                val selectedDate = "${day}/${month + 1}/${year}"
+                editText.setText(selectedDate)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun showTimePickerDialog(editText: TextInputEditText) {
+        val calendar = Calendar.getInstance()
+        TimePickerDialog(
+            this,
+            { _, hour, minute ->
+                val selectedTime = String.format("%02d:%02d", hour, minute)
+                editText.setText(selectedTime)
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true
+        ).show()
+    }
+
+    private fun combineDateTime(dateStr: String, timeStr: String): String {
+        try {
+            // Parse the date (assuming format dd/MM/yyyy)
+            val dateParts = dateStr.split("/")
+            val day = dateParts[0].toInt()
+            val month = dateParts[1].toInt() - 1 // Calendar months are 0-based
+            val year = dateParts[2].toInt()
+
+            // Parse the time (assuming format HH:mm)
+            val timeParts = timeStr.split(":")
+            val hour = timeParts[0].toInt()
+            val minute = timeParts[1].toInt()
+
+            // Create ZonedDateTime with system timezone
+            val zonedDateTime = ZonedDateTime.of(
+                year, month, day, hour, minute, 0, 0,
+                ZoneId.systemDefault()
+            )
+
+            // Format as ISO string
+            return zonedDateTime.format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+        } catch (e: Exception) {
+            Log.e("DateTime", "Error combining date and time", e)
+            throw IllegalArgumentException("Invalid date or time format")
+        }
+    }
+
+    private fun validateFlightDetails(data: Map<String, Any>): Boolean {
+        return when {
+            data["airline"].toString().isEmpty() -> {
+                showToast("Airline cannot be empty")
+                false
+            }
+            data["lastName"].toString().isEmpty() -> {
+                showToast("Last name cannot be empty")
+                false
+            }
+            data["phoneNumber"].toString().isEmpty() -> {
+                showToast("Phone number cannot be empty")
+                false
+            }
+            data["weightUpto"].toString().toIntOrNull() ?: 0 <= 0 -> {
+                showToast("Weight must be greater than 0")
+                false
+            }
+            data["leavingDate"].toString().isEmpty() -> {
+                showToast("Please select a leaving date")
+                false
+            }
+            data["leavingTime"].toString().isEmpty() -> {
+                showToast("Please select a leaving time")
+                false
+            }
+            else -> true
+        }
+    }
+
+    private fun isValidFlightData(data: Map<String, Any>): Boolean {
+        return when {
+            data["airline"].toString().isEmpty() -> {
+                showToast("Airline cannot be empty")
+                false
+            }
+            data["lastName"].toString().isEmpty() -> {
+                showToast("Last name cannot be empty")
+                false
+            }
+            data["phoneNumber"].toString().isEmpty() -> {
+                showToast("Phone number cannot be empty")
+                false
+            }
+            (data["weightUpto"] as Long) <= 0 -> {
+                showToast("Weight must be greater than 0")
+                false
+            }
+            else -> true
+        }
+    }
+
+    private fun updateFlightDetailsInFirestore(
+        documentId: String,
+        updates: Map<String, Any>,
+        callback: (Boolean) -> Unit = {}
+    ) {
+        if (documentId.isEmpty()) {
+            Log.e("Firestore", "Document ID is empty")
+            callback(false)
+            return
+        }
+
+        FirebaseFirestore.getInstance()
+            .collection("traveler")
+            .document(documentId)
+            .update(updates)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Document updated successfully")
+                callback(true)
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error updating document", e)
+                showToast("Failed to update details")
+                callback(false)
+            }
+    }
+
+    private fun showToast(message: String) {
+        runOnUiThread {
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Helper extension functions
+    fun String?.orEmpty(): String = this ?: ""
+    // Date/Time formatting helpers
+    private fun formatDate(isoTime: String): String {
+        return try {
+            if (isoTime.isNotEmpty()) {
+                ZonedDateTime.parse(isoTime, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+                    .format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+            } else "N/A"
+        } catch (e: Exception) {
+            Log.e("DateFormat", "Error formatting date", e)
+            "N/A"
+        }
+    }
+
+    private fun formatTime(isoTime: String): String {
+        return try {
+            if (isoTime.isNotEmpty()) {
+                ZonedDateTime.parse(isoTime, DateTimeFormatter.ISO_ZONED_DATE_TIME)
+                    .format(DateTimeFormatter.ofPattern("HH:mm"))
+            } else "N/A"
+        } catch (e: Exception) {
+            Log.e("DateFormat", "Error formatting time", e)
+            "N/A"
+        }
+    }
+
+
     private fun fetchFlightStatus(flightNumber: String) {
-        val apiKey = "d39af3ab5bee86108417afdcf52134cb" // replace with your key
-        val handler = FlightStatusHandler(apiKey)
+        val handler = FlightStatusHandler("d39af3ab5bee86108417afdcf52134cb")
+
+        // Get all UI references once
+        val tvFromCode = findViewById<TextView>(R.id.tvFromCode)
+        val tvFromCity = findViewById<TextView>(R.id.tvFromCity)
+        val tvFromTime = findViewById<TextView>(R.id.tvFromTime)
+        val tvToCode = findViewById<TextView>(R.id.tvToCode)
+        val tvToCity = findViewById<TextView>(R.id.tvToCity)
+        val tvToTime = findViewById<TextView>(R.id.tvToTime)
+        val tvFlightStatus = findViewById<TextView>(R.id.tvFlightStatus)
+        val tvDelay = findViewById<TextView>(R.id.tvDelay)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 when (val result = handler.getFlightStatus(flightNumber)) {
                     is FlightStatusHandler.FlightStatusResult.Success -> {
-                        val status = result.status
-                        val departureTime = result.departureTime
-                        val arrivalTime = result.arrivalTime
-                        val delay = result.delay
-
-                        // Switch to Main Thread for UI/logging
                         withContext(Dispatchers.Main) {
-                            println("Flight Status: $status")
-                            println("Departure Time: $departureTime")
-                            println("Arrival Time: $arrivalTime")
-                            println("Delay: ${delay} minutes")
+                            // 1. Set airport codes and names
+                            tvFromCode.text = "[${result.departureAirportCode}]"
+                            tvFromCity.text = result.departureAirport
+                            tvToCode.text = "[${result.arrivalAirportCode}]"
+                            tvToCity.text = result.arrivalAirport
 
-                            println("\nFlight Summary:")
-                            println("${flightNumber} is currently ${status.uppercase()}")
-                            println("${if (result.isDelayed()) "Delayed by" else "On time"} $delay minutes")
-                            println("Departing: $departureTime from ${result.departureAirport}")
-                            println("Arriving: $arrivalTime at ${result.arrivalAirport}")
+
+
+                            tvFromTime.text = formatFlightTime(result.departureTime) // "10:53 PM, 17 Jun 2025"
+                            tvToTime.text = formatFlightTime(result.arrivalTime)
+
+                            // 3. Set status and delay
+                            /*val statusText = when {
+                                result.delay > 0 -> "Delayed (${result.delay} mins)"
+                                else -> "On Time"
+                            }*/
+                            tvFlightStatus.text ="Status  : ${result.status}"
+                            tvFlightStatus.setTextColor(if (result.delay > 0) Color.RED else Color.GREEN)
+
+                            tvDelay.text = if (result.delay > 0) "⚠️ Delayed by ${result.delay} minutes" else ""
                         }
                     }
-
                     is FlightStatusHandler.FlightStatusResult.Error -> {
                         withContext(Dispatchers.Main) {
-                            println("Error fetching flight status: ${result.message}")
+                            tvFlightStatus.text = "Error: ${result.message}"
+                            tvFlightStatus.setTextColor(Color.RED)
                         }
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    println("Unexpected exception: ${e.localizedMessage}")
+                    tvFlightStatus.text = "Error: ${e.message}"
+                    tvFlightStatus.setTextColor(Color.RED)
                 }
             }
         }
     }
 
+    private fun formatFlightTime(isoTime: String): String {
+        return try {
+            ZonedDateTime.parse(isoTime, apiFormatter)
+                .format(displayFormatter)
+        } catch (e: Exception) {
+            "Time not available" // Fallback text
+        }
+    }
 
 
 }
