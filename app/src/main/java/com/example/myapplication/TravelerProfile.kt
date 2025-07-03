@@ -5,7 +5,10 @@ import android.app.DatePickerDialog
 import android.app.Dialog
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
+import android.graphics.Paint
+import android.net.Uri
 import android.os.Bundle
 import android.provider.SyncStateContract.Helpers.update
 import android.util.Log
@@ -24,6 +27,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore // Assuming you're using Firestore
+import android.widget.ScrollView
+
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -47,8 +52,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
 import java.time.ZoneId
 import java.util.Calendar
+import java.util.TimeZone
 
 class TravelerProfile : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
@@ -81,6 +88,12 @@ class TravelerProfile : AppCompatActivity() {
         setContentView(R.layout.activity_traveler_profile)
         enableEdgeToEdge()
             borzoHelper = BorzoOrderHelper(this)
+
+        var key = intent.getStringExtra("KEY") ?: ""
+        key?.let { nonNullKey ->
+            setupBookingTabs(nonNullKey)
+        }
+
 
         // Set up window insets
         // Use the root view of your layout instead of R.id.main
@@ -156,7 +169,6 @@ class TravelerProfile : AppCompatActivity() {
                         }
                     }
 
-                    // Rest of your existing code...
                     firstMileAddressTraveler(document)
 
                     val uniqueKey = document.getString("uniqueKey") ?: ""
@@ -169,9 +181,11 @@ class TravelerProfile : AppCompatActivity() {
                         if (modofpickDrop == "self") {
                             fetchTheAcceptedOrder_SelfPicknDrop()
                             fetchFlightDetails(document)
+                            loadSenderDetails(uniqueKey); // need to add the condition if taveler has any active sender
                         } else {
                             fetchTheAcceptedOrder(uniqueKey)
                             fetchFlightDetails(document)
+                            loadSenderDetails(uniqueKey); // need to add the condition if taveler has any active sender
                         }
                     }
 
@@ -889,7 +903,7 @@ class TravelerProfile : AppCompatActivity() {
    }
     private fun fetchFlightDetails(document: DocumentSnapshot) {
         try {
-            // Create flight data map with proper types
+            // Create flight data map with proper types, in doc - traveler data
             val flightData = hashMapOf<String, Any>(
                 "pnrVerified" to (document.getBoolean("verified") ?: false),
                 "pnr" to (document.getString("pnr") ?: ""),
@@ -945,7 +959,8 @@ class TravelerProfile : AppCompatActivity() {
 
             // Fetch flight status if available
             (flightData["flightNumber"] as? String)?.takeIf { it.isNotEmpty() }?.let { flightNumber ->
-                fetchFlightStatus(flightNumber)
+               // fetchFlightStatus(flightNumber)
+                fetchFlightStatusFromTraveler(document)
             }
 
         } catch (e: Exception) {
@@ -1229,7 +1244,7 @@ class TravelerProfile : AppCompatActivity() {
     }
 
 
-    private fun fetchFlightStatus(flightNumber: String) {
+ /*  private fun fetchFlightStatus(flightNumber: String) {
         val handler = FlightStatusHandler("d39af3ab5bee86108417afdcf52134cb")
 
         // Get all UI references once
@@ -1283,9 +1298,9 @@ class TravelerProfile : AppCompatActivity() {
                 }
             }
         }
-    }
+    }*/
 
-    private fun formatFlightTime(isoTime: String): String {
+  /*  private fun formatFlightTime(isoTime: String): String {
         return try {
             ZonedDateTime.parse(isoTime, apiFormatter)
                 .format(displayFormatter)
@@ -1293,6 +1308,225 @@ class TravelerProfile : AppCompatActivity() {
             "Time not available" // Fallback text
         }
     }
+*/
+  private fun fetchFlightStatusFromTraveler(document: DocumentSnapshot) {
+      // Get all UI references once
+      val tvFlightNumber = findViewById<TextView>(R.id.tvFlightNumber)
+      val tvFromCode = findViewById<TextView>(R.id.tvFromCode)
+      val tvFromCity = findViewById<TextView>(R.id.tvFromCity)
+      val tvFromTime = findViewById<TextView>(R.id.tvFromTime)
+      val tvToCode = findViewById<TextView>(R.id.tvToCode)
+      val tvToCity = findViewById<TextView>(R.id.tvToCity)
+      val tvToTime = findViewById<TextView>(R.id.tvToTime)
+      val tvFlightStatus = findViewById<TextView>(R.id.tvFlightStatus)
+
+      // Get data from document
+      val toCode = document.getString("toCode") ?: ""
+      val toPlace = document.getString("toPlace") ?: ""
+      val fromCode = document.getString("fromCode") ?: ""
+      val fromPlace = document.getString("fromPlace") ?: ""
+      val airline = document.getString("airline") ?: ""
+      val arrivalTime = document.getString("arrivalTime") ?: ""
+      val departureTime = document.getString("departureTime") ?: ""
+      val flightNumber = document.getString("flightNumber") ?: ""
+      val status = document.getString("status") ?: ""
+
+      // Set values to TextViews
+      tvFlightNumber.text = "$airline $flightNumber"
+      tvFromCode.text = "[$fromCode]"
+      tvFromCity.text = fromPlace
+      tvFromTime.text = departureTime
+      tvToCode.text = "[$toCode]"
+      tvToCity.text = toPlace
+      tvToTime.text = arrivalTime
+      tvFlightStatus.text = "Status : $status"
+
+      // Check if flight tracking should be enabled (3 hours before departure)
+      val shouldEnableTracking = try {
+          // Set IST (Indian Standard Time) TimeZone
+          val istTimeZone = TimeZone.getTimeZone("Asia/Kolkata")
+          val dateFormat = if (departureTime.contains(" ")) {
+              SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply {
+                  timeZone = istTimeZone
+              }
+          } else {
+              // If only time is available, assume today's date in IST
+              SimpleDateFormat("HH:mm", Locale.getDefault()).apply {
+                  timeZone = istTimeZone
+              }
+          }
+
+          // Parse departure time in IST
+          val departureDateTime = if (departureTime.contains(" ")) {
+              dateFormat.parse(departureTime)
+          } else {
+              // Combine today's date with the given time
+              val today = Calendar.getInstance(istTimeZone)
+              val timeParts = departureTime.split(":")
+              today.set(Calendar.HOUR_OF_DAY, timeParts[0].toInt())
+              today.set(Calendar.MINUTE, timeParts.getOrElse(1) { "0" }.toInt())
+              today.time
+          }
+
+          // Current time in IST
+          val now = Calendar.getInstance(istTimeZone).timeInMillis
+
+          // Departure time in IST
+          val departureCal = Calendar.getInstance(istTimeZone).apply { time = departureDateTime!! }
+          val departureTimeInMillis = departureCal.timeInMillis
+
+          // 3 hours before departure (in IST)
+          val threeHoursBeforeDeparture = departureTimeInMillis - (3 * 60 * 60 * 1000)
+
+          // Enable tracking if:
+          // 1. Current time is within 3 hours before departure OR
+          // 2. Flight is today (even if past departure, for status checks)
+          now >= threeHoursBeforeDeparture && now <= departureTimeInMillis + (12 * 60 * 60 * 1000) // Allow 12h after departure for status
+      } catch (e: Exception) {
+          e.printStackTrace()
+          false
+      }
+
+      // Enable FlightAware tracking only if flight is upcoming or active
+      if (shouldEnableTracking && flightNumber.isNotBlank()) {
+          tvFlightNumber.setOnClickListener {
+              val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
+              try {
+                  startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(trackingUrl)))
+              } catch (e: Exception) {
+                  Toast.makeText(this, "Cannot open tracking", Toast.LENGTH_SHORT).show()
+              }
+          }
+          // Visual indication (optional)
+          tvFlightNumber.setTextColor(Color.BLUE)
+          tvFlightNumber.paintFlags = tvFlightNumber.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+      } else {
+          // Reset if not clickable
+          tvFlightNumber.setOnClickListener(null)
+          tvFlightNumber.setTextColor(Color.BLACK) // Or your default text color
+          tvFlightNumber.paintFlags = tvFlightNumber.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
+
+          // Show departure date if not today
+          if (departureTime.contains(" ")) {
+              tvFlightStatus.text = "Will Depart On ${departureTime.substringBefore(" ")}"
+          } else {
+              tvFlightStatus.text = "Status: Scheduled"
+          }
+      }
+  }
+    private fun setupBookingTabs(uniqueKey: String) {
+        val tabStatus = findViewById<TextView>(R.id.tabStatus)
+        val tabSender = findViewById<TextView>(R.id.tabSender)
+        val underlineStatus = findViewById<View>(R.id.underlineStatus)
+        val underlineSender = findViewById<View>(R.id.underlineSender)
+        val statusContent = findViewById<LinearLayout>(R.id.statusContent)
+        val senderContent = findViewById<ScrollView>(R.id.senderContent)
+
+        // default to Status tab
+        statusContent.visibility = View.VISIBLE
+        senderContent.visibility = View.GONE
+        tabStatus.setTextColor(Color.parseColor("#F25C05"))
+        tabSender.setTextColor(Color.parseColor("#888888"))
+        underlineStatus.visibility = View.VISIBLE
+        underlineSender.visibility = View.GONE
+
+        tabStatus.setOnClickListener {
+            statusContent.visibility = View.VISIBLE
+            senderContent.visibility = View.GONE
+
+            tabStatus.setTextColor(Color.parseColor("#F25C05"))
+            tabSender.setTextColor(Color.parseColor("#888888"))
+
+            underlineStatus.visibility = View.VISIBLE
+            underlineSender.visibility = View.GONE
+        }
+
+        tabSender.setOnClickListener {
+            statusContent.visibility = View.GONE
+            senderContent.visibility = View.VISIBLE
+
+            tabStatus.setTextColor(Color.parseColor("#888888"))
+            tabSender.setTextColor(Color.parseColor("#F25C05"))
+
+            underlineStatus.visibility = View.GONE
+            underlineSender.visibility = View.VISIBLE
+
+            loadSenderDetails(uniqueKey)
+        }
+    }
+
+    private fun loadSenderDetails(uniqueKey: String) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("Sender")
+            .whereEqualTo("uniqueKey", uniqueKey)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val document = querySnapshot.documents[0]
+
+                    // Get nested maps
+                    val fromAddressMap = document.get("fromAddress") as? Map<*, *>
+                    val toAddressMap = document.get("toAddress") as? Map<*, *>
+                    val itemMap = document.get("itemDetails") as? Map<*, *>
+
+                    // Parse values
+                    val fromAddress = fromAddressMap?.get("fullAddress") as? String ?: "N/A"
+                    val fromLat = (fromAddressMap?.get("latitude") as? Number)?.toDouble() ?: 0.0
+                    val fromLng = (fromAddressMap?.get("longitude") as? Number)?.toDouble() ?: 0.0
+
+                    val toAddress = toAddressMap?.get("fullAddress") as? String ?: "N/A"
+                    val toLat = (toAddressMap?.get("latitude") as? Number)?.toDouble() ?: 0.0
+                    val toLng = (toAddressMap?.get("longitude") as? Number)?.toDouble() ?: 0.0
+
+                    val isVerified = document.getBoolean("isVerified") ?: false
+
+                    val itemName = itemMap?.get("itemName") as? String ?: "N/A"
+                    val itemInstructions = itemMap?.get("instructions") as? String ?: "N/A"
+                    val totalWeight = (itemMap?.get("totalWeight") as? Number)?.toDouble() ?: 0.0
+                    val weightGram = (itemMap?.get("weightGram") as? Number)?.toDouble() ?: 0.0
+                    val weightKg = (itemMap?.get("weightKg") as? Number)?.toDouble() ?: 0.0
+
+                    Log.d("FirestoreDebug", "fromAddress: $fromAddress, fromLat: $fromLat, fromLng: $fromLng")
+                    Log.d("FirestoreDebug", "toAddress: $toAddress, toLat: $toLat, toLng: $toLng")
+                    Log.d("FirestoreDebug", "itemName: $itemName, instructions: $itemInstructions, totalWeight: $totalWeight")
+                    Log.d("FirestoreDebug", "isVerified: $isVerified")
+
+                    runOnUiThread {
+                        findViewById<TextView>(R.id.tvSenderFromAddress).text =
+                            "From Address:\n$fromAddress"
+                        findViewById<TextView>(R.id.tvSenderFromCoords).text =
+                            "Lat: $fromLat, Lng: $fromLng"
+
+                        findViewById<TextView>(R.id.tvSenderToAddress).text =
+                            "To Address:\n$toAddress"
+                        findViewById<TextView>(R.id.tvSenderToCoords).text =
+                            "Lat: $toLat, Lng: $toLng"
+
+                        findViewById<TextView>(R.id.tvSenderIsVerified).text =
+                            "Verified: ${if (isVerified) "Yes" else "No"}"
+
+                        findViewById<TextView>(R.id.tvSenderItemName).text =
+                            "Item: $itemName"
+                        findViewById<TextView>(R.id.tvSenderItemInstructions).text =
+                            "Instructions: $itemInstructions"
+
+                        findViewById<TextView>(R.id.tvSenderWeight).text =
+                            "Weight: $totalWeight g ($weightGram g / $weightKg kg)"
+                    }
+
+                } else {
+                    runOnUiThread {
+                        Toast.makeText(this, "No sender details found", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                runOnUiThread {
+                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
+
 
 
 }
