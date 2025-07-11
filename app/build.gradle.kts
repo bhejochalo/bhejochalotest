@@ -80,6 +80,6 @@ dependencies {
 
     implementation ("com.google.android.material:material:1.6.0")
 
-
+    implementation ("com.google.android.material:material:1.6.0")
 
 }

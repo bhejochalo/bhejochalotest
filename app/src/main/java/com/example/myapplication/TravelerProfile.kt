@@ -1420,7 +1420,8 @@ class TravelerProfile : AppCompatActivity() {
         val underlineStatus = findViewById<View>(R.id.underlineStatus)
         val underlineSender = findViewById<View>(R.id.underlineSender)
         val statusContent = findViewById<LinearLayout>(R.id.statusContent)
-        val senderContent = findViewById<ScrollView>(R.id.senderContent)
+        // Changed from ScrollView to NestedScrollView
+        val senderContent = findViewById<androidx.core.widget.NestedScrollView>(R.id.senderContent)
 
         // default to Status tab
         statusContent.visibility = View.VISIBLE
@@ -1430,7 +1431,11 @@ class TravelerProfile : AppCompatActivity() {
         underlineStatus.visibility = View.VISIBLE
         underlineSender.visibility = View.GONE
 
-        tabStatus.setOnClickListener {
+        // Use the tab containers for click listeners instead of just TextViews
+        val tabStatusContainer = findViewById<LinearLayout>(R.id.tabStatusContainer)
+        val tabSenderContainer = findViewById<LinearLayout>(R.id.tabSenderContainer)
+
+        tabStatusContainer.setOnClickListener {
             statusContent.visibility = View.VISIBLE
             senderContent.visibility = View.GONE
 
@@ -1441,7 +1446,7 @@ class TravelerProfile : AppCompatActivity() {
             underlineSender.visibility = View.GONE
         }
 
-        tabSender.setOnClickListener {
+        tabSenderContainer.setOnClickListener {
             statusContent.visibility = View.GONE
             senderContent.visibility = View.VISIBLE
 
