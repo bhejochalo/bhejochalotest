@@ -193,6 +193,10 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
                 startPayment(traveler)
                 attachTravelerWithSender(traveler)
                 attachSenderWithTraveler(traveler)
+
+                // Navigate to SenderProfile after booking
+                val intent = Intent(itemView.context, SenderProfile::class.java)
+                itemView.context.startActivity(intent)
             }
 
             dialog.show()
@@ -210,9 +214,7 @@ class TravelerAdapter(private val travelers: MutableList<Traveler>, private val 
                     attachSenderWithTraveler(traveler)  //
                     // update the respected traveler in the db and attach this sender details lookup if possible
 
-                    val intent = Intent(itemView.context, TravelerProfile::class.java).apply {
-                        //putExtra("TRAVELER_DATA", traveler) // If Traveler is Parcelable
-                    }
+                    val intent = Intent(itemView.context, SenderProfile::class.java)
                     itemView.context.startActivity(intent)
                 }
                 // yaha per traveler ka record get hoga phone number se, and uska anyReq true ho jayega.
