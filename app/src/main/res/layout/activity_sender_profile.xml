@@ -1,155 +1,495 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     android:background="#F5F5F5"
-    android:padding="16dp"
     tools:context=".SenderProfile">
 
-    <!-- Address Card -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/addressCard"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:padding="16dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Address Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/addressCard"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/tvFromAddressTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="From Address:"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#F25C05" />
-
-            <TextView
-                android:id="@+id/tvFromAddress"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:textSize="16sp"
-                android:textColor="#333333" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:background="#DDDDDD" />
+                <!-- From Address -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
-            <TextView
-                android:id="@+id/tvToAddressTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="To Address:"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#F25C05" />
+                    <TextView
+                        android:id="@+id/tvFromAddressTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="From Address:"
+                        android:textColor="#F25C05"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
 
-            <TextView
-                android:id="@+id/tvToAddress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:textSize="16sp"
-                android:textColor="#333333" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
+                    <Button
+                        android:id="@+id/btnEditFromAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Edit"
+                        android:textColor="#FFFFFF"
+                        android:backgroundTint="#F25C05"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Status Card -->
-    <androidx.cardview.widget.CardView
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:layout_constraintTop_toBottomOf="@id/addressCard"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+                <TextView
+                    android:id="@+id/tvFromAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#333333"
+                    android:textSize="16sp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="#DDDDDD" />
+
+                <!-- To Address -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/tvToAddressTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="To Address:"
+                        android:textColor="#F25C05"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <Button
+                        android:id="@+id/btnEditToAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Edit"
+                        android:textColor="#FFFFFF"
+                        android:backgroundTint="#F25C05"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <TextView
+                    android:id="@+id/tvToAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#333333"
+                    android:textSize="16sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Booking Status Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/statusCard"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/addressCard">
 
-            <TextView
-                android:id="@+id/bookingStatus"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#F25C05"
-                android:text="Booking Status:" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/subStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="16sp"
-                android:textColor="#333333" />
+                <!-- Tab Header -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/tabHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:background="#DDDDDD" />
+                    <LinearLayout
+                        android:id="@+id/tabStatusContainer"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:clickable="true"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toStartOf="@id/tabTravelerContainer"
+                        app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/trackingUrl"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:textColor="#333333"
-                android:text="Tracking URL:" />
+                        <TextView
+                            android:id="@+id/tabStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Status"
+                            android:textColor="#F25C05"
+                            android:textSize="16sp"
+                            android:textStyle="bold"/>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
-                android:background="#DDDDDD" />
+                        <View
+                            android:id="@+id/underlineStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="2dp"
+                            android:background="#F25C05"/>
+                    </LinearLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Time Information"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#F25C05" />
+                    <LinearLayout
+                        android:id="@+id/tabTravelerContainer"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:clickable="true"
+                        app:layout_constraintStart_toEndOf="@id/tabStatusContainer"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/startTimeSender"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="16sp"
-                android:textColor="#333333" />
+                        <TextView
+                            android:id="@+id/tabTraveler"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Traveler Details"
+                            android:textColor="#888888"
+                            android:textSize="16sp"
+                            android:textStyle="bold"/>
 
-            <TextView
-                android:id="@+id/endTimeSender"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textSize="16sp"
-                android:textColor="#333333" />
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-</androidx.constraintlayout.widget.ConstraintLayout>
+                        <View
+                            android:id="@+id/underlineTraveler"
+                            android:layout_width="match_parent"
+                            android:layout_height="2dp"
+                            android:background="#F25C05"
+                            android:visibility="gone"/>
+                    </LinearLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!-- Content Container -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp">
+
+                    <!-- Status Content -->
+                    <LinearLayout
+                        android:id="@+id/statusContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+
+                        <TextView
+                            android:id="@+id/bookingStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Booking Status:"
+                            android:textColor="#F25C05"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/subStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Pending"
+                            android:textColor="#333333"
+                            android:textSize="16sp"/>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="16dp"
+                            android:background="#DDDDDD"/>
+
+                        <TextView
+                            android:id="@+id/trackingUrl"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Tracking URL:"
+                            android:textColor="#333333"
+                            android:textSize="16sp"/>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="16dp"
+                            android:background="#DDDDDD"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Time Information"
+                            android:textColor="#F25C05"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/startTimeSender"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Start Time:"
+                            android:textColor="#333333"
+                            android:textSize="16sp"/>
+
+                        <TextView
+                            android:id="@+id/endTimeSender"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="End Time:"
+                            android:textColor="#333333"
+                            android:textSize="16sp"/>
+                    </LinearLayout>
+
+                    <!-- Traveler Content -->
+                    <androidx.core.widget.NestedScrollView
+                        android:id="@+id/travelerContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        android:padding="8dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="#F9F9F9"
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Traveler Information"
+                                android:textColor="#F25C05"
+                                android:textSize="18sp"
+                                android:textStyle="bold"/>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="16dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Name:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerName"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Airline:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerAirline"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="PNR:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerPnr"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Flight Number:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerFlightNumber"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Departure:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerDeparture"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Arrival:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerArrival"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Destination:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerDestination"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Weight Allowance:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerWeight"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+                        </LinearLayout>
+                    </androidx.core.widget.NestedScrollView>
+                </FrameLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>
