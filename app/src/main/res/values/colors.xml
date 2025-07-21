@@ -8,4 +8,11 @@
     <color name="green_600">#43A047</color> <!-- Nice green for Book button -->
     <color name="gray_700">#616161</color> <!-- Text secondary -->
     <color name="gray_200">#EEEEEE</color> <!-- Card border -->
+    <color name="colorPrimary">#F25C05</color>
+    <color name="colorPrimaryDark">#D14F04</color>
+    <color name="colorAccent">#03DAC5</color>
+
+    <!-- Add these new color definitions -->
+    <color name="orange_primary">#F25C05</color>
+    <color name="gray_secondary">#888888</color>
 </resources>

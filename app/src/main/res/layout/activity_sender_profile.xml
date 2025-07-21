@@ -143,7 +143,7 @@
                         android:gravity="center"
                         android:clickable="true"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/tabTravelerContainer"
+                        app:layout_constraintEnd_toStartOf="@id/tabSenderContainer"
                         app:layout_constraintTop_toTopOf="parent">
 
                         <TextView
@@ -163,7 +163,7 @@
                     </LinearLayout>
 
                     <LinearLayout
-                        android:id="@+id/tabTravelerContainer"
+                        android:id="@+id/tabSenderContainer"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
@@ -174,16 +174,16 @@
                         app:layout_constraintTop_toTopOf="parent">
 
                         <TextView
-                            android:id="@+id/tabTraveler"
+                            android:id="@+id/tabSender"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Traveler Details"
+                            android:text="Traveler"
                             android:textColor="#888888"
                             android:textSize="16sp"
                             android:textStyle="bold"/>
 
                         <View
-                            android:id="@+id/underlineTraveler"
+                            android:id="@+id/underlineSender"
                             android:layout_width="match_parent"
                             android:layout_height="2dp"
                             android:background="#F25C05"
@@ -274,7 +274,7 @@
 
                     <!-- Traveler Content -->
                     <androidx.core.widget.NestedScrollView
-                        android:id="@+id/travelerContent"
+                        android:id="@+id/senderContent"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:visibility="gone"
@@ -486,6 +486,16 @@
                                     android:textColor="#333333"
                                     android:textSize="16sp"/>
                             </LinearLayout>
+
+                            <Button
+                                android:id="@+id/btnViewFullDetails"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:layout_marginTop="16dp"
+                                android:text="View Complete Details"
+                                android:textColor="#FFFFFF"
+                                android:backgroundTint="#F25C05"/>
                         </LinearLayout>
                     </androidx.core.widget.NestedScrollView>
                 </FrameLayout>
