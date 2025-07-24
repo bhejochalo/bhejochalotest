@@ -637,18 +637,11 @@
             app:layout_constraintTop_toBottomOf="@id/toAddressHeader"
             android:layout_marginTop="4dp" />
 
-
-
-
-
-
+        <!-- Status Card Section -->
         <androidx.constraintlayout.widget.ConstraintLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            xmlns:tools="http://schemas.android.com/tools"
             android:id="@+id/statusCard"
             android:layout_width="0dp"
-            android:layout_height="300dp"
+            android:layout_height="wrap_content"
             android:background="@drawable/card_background"
             app:cardCornerRadius="16dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -706,7 +699,7 @@
                         android:id="@+id/tabSender"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Sender Details"
+                        android:text="Order Details"
                         android:textColor="#888888"
                         android:textSize="16sp"
                         android:textStyle="bold"/>
@@ -721,191 +714,379 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- CONTENT CONTAINER -->
-            <FrameLayout
+            <androidx.core.widget.NestedScrollView
                 android:id="@+id/contentContainer"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="300dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tabHeader"
                 android:layout_marginTop="12dp">
 
-                <!-- STATUS CONTENT -->
                 <LinearLayout
-                    android:id="@+id/statusContent"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:padding="8dp">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
-                    <TextView
+                    <!-- STATUS CONTENT -->
+                    <LinearLayout
+                        android:id="@+id/statusContent"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Booking Status:"
-                        android:textColor="#F25C05"
-                        android:textSize="18sp"
-                        android:textStyle="bold"/>
+                        android:orientation="vertical"
+                        android:padding="8dp">
 
-                    <TextView
-                        android:id="@+id/subStatus"
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Booking Status:"
+                            android:textColor="#F25C05"
+                            android:textSize="18sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/subStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Mode - Self Pick And Drop"
+                            android:textColor="#333333"
+                            android:textSize="16sp"/>
+                    </LinearLayout>
+
+                    <!-- 1st Stage - First Mile -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="Self Pick And Drop"
-                        android:textColor="#333333"
-                        android:textSize="16sp"/>
-                </LinearLayout>
+                        android:orientation="vertical"
+                        android:padding="12dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@drawable/card_background">
 
-                <!-- SENDER CONTENT -->
-                <androidx.core.widget.NestedScrollView
-                    android:id="@+id/senderContent"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:fillViewport="true"
-                    android:padding="8dp"
-                    android:visibility="gone">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="✓ 1st Stage - We’re bringing it to you now!"
+                            android:id="@+id/fileMileMainStatus"
+                            android:textStyle="bold"
+                            android:textColor="#F25C05"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/tvPickupOtp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text=""
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:id="@+id/tvDriverPhone"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:id="@+id/tvEta1st"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ETA: "
+                            android:textColor="#333333" />
+                    </LinearLayout>
+
+                    <!-- 2nd Stage - In Transit -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/card_background">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:id="@+id/tvTransitStatusMain"
+                            android:layout_height="wrap_content"
+                            android:text="⏳ 2nd Stage - Received, You’re now flying with it"
+                            android:textStyle="bold"
+                            android:textColor="#F25C05"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/tvTransitStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Parcel Status: In Transit"
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:id="@+id/tvLastUpdated"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="#333333" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="#F9F9F9"
                         android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <!-- From Address Section -->
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="From Address:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
+                        android:layout_marginTop="24dp"
+                        android:paddingHorizontal="24dp"
+                        android:gravity="center_horizontal">
 
                         <TextView
-                            android:id="@+id/tvSenderFromAddress"
-                            android:layout_width="match_parent"
+                            android:id="@+id/tvSliderPrompt"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="Reached Home? Slide to confirm"
+                            android:textSize="16sp"
+                            android:textColor="#212121"
                             android:layout_marginBottom="8dp"
-                            android:text="123 Main Street, New Delhi"
-                            android:textColor="#333333"/>
+                            android:fontFamily="sans-serif-medium" />
 
-                        <TextView
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/sliderConfirmArrival"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="Coordinates:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvSenderFromCoords"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:text="28.6139° N, 77.2090° E"
-                            android:textColor="#333333"/>
-
-                        <!-- To Address Section -->
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="To Address:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvSenderToAddress"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:text="456 Marine Drive, Mumbai"
-                            android:textColor="#333333"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="Coordinates:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvSenderToCoords"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:text="19.0760° N, 72.8777° E"
-                            android:textColor="#333333"/>
-
-                        <!-- Verification Status -->
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="Verification Status:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvSenderIsVerified"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:text="Verified"
-                            android:textColor="#008000"/>
-
-                        <!-- Item Details Section -->
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="Item Details:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvSenderItemName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:text="Important Documents"
-                            android:textColor="#333333"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="Special Instructions:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvSenderItemInstructions"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:text="Handle with care. Fragile contents."
-                            android:textColor="#333333"/>
-
-                        <!-- Weight Details -->
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="4dp"
-                            android:text="Weight Details:"
-                            android:textColor="#F25C05"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/tvSenderWeight"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:text="2.5 kg"
-                            android:textColor="#333333"/>
+                            android:valueFrom="0"
+                            android:valueTo="100"
+                            android:stepSize="100"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="12dp" />
                     </LinearLayout>
-                </androidx.core.widget.NestedScrollView>
-            </FrameLayout>
+
+
+                    <!-- 3rd Stage - Ready for Pickup -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/card_background">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:id="@+id/tvDestinationStatusMain"
+
+                            android:layout_height="wrap_content"
+                            android:text="📍 3rd Stage - Ready for Pickup"
+                            android:textStyle="bold"
+                            android:textColor="#F25C05"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/tvDeliveryOtp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Delivery OTP: "
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:id="@+id/pickerContact"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="#333333" />
+
+                        <TextView
+                            android:id="@+id/tvDestinationStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Status: Reached Destination, Awaiting Pickup"
+                            android:textColor="#333333" />
+
+
+                        <!-- Add this new OTP input section -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center">
+
+                            <EditText
+                                android:id="@+id/etOtpInput"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:hint="Enter OTP"
+                                android:inputType="number"
+                                android:maxLength="6"
+                                android:padding="12dp"
+                                android:background="@drawable/edittext_background"/>
+
+                            <Button
+                                android:id="@+id/btnVerifyOtp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="Complete"
+                                android:backgroundTint="#F25C05"
+                                android:textColor="#FFFFFF"/>
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <!-- SENDER CONTENT -->
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/senderContent"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:fillViewport="true"
+                android:padding="8dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tabHeader">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#F9F9F9"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- From Address Section -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="From Address:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderFromAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="123 Main Street, New Delhi"
+                        android:textColor="#333333"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Coordinates:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderFromCoords"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:text="28.6139° N, 77.2090° E"
+                        android:textColor="#333333"/>
+
+                    <!-- To Address Section -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="To Address:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderToAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="456 Marine Drive, Mumbai"
+                        android:textColor="#333333"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Coordinates:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderToCoords"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:text="19.0760° N, 72.8777° E"
+                        android:textColor="#333333"/>
+
+                    <!-- Verification Status -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Verification Status:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderIsVerified"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:text="Verified"
+                        android:textColor="#008000"/>
+
+                    <!-- Item Details Section -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Item Details:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderItemName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="Important Documents"
+                        android:textColor="#333333"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Special Instructions:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderItemInstructions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:text="Handle with care. Fragile contents."
+                        android:textColor="#333333"/>
+
+                    <!-- Weight Details -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text="Weight Details:"
+                        android:textColor="#F25C05"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvSenderWeight"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="2.5 kg"
+                        android:textColor="#333333"/>
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

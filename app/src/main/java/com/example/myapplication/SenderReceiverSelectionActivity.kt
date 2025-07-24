@@ -50,8 +50,9 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
                         val document = querySnapshot.documents[0]
                         // Get the travelerID field
                         val key = document.getString("uniqueKey")
+                        val statusOnTraveler = document.getString("status")
                         println("travelerID: $key")
-                        navigateToTravelerProfile(phone,key.toString())
+                        navigateToTravelerProfile(phone,key.toString(),statusOnTraveler.toString())
                     } else {
                         println("new traveler ")
                         navigateToAutoComplete(phone)
@@ -102,11 +103,12 @@ class SenderReceiverSelectionActivity : AppCompatActivity() {
         } ?: showError("Phone number is null")
     }
 
-    private fun navigateToTravelerProfile(phone: String,key: String) {
+    private fun navigateToTravelerProfile(phone: String,key: String,status: String) {
 
         Intent(this, TravelerProfile::class.java).apply {
             putExtra("PHONE_NUMBER", phone)
             putExtra("KEY",key)
+            putExtra("StatusOnTraveler",status)
             startActivity(this)
         }
     }

@@ -6,6 +6,7 @@ import android.app.Dialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Paint
 import android.net.Uri
@@ -28,6 +29,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore // Assuming you're using Firestore
 import android.widget.ScrollView
+import androidx.core.content.ContextCompat
 
 import okhttp3.Call
 import okhttp3.Callback
@@ -41,13 +43,13 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import com.example.myapplication.BorzoOrderHelper
+import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestoreException
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -65,6 +67,7 @@ class TravelerProfile : AppCompatActivity() {
     private var city_Traveler = "";
     private var pincode_Traveler = "";
     private var state_Traveler = "";
+    private var isProcessing = false
 
     private var houseNumber_Sender = "";
     private var street_Sender = "";
@@ -73,27 +76,36 @@ class TravelerProfile : AppCompatActivity() {
     private var pincode_Sender = "";
     private var state_Sender = "";
     private var isFirstMile = false;
+
     //private var uniqueKey = "";
+    private var mileStatus = ""
+    private var senderPhoneNumber = ""
 
     private lateinit var borzoHelper: BorzoOrderHelper
     private val apiFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
-    private val displayFormatter = DateTimeFormatter.ofPattern("h:mm a, dd MMM yyyy", Locale.getDefault())
+    private val displayFormatter =
+        DateTimeFormatter.ofPattern("h:mm a, dd MMM yyyy", Locale.getDefault())
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
 
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_traveler_profile)
         enableEdgeToEdge()
-            borzoHelper = BorzoOrderHelper(this)
+
+
+        setupSlider()
+
+
+        borzoHelper = BorzoOrderHelper(this)
 
         var key = intent.getStringExtra("KEY") ?: ""
         key?.let { nonNullKey ->
             setupBookingTabs(nonNullKey)
         }
 
+        var statusOfRequest = intent.getStringExtra("StatusOnTraveler") ?: ""
 
         // Set up window insets
         // Use the root view of your layout instead of R.id.main
@@ -111,6 +123,64 @@ class TravelerProfile : AppCompatActivity() {
 
         }
     }
+
+    private fun setupSlider() {
+        val slider = findViewById<Slider>(R.id.sliderConfirmArrival)
+
+        slider.apply {
+            trackActiveTintList = ColorStateList.valueOf(Color.parseColor("#FFA500")) // Orange
+            thumbTintList = ColorStateList.valueOf(Color.parseColor("#FFA500"))
+            trackInactiveTintList = ColorStateList.valueOf(Color.parseColor("#E0E0E0"))
+
+            addOnChangeListener { _, value, fromUser ->
+                if (fromUser && value == 100f && !isProcessing) {
+                    isProcessing = true
+                    isEnabled = false
+                    showConfirmationDialog()
+                }
+            }
+        }
+    }
+
+    private fun showConfirmationDialog() {
+        AlertDialog.Builder(this).apply {
+            setTitle("Confirm Arrival")
+            setMessage("If you confirm you've reached home, we will initiate the final pickup process. This action cannot be undone.")
+            setPositiveButton("Yes, I'm Home") { dialog, _ ->
+                handleConfirmation()
+                dialog.dismiss()
+            }
+            setNegativeButton("Cancel") { dialog, _ ->
+                resetSlider()
+                dialog.dismiss()
+            }
+            setOnCancelListener { resetSlider() }
+            show()
+        }
+    }
+
+    private fun handleConfirmation() {
+        Toast.makeText(this, "Arrival Confirmed!", Toast.LENGTH_SHORT).show()
+        findViewById<Slider>(R.id.sliderConfirmArrival).isEnabled = false
+
+
+        val phNum = getCurrentUserId() ?: run {
+            Log.e("Auth", "No user ID available")
+            // Show error to user if needed
+            return
+        }
+
+        updateTraveler2ndMileStatus(phNum)
+        // yahi per borzo bhi book karenge
+    }
+
+    private fun resetSlider() {
+        val slider = findViewById<Slider>(R.id.sliderConfirmArrival)
+        slider.value = 0f
+        slider.isEnabled = true
+        isProcessing = false
+    }
+
 
     private fun displayAddressFromHolder() {
         // Get references to TextViews
@@ -194,7 +264,11 @@ class TravelerProfile : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Error fetching traveler data: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Error fetching traveler data: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
     }
 
@@ -203,7 +277,8 @@ class TravelerProfile : AppCompatActivity() {
         addressType: String,
         onSave: (String) -> Unit
     ) {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_traveler_address, null)
+        val dialogView =
+            LayoutInflater.from(this).inflate(R.layout.dialog_edit_traveler_address, null)
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .setCancelable(true)
@@ -318,7 +393,11 @@ class TravelerProfile : AppCompatActivity() {
 
         return phoneNumber //
     }
-    private fun showSenderRequest(senderRef: String, document: DocumentSnapshot) {  // Removed context parameter since we're in Activity
+
+    private fun showSenderRequest(
+        senderRef: String,
+        document: DocumentSnapshot
+    ) {  // Removed context parameter since we're in Activity
         println("inside showSenderRequest ===> $senderRef")
 
 
@@ -332,7 +411,7 @@ class TravelerProfile : AppCompatActivity() {
         runOnUiThread {
             try {
                 if (!isFinishing) {
-                    showSenderDialog(name, phone, address, senderRef,document)
+                    showSenderDialog(name, phone, address, senderRef, document)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -346,7 +425,13 @@ class TravelerProfile : AppCompatActivity() {
     }
 
 
-    private fun showSenderDialog(name: String, phone: String, address: String, senderRef: String, document: DocumentSnapshot) {
+    private fun showSenderDialog(
+        name: String,
+        phone: String,
+        address: String,
+        senderRef: String,
+        document: DocumentSnapshot
+    ) {
         try {
             val dialogView = LayoutInflater.from(this@TravelerProfile).inflate(
                 R.layout.dialog_sender_details,
@@ -363,11 +448,11 @@ class TravelerProfile : AppCompatActivity() {
                 .setTitle("Sender Request")
                 .setView(dialogView)
                 .setPositiveButton("Accept") { dialog, _ ->
-                    onAcceptRequest(senderRef,document)
+                    onAcceptRequest(senderRef, document)
                     dialog.dismiss()
                 }
                 .setNegativeButton("Reject") { dialog, _ ->
-                    onRejectRequest(senderRef,document)
+                    onRejectRequest(senderRef, document)
                     dialog.dismiss()
                 }
                 .setCancelable(false)
@@ -381,41 +466,56 @@ class TravelerProfile : AppCompatActivity() {
 
     private fun onAcceptRequest(senderRef: String, document: DocumentSnapshot) {
         // in document we have current traveler
-       // isFirstMile = true;
+        // isFirstMile = true;
         //placeBorzoOrder(senderRef) // need to pass the other details also, address of traveler
-           isFirstMile = true
+        isFirstMile = true
         val modofpickDrop = "${document.getString("pickAndDropMode")}"
 
         println("modofpickDrop ===> $modofpickDrop")
 
-        document.reference.update("status", "Request Accepted By Traveler") // // updating the traveler status
+        // Create a map of the fields you want to update
+        val updates = hashMapOf<String, Any>(
+            "status" to "Request Accepted By Traveler",
+            "FirstMileStatus" to "In Progress",// or use your own timestamp
+            "SecondMileStatus" to "Not Started",
+            "LastMileStatus" to "Not Started",
+
+
+            // Add more fields as needed
+        )
+
+
+
+        document.reference.update(updates) // // updating the traveler status
             .addOnSuccessListener {
                 runOnUiThread {
-                    Toast.makeText(this@TravelerProfile, "Request Accepted", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@TravelerProfile, "Request Accepted", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
             .addOnFailureListener { e ->
                 runOnUiThread {
-                    Toast.makeText(this@TravelerProfile, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@TravelerProfile, "Error: ${e.message}", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
 
-           // Prepare traveler address data
-           val travelerAddress = mapOf(
-               "houseNumber" to houseNumber_Traveler,
-               "street" to street_Traveler,
-               "area" to area_Traveler,
-               "city" to city_Traveler,
-               "state" to state_Traveler,
-               "postalCode" to pincode_Traveler
-           )
+        // Prepare traveler address data
+        val travelerAddress = mapOf(
+            "houseNumber" to houseNumber_Traveler,
+            "street" to street_Traveler,
+            "area" to area_Traveler,
+            "city" to city_Traveler,
+            "state" to state_Traveler,
+            "postalCode" to pincode_Traveler
+        )
 
-        if(modofpickDrop == "self"){
+        if (modofpickDrop == "self") {
 
             fetchTheAcceptedOrder_SelfPicknDrop(); // show the order details to the traveler
             fetchFlightDetails(document) // fetch flight details, in doc -  current traveler record
 
-        }else{
+        } else {
 
             borzoHelper.placeOrder(
                 senderId = senderRef,
@@ -438,245 +538,249 @@ class TravelerProfile : AppCompatActivity() {
         }
 
 
+    }
 
 
-       }
+    private fun onRejectRequest(
+        senderRef: String,
+        document: DocumentSnapshot
+    ) { // in document we have current traveler
 
-
-
-    private fun onRejectRequest(senderRef: String,document: DocumentSnapshot) { // in document we have current traveler
-
-        document.reference.update("status", "Request Rejected By Traveler") // updating the traveler status
+        document.reference.update(
+            "status",
+            "Request Rejected By Traveler"
+        ) // updating the traveler status
             .addOnSuccessListener {
                 runOnUiThread {
-                    Toast.makeText(this@TravelerProfile, "Request Rejected", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@TravelerProfile, "Request Rejected", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
             .addOnFailureListener { e ->
                 runOnUiThread {
-                    Toast.makeText(this@TravelerProfile, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@TravelerProfile, "Error: ${e.message}", Toast.LENGTH_SHORT)
+                        .show()
                 }
             }
     }
 
 
+    /*
+        private fun formatPhoneForBorzo(phone: String): String? {
+            // Remove all non-digit characters
+            val digitsOnly = phone.replace("[^0-9]".toRegex(), "")
 
-/*
-    private fun formatPhoneForBorzo(phone: String): String? {
-        // Remove all non-digit characters
-        val digitsOnly = phone.replace("[^0-9]".toRegex(), "")
-
-        // Borzo typically expects phone numbers in E.164 format (e.g., +918696888060)
-        return when {
-            digitsOnly.length == 10 -> "+91$digitsOnly" // Assuming Indian numbers
-            digitsOnly.length == 12 && digitsOnly.startsWith("91") -> "+$digitsOnly"
-            digitsOnly.startsWith("+") -> phone // Already in correct format
-            else -> null // Invalid format
+            // Borzo typically expects phone numbers in E.164 format (e.g., +918696888060)
+            return when {
+                digitsOnly.length == 10 -> "+91$digitsOnly" // Assuming Indian numbers
+                digitsOnly.length == 12 && digitsOnly.startsWith("91") -> "+$digitsOnly"
+                digitsOnly.startsWith("+") -> phone // Already in correct format
+                else -> null // Invalid format
+            }
         }
-    }
 
-    private fun buildFullAddress(
-        houseNumber: String?,
-        street: String?,
-        area: String?,
-        city: String?,
-        state: String?,
-        postalCode: String?
-    ): String {
-        println("in build full address")
-        return listOfNotNull(houseNumber, street, area, city, state, postalCode)
-            .joinToString(", ")
-    }
+        private fun buildFullAddress(
+            houseNumber: String?,
+            street: String?,
+            area: String?,
+            city: String?,
+            state: String?,
+            postalCode: String?
+        ): String {
+            println("in build full address")
+            return listOfNotNull(houseNumber, street, area, city, state, postalCode)
+                .joinToString(", ")
+        }
 
-    private fun placeBorzoOrder(senderId: String) {
-        // First get the sender data, then place the order
-        getTheRelatedSenderData(senderId) { senderData ->
-            println("in borzo place order")
-            val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-            val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
+        private fun placeBorzoOrder(senderId: String) {
+            // First get the sender data, then place the order
+            getTheRelatedSenderData(senderId) { senderData ->
+                println("in borzo place order")
+                val sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
+                val phoneNumber = sharedPref.getString("PHONE_NUMBER", "") ?: ""
 
-            // Format phone numbers according to Borzo requirements
-            val senderPhone = formatPhoneForBorzo(senderData["phoneNumber"] ?: "")// formatPhoneForBorzo(senderId)
-            val receiverPhone = formatPhoneForBorzo(phoneNumber)
+                // Format phone numbers according to Borzo requirements
+                val senderPhone = formatPhoneForBorzo(senderData["phoneNumber"] ?: "")// formatPhoneForBorzo(senderId)
+                val receiverPhone = formatPhoneForBorzo(phoneNumber)
 
-            if (senderPhone == null || receiverPhone == null) {
-                runOnUiThread {
-                    Toast.makeText(
-                        this@TravelerProfile,
-                        "Invalid phone number format",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-                return@getTheRelatedSenderData
-            }
-
-            val toAddress = buildFullAddress(
-                houseNumber_Traveler,
-                street_Traveler,
-                area_Traveler,
-                city_Traveler,
-                state_Traveler,
-                pincode_Traveler
-            )
-
-            val fromAddress = buildFullAddress(
-                senderData["houseNumber"] ?: "",
-                senderData["street"] ?: "",
-                senderData["area"] ?: "",
-                senderData["city"] ?: "",
-                senderData["state"] ?: "",
-                senderData["postalCode"] ?: "",
-               // senderData["phoneNumber"]?: ""
-            )
-
-            println("Debugging fromAddress components:")
-            println("House Number 1: ${senderData["houseNumber"]}")
-            println("Street1: ${senderData["street"]}")
-            println("Area1: ${senderData["area"]}")
-            println("City:1 ${senderData["city"]}")
-            println("State:1 ${senderData["state"]}")
-            println("Pincode1: ${senderData["postalCode"]}")
-
-            // Rest of your Borzo order placement code...
-            val client = OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build()
-
-            val jsonBody = JSONObject().apply {
-                put("matter", "Documents") // should be dynamic
-                put("vehicle_type_id", 2)
-              //  put("client_order_id", senderId) // Add client order ID
-              //  put("required_start_time", "2023-05-15T14:30:00Z")// Add required start time (format depends on API)
-              //  put("note", "full address dalgenge") // Add note
-             //   put("delivery_id", senderId) // Add delivery ID
-                put("points", JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("address", fromAddress)
-                        put("contact_person", JSONObject().apply {
-                            put("phone", senderPhone)
-                            put("name", "Sender")
-                        })
-                    })
-                    put(JSONObject().apply {
-                        put("address", toAddress)
-                        put("contact_person", JSONObject().apply {
-                            put("phone", receiverPhone)
-                            put("name", "Receiver")
-                        })
-                    })
-                })
-             //   put("client_order_id", senderId)  // Your internal order ID (formerly client_order_id)
-              //  put("required_start_datetime", "2025-06-01T14:30:00+05:30")  // ISO 8601 format (for scheduled orders)
-             //   put("note", "Fragile items")  // General order note
-            }.toString()
-
-            println("Request JSON: $jsonBody")
-
-            val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
-
-            val request = Request.Builder()
-                .url("https://robotapitest-in.borzodelivery.com/api/business/1.6/create-order")
-                .addHeader("Content-Type", "application/json")
-                .addHeader("X-DV-Auth-Token", "3F561C810EDAC4F9339582C4BCB9F1A1B3800B87")
-                .post(requestBody)
-                .build()
-
-            client.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    println("in borzo place order failed")
-                    Log.e("BORZO", "Request failed: ${e.message}")
+                if (senderPhone == null || receiverPhone == null) {
                     runOnUiThread {
                         Toast.makeText(
                             this@TravelerProfile,
-                            "Booking failed. Please try again.",
+                            "Invalid phone number format",
                             Toast.LENGTH_LONG
                         ).show()
                     }
+                    return@getTheRelatedSenderData
                 }
 
-                override fun onResponse(call: Call, response: Response) {
-                    try {
-                        val responseBody = response.body?.string()
-                        println("in borzo place order response")
-                        Log.d("BORZO", "Response: $responseBody")
+                val toAddress = buildFullAddress(
+                    houseNumber_Traveler,
+                    street_Traveler,
+                    area_Traveler,
+                    city_Traveler,
+                    state_Traveler,
+                    pincode_Traveler
+                )
 
-                        runOnUiThread {
-                            if (response.isSuccessful) {
+                val fromAddress = buildFullAddress(
+                    senderData["houseNumber"] ?: "",
+                    senderData["street"] ?: "",
+                    senderData["area"] ?: "",
+                    senderData["city"] ?: "",
+                    senderData["state"] ?: "",
+                    senderData["postalCode"] ?: "",
+                   // senderData["phoneNumber"]?: ""
+                )
 
-                                updateBookingDetailsOnSender(response)
-                                updateBookingDetailsOnTraveler(response)
+                println("Debugging fromAddress components:")
+                println("House Number 1: ${senderData["houseNumber"]}")
+                println("Street1: ${senderData["street"]}")
+                println("Area1: ${senderData["area"]}")
+                println("City:1 ${senderData["city"]}")
+                println("State:1 ${senderData["state"]}")
+                println("Pincode1: ${senderData["postalCode"]}")
 
-                                Toast.makeText(
-                                    this@TravelerProfile,
-                                    "Booking successful!",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            } else {
-                                Toast.makeText(
-                                    this@TravelerProfile,
-                                    "Booking failed: ${response.message}\n$responseBody",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("BORZO", "Error parsing response", e)
+                // Rest of your Borzo order placement code...
+                val client = OkHttpClient.Builder()
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .build()
+
+                val jsonBody = JSONObject().apply {
+                    put("matter", "Documents") // should be dynamic
+                    put("vehicle_type_id", 2)
+                  //  put("client_order_id", senderId) // Add client order ID
+                  //  put("required_start_time", "2023-05-15T14:30:00Z")// Add required start time (format depends on API)
+                  //  put("note", "full address dalgenge") // Add note
+                 //   put("delivery_id", senderId) // Add delivery ID
+                    put("points", JSONArray().apply {
+                        put(JSONObject().apply {
+                            put("address", fromAddress)
+                            put("contact_person", JSONObject().apply {
+                                put("phone", senderPhone)
+                                put("name", "Sender")
+                            })
+                        })
+                        put(JSONObject().apply {
+                            put("address", toAddress)
+                            put("contact_person", JSONObject().apply {
+                                put("phone", receiverPhone)
+                                put("name", "Receiver")
+                            })
+                        })
+                    })
+                 //   put("client_order_id", senderId)  // Your internal order ID (formerly client_order_id)
+                  //  put("required_start_datetime", "2025-06-01T14:30:00+05:30")  // ISO 8601 format (for scheduled orders)
+                 //   put("note", "Fragile items")  // General order note
+                }.toString()
+
+                println("Request JSON: $jsonBody")
+
+                val requestBody = jsonBody.toRequestBody("application/json".toMediaTypeOrNull())
+
+                val request = Request.Builder()
+                    .url("https://robotapitest-in.borzodelivery.com/api/business/1.6/create-order")
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("X-DV-Auth-Token", "3F561C810EDAC4F9339582C4BCB9F1A1B3800B87")
+                    .post(requestBody)
+                    .build()
+
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        println("in borzo place order failed")
+                        Log.e("BORZO", "Request failed: ${e.message}")
                         runOnUiThread {
                             Toast.makeText(
                                 this@TravelerProfile,
-                                "Error processing booking",
+                                "Booking failed. Please try again.",
                                 Toast.LENGTH_LONG
                             ).show()
                         }
                     }
-                }
-            })
+
+                    override fun onResponse(call: Call, response: Response) {
+                        try {
+                            val responseBody = response.body?.string()
+                            println("in borzo place order response")
+                            Log.d("BORZO", "Response: $responseBody")
+
+                            runOnUiThread {
+                                if (response.isSuccessful) {
+
+                                    updateBookingDetailsOnSender(response)
+                                    updateBookingDetailsOnTraveler(response)
+
+                                    Toast.makeText(
+                                        this@TravelerProfile,
+                                        "Booking successful!",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        this@TravelerProfile,
+                                        "Booking failed: ${response.message}\n$responseBody",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("BORZO", "Error parsing response", e)
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this@TravelerProfile,
+                                    "Error processing booking",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                })
+            }
         }
-    }
 
-    private fun getTheRelatedSenderData(senderId: String, callback: (Map<String, String?>) -> Unit) {
-      //  println("uniqueKey   ===> $uniqueKey")
-        db.collection("Sender")
-            .whereEqualTo("uniqueKey", senderId) // Filters documents w
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    // Get the first matching document (assuming userId is unique)
-                    val document = querySnapshot.documents[0]
+        private fun getTheRelatedSenderData(senderId: String, callback: (Map<String, String?>) -> Unit) {
+          //  println("uniqueKey   ===> $uniqueKey")
+            db.collection("Sender")
+                .whereEqualTo("uniqueKey", senderId) // Filters documents w
+                .get()
+                .addOnSuccessListener { querySnapshot ->
+                    if (!querySnapshot.isEmpty) {
+                        // Get the first matching document (assuming userId is unique)
+                        val document = querySnapshot.documents[0]
 
-                    // Extract nested address fields safely
-                    val address = document.get("fromAddress") as? Map<String, String>
+                        // Extract nested address fields safely
+                        val address = document.get("fromAddress") as? Map<String, String>
 
-                    val senderData = hashMapOf<String, String?>(
-                        "houseNumber" to address?.get("houseNumber"),
-                        "street" to address?.get("street"),
-                        "area" to address?.get("area"),
-                        "city" to address?.get("city"),
-                        "postalCode" to address?.get("postalCode"),
-                        "state" to address?.get("state"),
-                        "phoneNumber" to document.getString("phoneNumber")
-                    )
+                        val senderData = hashMapOf<String, String?>(
+                            "houseNumber" to address?.get("houseNumber"),
+                            "street" to address?.get("street"),
+                            "area" to address?.get("area"),
+                            "city" to address?.get("city"),
+                            "postalCode" to address?.get("postalCode"),
+                            "state" to address?.get("state"),
+                            "phoneNumber" to document.getString("phoneNumber")
+                        )
 
 
-                    // last mile sender address will come here
+                        // last mile sender address will come here
 
-                    // Update the class fields
-                  */
-/*  this.houseNumber_Sender = senderData["houseNumber"] ?: ""
-                    this.street_Sender = senderData["street"] ?: ""
-                    this.area_Sender = senderData["area"] ?: ""
-                    this.city_Sender = senderData["city"] ?: ""
-                    this.pincode_Sender = senderData["postalCode"] ?: ""
-                    this.state_Sender = senderData["state"] ?: ""
+                        // Update the class fields
+                      */
+    /*  this.houseNumber_Sender = senderData["houseNumber"] ?: ""
+                        this.street_Sender = senderData["street"] ?: ""
+                        this.area_Sender = senderData["area"] ?: ""
+                        this.city_Sender = senderData["city"] ?: ""
+                        this.pincode_Sender = senderData["postalCode"] ?: ""
+                        this.state_Sender = senderData["state"] ?: ""
 
-                    println("Debugging sender fromAddress components:")
-                    println("House Number sender : ${senderData["houseNumber"]}")
-                    println("Streetsender = : ${senderData["street"]}")
-                    println("Areasender = : ${senderData["area"]}")
-                    println("Citysender = : ${senderData["city"]}")
-                    println("Statesender = : ${senderData["state"]}")
-                    println("Pincodesender = : ${senderData["postalCode"]}") *//*
+                        println("Debugging sender fromAddress components:")
+                        println("House Number sender : ${senderData["houseNumber"]}")
+                        println("Streetsender = : ${senderData["street"]}")
+                        println("Areasender = : ${senderData["area"]}")
+                        println("Citysender = : ${senderData["city"]}")
+                        println("Statesender = : ${senderData["state"]}")
+                        println("Pincodesender = : ${senderData["postalCode"]}") *//*
 
 
                     callback(senderData)
@@ -692,9 +796,8 @@ class TravelerProfile : AppCompatActivity() {
     }
 */
 
-    private fun firstMileAddressTraveler(document: DocumentSnapshot){
+    private fun firstMileAddressTraveler(document: DocumentSnapshot) {
 // unique key would be same for traveler and sender in a journey
-
 
 
         houseNumber_Traveler = """
@@ -730,12 +833,12 @@ class TravelerProfile : AppCompatActivity() {
 
     }
 
-    private fun lastMileAddressTraveler(){
-      // traveler to address will be from address in last mile
+    private fun lastMileAddressTraveler() {
+        // traveler to address will be from address in last mile
 
     }
 
-    private fun updateBookingDetailsOnSender(response: Response){
+    private fun updateBookingDetailsOnSender(response: Response) {
 
         try {
             val responseBody = response.body?.string()
@@ -745,17 +848,17 @@ class TravelerProfile : AppCompatActivity() {
 
                 // Extract data from response
                 val bookingId = json.optString("order.order_id")
-             //   order name = order_name
-                   //     "vehicle_type_id":2,
-              //  created_datetime":"2025-05-31T12:07:13+05:30","finish_datetime":null,"status":"new","status_description":"Created","matter":"Documents","total_weight_kg":500,"is_client_notification_enabled":false,"is_contact_person_notification_enabled":false,"loaders_count":0,"backpayment_details":null
+                //   order name = order_name
+                //     "vehicle_type_id":2,
+                //  created_datetime":"2025-05-31T12:07:13+05:30","finish_datetime":null,"status":"new","status_description":"Created","matter":"Documents","total_weight_kg":500,"is_client_notification_enabled":false,"is_contact_person_notification_enabled":false,"loaders_count":0,"backpayment_details":null
                 val status = json.optString("status")
                 val trackingUrl = json.optString("tracking_url")
 
                 // Update UI or perform other actions
                 runOnUiThread {
                     // Example: Update TextViews
-                   // ? findViewById<TextView>(R.id.tvBookingId).text = bookingId
-                   // ? findViewById<TextView>(R.id.tvStatus).text = status
+                    // ? findViewById<TextView>(R.id.tvBookingId).text = bookingId
+                    // ? findViewById<TextView>(R.id.tvStatus).text = status
 
                     // You can also update Sender.senderRecord if needed
                     // (Assuming you have a way to convert this to a DocumentSnapshot)
@@ -772,14 +875,14 @@ class TravelerProfile : AppCompatActivity() {
     }
 
 
-    private fun updateBookingDetailsOnTraveler(response: Response){
+    private fun updateBookingDetailsOnTraveler(response: Response) {
 
     }
 
     private fun fetchTheAcceptedOrder(uniqueKey: String) {
         val subStatus = findViewById<TextView>(R.id.subStatus)
         val trackingUrlTextView = findViewById<TextView>(R.id.trackingUrl)
-       // val startTimeSender = findViewById<TextView>(R.id.startTimeSender)
+        // val startTimeSender = findViewById<TextView>(R.id.startTimeSender)
         val endTimeSender = findViewById<TextView>(R.id.endTimeSender)
         val mainStatus = findViewById<TextView>(R.id.bookingStatus)
 
@@ -852,8 +955,8 @@ class TravelerProfile : AppCompatActivity() {
                                         }
                                     }
 
-                                  /*  startTimeSender.text =
-                                        "Pickup: ${formatDateTime(senderPoint["requiredStartDatetime"])}"*/
+                                    /*  startTimeSender.text =
+                                          "Pickup: ${formatDateTime(senderPoint["requiredStartDatetime"])}"*/
                                     endTimeSender.text =
                                         "Parcel Arrival Time: ${formatDateTime(senderPoint["requiredFinishDatetime"])}"
                                 } ?: run {
@@ -892,15 +995,16 @@ class TravelerProfile : AppCompatActivity() {
             }
     }
 
-   private fun fetchTheAcceptedOrder_SelfPicknDrop(){
+    private fun fetchTheAcceptedOrder_SelfPicknDrop() {
 
-       print("in fetchTheAcceptedOrder_SelfPicknDrop")
+        print("in fetchTheAcceptedOrder_SelfPicknDrop")
 
-       val subStatus = findViewById<TextView>(R.id.subStatus)
-       subStatus.text = "Self Pick And Drop"
+        val subStatus = findViewById<TextView>(R.id.subStatus)
+        subStatus.text = "Mode - Self Pick And Drop"
 
 
-   }
+    }
+
     private fun fetchFlightDetails(document: DocumentSnapshot) {
         try {
             // Create flight data map with proper types, in doc - traveler data
@@ -934,8 +1038,12 @@ class TravelerProfile : AppCompatActivity() {
             // Update UI on main thread
             runOnUiThread {
                 try {
-                    flightData["airline"]?.let { findViewById<TextView>(R.id.tvAirline)?.text = it.toString() }
-                    flightData["lastName"]?.let { findViewById<TextView>(R.id.tvLastName)?.text = it.toString() }
+                    flightData["airline"]?.let {
+                        findViewById<TextView>(R.id.tvAirline)?.text = it.toString()
+                    }
+                    flightData["lastName"]?.let {
+                        findViewById<TextView>(R.id.tvLastName)?.text = it.toString()
+                    }
                     // Use separate date and time fields
                     flightData["leavingDate"]?.let {
                         findViewById<TextView>(R.id.tvLeavingDate)?.text = it.toString()
@@ -943,11 +1051,19 @@ class TravelerProfile : AppCompatActivity() {
                     flightData["leavingTime"]?.let {
                         findViewById<TextView>(R.id.tvLeavingTime)?.text = it.toString()
                     }
-                    flightData["phoneNumber"]?.let { findViewById<TextView>(R.id.tvPhoneNumber)?.text = it.toString() }
-                    flightData["pnr"]?.let { findViewById<TextView>(R.id.tvPnr)?.text = it.toString() }
-                    flightData["weightUpto"]?.let { findViewById<TextView>(R.id.tvWeightUpto)?.text = "$it kg" }
+                    flightData["phoneNumber"]?.let {
+                        findViewById<TextView>(R.id.tvPhoneNumber)?.text = it.toString()
+                    }
+                    flightData["pnr"]?.let {
+                        findViewById<TextView>(R.id.tvPnr)?.text = it.toString()
+                    }
+                    flightData["weightUpto"]?.let {
+                        findViewById<TextView>(R.id.tvWeightUpto)?.text = "$it kg"
+                    }
 
-                    flightData["spaceAvailableIn"]?.let { findViewById<TextView>(R.id.tvsAIn)?.text = it.toString() }
+                    flightData["spaceAvailableIn"]?.let {
+                        findViewById<TextView>(R.id.tvsAIn)?.text = it.toString()
+                    }
 
                     // Set up edit button with dialog
                     setupFlightDetailsEditDialog(flightData)
@@ -958,10 +1074,11 @@ class TravelerProfile : AppCompatActivity() {
             }
 
             // Fetch flight status if available
-            (flightData["flightNumber"] as? String)?.takeIf { it.isNotEmpty() }?.let { flightNumber ->
-               // fetchFlightStatus(flightNumber)
-                fetchFlightStatusFromTraveler(document)
-            }
+            (flightData["flightNumber"] as? String)?.takeIf { it.isNotEmpty() }
+                ?.let { flightNumber ->
+                    // fetchFlightStatus(flightNumber)
+                    fetchFlightStatusFromTraveler(document)
+                }
 
         } catch (e: Exception) {
             Log.e("FlightDetails", "Error fetching document", e)
@@ -976,7 +1093,8 @@ class TravelerProfile : AppCompatActivity() {
     }
 
     private fun showEditFlightDetailsDialog(flightData: Map<String, Any>) {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_flight_details, null)
+        val dialogView =
+            LayoutInflater.from(this).inflate(R.layout.dialog_edit_flight_details, null)
 
         // Initialize dialog views
         val etAirline = dialogView.findViewById<TextInputEditText>(R.id.etAirline)
@@ -1045,15 +1163,28 @@ class TravelerProfile : AppCompatActivity() {
                 }
 
                 if (validateFlightDetails(updates)) {
-                    updateFlightDetailsInFirestore(flightData["documentId"].toString(), updates) { success ->
+                    updateFlightDetailsInFirestore(
+                        flightData["documentId"].toString(),
+                        updates
+                    ) { success ->
                         if (success) {
                             runOnUiThread {
                                 // Update UI with new values
-                                updates["airline"]?.let { findViewById<TextView>(R.id.tvAirline)?.text = it.toString() }
-                                updates["lastName"]?.let { findViewById<TextView>(R.id.tvLastName)?.text = it.toString() }
-                                updates["phoneNumber"]?.let { findViewById<TextView>(R.id.tvPhoneNumber)?.text = it.toString() }
-                                updates["pnr"]?.let { findViewById<TextView>(R.id.tvPnr)?.text = it.toString() }
-                                updates["weightUpto"]?.let { findViewById<TextView>(R.id.tvWeightUpto)?.text = "$it kg" }
+                                updates["airline"]?.let {
+                                    findViewById<TextView>(R.id.tvAirline)?.text = it.toString()
+                                }
+                                updates["lastName"]?.let {
+                                    findViewById<TextView>(R.id.tvLastName)?.text = it.toString()
+                                }
+                                updates["phoneNumber"]?.let {
+                                    findViewById<TextView>(R.id.tvPhoneNumber)?.text = it.toString()
+                                }
+                                updates["pnr"]?.let {
+                                    findViewById<TextView>(R.id.tvPnr)?.text = it.toString()
+                                }
+                                updates["weightUpto"]?.let {
+                                    findViewById<TextView>(R.id.tvWeightUpto)?.text = "$it kg"
+                                }
                                 // Update separate date/time fields
                                 updates["leavingDate"]?.let {
                                     findViewById<TextView>(R.id.tvLeavingDate)?.text = it.toString()
@@ -1061,7 +1192,9 @@ class TravelerProfile : AppCompatActivity() {
                                 updates["leavingTime"]?.let {
                                     findViewById<TextView>(R.id.tvLeavingTime)?.text = it.toString()
                                 }
-                                updates["spaceAvailabelIn"]?.let { findViewById<TextView>(R.id.tvsAIn)?.text = it.toString() }
+                                updates["spaceAvailabelIn"]?.let {
+                                    findViewById<TextView>(R.id.tvsAIn)?.text = it.toString()
+                                }
 
                                 showToast("Details updated successfully")
                                 dialog.dismiss()
@@ -1077,6 +1210,7 @@ class TravelerProfile : AppCompatActivity() {
 
         dialog.show()
     }
+
     private fun showDatePickerDialog(editText: TextInputEditText) {
         val calendar = Calendar.getInstance()
         DatePickerDialog(
@@ -1138,26 +1272,32 @@ class TravelerProfile : AppCompatActivity() {
                 showToast("Airline cannot be empty")
                 false
             }
+
             data["lastName"].toString().isEmpty() -> {
                 showToast("Last name cannot be empty")
                 false
             }
+
             data["phoneNumber"].toString().isEmpty() -> {
                 showToast("Phone number cannot be empty")
                 false
             }
+
             data["weightUpto"].toString().toIntOrNull() ?: 0 <= 0 -> {
                 showToast("Weight must be greater than 0")
                 false
             }
+
             data["leavingDate"].toString().isEmpty() -> {
                 showToast("Please select a leaving date")
                 false
             }
+
             data["leavingTime"].toString().isEmpty() -> {
                 showToast("Please select a leaving time")
                 false
             }
+
             else -> true
         }
     }
@@ -1168,18 +1308,22 @@ class TravelerProfile : AppCompatActivity() {
                 showToast("Airline cannot be empty")
                 false
             }
+
             data["lastName"].toString().isEmpty() -> {
                 showToast("Last name cannot be empty")
                 false
             }
+
             data["phoneNumber"].toString().isEmpty() -> {
                 showToast("Phone number cannot be empty")
                 false
             }
+
             (data["weightUpto"] as Long) <= 0 -> {
                 showToast("Weight must be greater than 0")
                 false
             }
+
             else -> true
         }
     }
@@ -1218,6 +1362,7 @@ class TravelerProfile : AppCompatActivity() {
 
     // Helper extension functions
     fun String?.orEmpty(): String = this ?: ""
+
     // Date/Time formatting helpers
     private fun formatDate(isoTime: String): String {
         return try {
@@ -1244,10 +1389,74 @@ class TravelerProfile : AppCompatActivity() {
     }
 
 
- /*  private fun fetchFlightStatus(flightNumber: String) {
-        val handler = FlightStatusHandler("d39af3ab5bee86108417afdcf52134cb")
+    /*  private fun fetchFlightStatus(flightNumber: String) {
+           val handler = FlightStatusHandler("d39af3ab5bee86108417afdcf52134cb")
 
+           // Get all UI references once
+           val tvFromCode = findViewById<TextView>(R.id.tvFromCode)
+           val tvFromCity = findViewById<TextView>(R.id.tvFromCity)
+           val tvFromTime = findViewById<TextView>(R.id.tvFromTime)
+           val tvToCode = findViewById<TextView>(R.id.tvToCode)
+           val tvToCity = findViewById<TextView>(R.id.tvToCity)
+           val tvToTime = findViewById<TextView>(R.id.tvToTime)
+           val tvFlightStatus = findViewById<TextView>(R.id.tvFlightStatus)
+           val tvDelay = findViewById<TextView>(R.id.tvDelay)
+
+           CoroutineScope(Dispatchers.IO).launch {
+               try {
+                   when (val result = handler.getFlightStatus(flightNumber)) {
+                       is FlightStatusHandler.FlightStatusResult.Success -> {
+                           withContext(Dispatchers.Main) {
+                               // 1. Set airport codes and names
+                               tvFromCode.text = "[${result.departureAirportCode}]"
+                               tvFromCity.text = result.departureAirport
+                               tvToCode.text = "[${result.arrivalAirportCode}]"
+                               tvToCity.text = result.arrivalAirport
+
+
+
+                               tvFromTime.text = formatFlightTime(result.departureTime) // "10:53 PM, 17 Jun 2025"
+                               tvToTime.text = formatFlightTime(result.arrivalTime)
+
+                               // 3. Set status and delay
+                               /*val statusText = when {
+                                   result.delay > 0 -> "Delayed (${result.delay} mins)"
+                                   else -> "On Time"
+                               }*/
+                               tvFlightStatus.text ="Status  : ${result.status}"
+                               tvFlightStatus.setTextColor(if (result.delay > 0) Color.RED else Color.GREEN)
+
+                               tvDelay.text = if (result.delay > 0) "⚠️ Delayed by ${result.delay} minutes" else ""
+                           }
+                       }
+                       is FlightStatusHandler.FlightStatusResult.Error -> {
+                           withContext(Dispatchers.Main) {
+                               tvFlightStatus.text = "Error: ${result.message}"
+                               tvFlightStatus.setTextColor(Color.RED)
+                           }
+                       }
+                   }
+               } catch (e: Exception) {
+                   withContext(Dispatchers.Main) {
+                       tvFlightStatus.text = "Error: ${e.message}"
+                       tvFlightStatus.setTextColor(Color.RED)
+                   }
+               }
+           }
+       }*/
+
+    /*  private fun formatFlightTime(isoTime: String): String {
+          return try {
+              ZonedDateTime.parse(isoTime, apiFormatter)
+                  .format(displayFormatter)
+          } catch (e: Exception) {
+              "Time not available" // Fallback text
+          }
+      }
+  */
+    private fun fetchFlightStatusFromTraveler(document: DocumentSnapshot) {
         // Get all UI references once
+        val tvFlightNumber = findViewById<TextView>(R.id.tvFlightNumber)
         val tvFromCode = findViewById<TextView>(R.id.tvFromCode)
         val tvFromCity = findViewById<TextView>(R.id.tvFromCity)
         val tvFromTime = findViewById<TextView>(R.id.tvFromTime)
@@ -1255,165 +1464,104 @@ class TravelerProfile : AppCompatActivity() {
         val tvToCity = findViewById<TextView>(R.id.tvToCity)
         val tvToTime = findViewById<TextView>(R.id.tvToTime)
         val tvFlightStatus = findViewById<TextView>(R.id.tvFlightStatus)
-        val tvDelay = findViewById<TextView>(R.id.tvDelay)
 
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                when (val result = handler.getFlightStatus(flightNumber)) {
-                    is FlightStatusHandler.FlightStatusResult.Success -> {
-                        withContext(Dispatchers.Main) {
-                            // 1. Set airport codes and names
-                            tvFromCode.text = "[${result.departureAirportCode}]"
-                            tvFromCity.text = result.departureAirport
-                            tvToCode.text = "[${result.arrivalAirportCode}]"
-                            tvToCity.text = result.arrivalAirport
+        // Get data from document
+        val toCode = document.getString("toCode") ?: ""
+        val toPlace = document.getString("toPlace") ?: ""
+        val fromCode = document.getString("fromCode") ?: ""
+        val fromPlace = document.getString("fromPlace") ?: ""
+        val airline = document.getString("airline") ?: ""
+        val arrivalTime = document.getString("arrivalTime") ?: ""
+        val departureTime = document.getString("departureTime") ?: ""
+        val flightNumber = document.getString("flightNumber") ?: ""
+        val status = document.getString("status") ?: ""
+        mileStatus = status; // Update the global variable
+        // Set values to TextViews
+        tvFlightNumber.text = "$airline $flightNumber"
+        tvFromCode.text = "[$fromCode]"
+        tvFromCity.text = fromPlace
+        tvFromTime.text = departureTime
+        tvToCode.text = "[$toCode]"
+        tvToCity.text = toPlace
+        tvToTime.text = arrivalTime
+        tvFlightStatus.text = "Status : $status"
 
-
-
-                            tvFromTime.text = formatFlightTime(result.departureTime) // "10:53 PM, 17 Jun 2025"
-                            tvToTime.text = formatFlightTime(result.arrivalTime)
-
-                            // 3. Set status and delay
-                            /*val statusText = when {
-                                result.delay > 0 -> "Delayed (${result.delay} mins)"
-                                else -> "On Time"
-                            }*/
-                            tvFlightStatus.text ="Status  : ${result.status}"
-                            tvFlightStatus.setTextColor(if (result.delay > 0) Color.RED else Color.GREEN)
-
-                            tvDelay.text = if (result.delay > 0) "⚠️ Delayed by ${result.delay} minutes" else ""
-                        }
-                    }
-                    is FlightStatusHandler.FlightStatusResult.Error -> {
-                        withContext(Dispatchers.Main) {
-                            tvFlightStatus.text = "Error: ${result.message}"
-                            tvFlightStatus.setTextColor(Color.RED)
-                        }
-                    }
+        // Check if flight tracking should be enabled (3 hours before departure)
+        val shouldEnableTracking = try {
+            // Set IST (Indian Standard Time) TimeZone
+            val istTimeZone = TimeZone.getTimeZone("Asia/Kolkata")
+            val dateFormat = if (departureTime.contains(" ")) {
+                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply {
+                    timeZone = istTimeZone
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    tvFlightStatus.text = "Error: ${e.message}"
-                    tvFlightStatus.setTextColor(Color.RED)
+            } else {
+                // If only time is available, assume today's date in IST
+                SimpleDateFormat("HH:mm", Locale.getDefault()).apply {
+                    timeZone = istTimeZone
                 }
             }
-        }
-    }*/
 
-  /*  private fun formatFlightTime(isoTime: String): String {
-        return try {
-            ZonedDateTime.parse(isoTime, apiFormatter)
-                .format(displayFormatter)
+            // Parse departure time in IST
+            val departureDateTime = if (departureTime.contains(" ")) {
+                dateFormat.parse(departureTime)
+            } else {
+                // Combine today's date with the given time
+                val today = Calendar.getInstance(istTimeZone)
+                val timeParts = departureTime.split(":")
+                today.set(Calendar.HOUR_OF_DAY, timeParts[0].toInt())
+                today.set(Calendar.MINUTE, timeParts.getOrElse(1) { "0" }.toInt())
+                today.time
+            }
+
+            // Current time in IST
+            val now = Calendar.getInstance(istTimeZone).timeInMillis
+
+            // Departure time in IST
+            val departureCal =
+                Calendar.getInstance(istTimeZone).apply { time = departureDateTime!! }
+            val departureTimeInMillis = departureCal.timeInMillis
+
+            // 3 hours before departure (in IST)
+            val threeHoursBeforeDeparture = departureTimeInMillis - (3 * 60 * 60 * 1000)
+
+            // Enable tracking if:
+            // 1. Current time is within 3 hours before departure OR
+            // 2. Flight is today (even if past departure, for status checks)
+            now >= threeHoursBeforeDeparture && now <= departureTimeInMillis + (12 * 60 * 60 * 1000) // Allow 12h after departure for status
         } catch (e: Exception) {
-            "Time not available" // Fallback text
+            e.printStackTrace()
+            false
+        }
+
+        // Enable FlightAware tracking only if flight is upcoming or active
+        if (shouldEnableTracking && flightNumber.isNotBlank()) {
+            tvFlightNumber.setOnClickListener {
+                val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(trackingUrl)))
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Cannot open tracking", Toast.LENGTH_SHORT).show()
+                }
+            }
+            // Visual indication (optional)
+            tvFlightNumber.setTextColor(Color.BLUE)
+            tvFlightNumber.paintFlags = tvFlightNumber.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+        } else {
+            // Reset if not clickable
+            tvFlightNumber.setOnClickListener(null)
+            tvFlightNumber.setTextColor(Color.BLACK) // Or your default text color
+            tvFlightNumber.paintFlags =
+                tvFlightNumber.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
+
+            // Show departure date if not today
+            if (departureTime.contains(" ")) {
+                tvFlightStatus.text = "Will Depart On ${departureTime.substringBefore(" ")}"
+            } else {
+                tvFlightStatus.text = "Status: Scheduled"
+            }
         }
     }
-*/
-  private fun fetchFlightStatusFromTraveler(document: DocumentSnapshot) {
-      // Get all UI references once
-      val tvFlightNumber = findViewById<TextView>(R.id.tvFlightNumber)
-      val tvFromCode = findViewById<TextView>(R.id.tvFromCode)
-      val tvFromCity = findViewById<TextView>(R.id.tvFromCity)
-      val tvFromTime = findViewById<TextView>(R.id.tvFromTime)
-      val tvToCode = findViewById<TextView>(R.id.tvToCode)
-      val tvToCity = findViewById<TextView>(R.id.tvToCity)
-      val tvToTime = findViewById<TextView>(R.id.tvToTime)
-      val tvFlightStatus = findViewById<TextView>(R.id.tvFlightStatus)
 
-      // Get data from document
-      val toCode = document.getString("toCode") ?: ""
-      val toPlace = document.getString("toPlace") ?: ""
-      val fromCode = document.getString("fromCode") ?: ""
-      val fromPlace = document.getString("fromPlace") ?: ""
-      val airline = document.getString("airline") ?: ""
-      val arrivalTime = document.getString("arrivalTime") ?: ""
-      val departureTime = document.getString("departureTime") ?: ""
-      val flightNumber = document.getString("flightNumber") ?: ""
-      val status = document.getString("status") ?: ""
-
-      // Set values to TextViews
-      tvFlightNumber.text = "$airline $flightNumber"
-      tvFromCode.text = "[$fromCode]"
-      tvFromCity.text = fromPlace
-      tvFromTime.text = departureTime
-      tvToCode.text = "[$toCode]"
-      tvToCity.text = toPlace
-      tvToTime.text = arrivalTime
-      tvFlightStatus.text = "Status : $status"
-
-      // Check if flight tracking should be enabled (3 hours before departure)
-      val shouldEnableTracking = try {
-          // Set IST (Indian Standard Time) TimeZone
-          val istTimeZone = TimeZone.getTimeZone("Asia/Kolkata")
-          val dateFormat = if (departureTime.contains(" ")) {
-              SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).apply {
-                  timeZone = istTimeZone
-              }
-          } else {
-              // If only time is available, assume today's date in IST
-              SimpleDateFormat("HH:mm", Locale.getDefault()).apply {
-                  timeZone = istTimeZone
-              }
-          }
-
-          // Parse departure time in IST
-          val departureDateTime = if (departureTime.contains(" ")) {
-              dateFormat.parse(departureTime)
-          } else {
-              // Combine today's date with the given time
-              val today = Calendar.getInstance(istTimeZone)
-              val timeParts = departureTime.split(":")
-              today.set(Calendar.HOUR_OF_DAY, timeParts[0].toInt())
-              today.set(Calendar.MINUTE, timeParts.getOrElse(1) { "0" }.toInt())
-              today.time
-          }
-
-          // Current time in IST
-          val now = Calendar.getInstance(istTimeZone).timeInMillis
-
-          // Departure time in IST
-          val departureCal = Calendar.getInstance(istTimeZone).apply { time = departureDateTime!! }
-          val departureTimeInMillis = departureCal.timeInMillis
-
-          // 3 hours before departure (in IST)
-          val threeHoursBeforeDeparture = departureTimeInMillis - (3 * 60 * 60 * 1000)
-
-          // Enable tracking if:
-          // 1. Current time is within 3 hours before departure OR
-          // 2. Flight is today (even if past departure, for status checks)
-          now >= threeHoursBeforeDeparture && now <= departureTimeInMillis + (12 * 60 * 60 * 1000) // Allow 12h after departure for status
-      } catch (e: Exception) {
-          e.printStackTrace()
-          false
-      }
-
-      // Enable FlightAware tracking only if flight is upcoming or active
-      if (shouldEnableTracking && flightNumber.isNotBlank()) {
-          tvFlightNumber.setOnClickListener {
-              val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
-              try {
-                  startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(trackingUrl)))
-              } catch (e: Exception) {
-                  Toast.makeText(this, "Cannot open tracking", Toast.LENGTH_SHORT).show()
-              }
-          }
-          // Visual indication (optional)
-          tvFlightNumber.setTextColor(Color.BLUE)
-          tvFlightNumber.paintFlags = tvFlightNumber.paintFlags or Paint.UNDERLINE_TEXT_FLAG
-      } else {
-          // Reset if not clickable
-          tvFlightNumber.setOnClickListener(null)
-          tvFlightNumber.setTextColor(Color.BLACK) // Or your default text color
-          tvFlightNumber.paintFlags = tvFlightNumber.paintFlags and Paint.UNDERLINE_TEXT_FLAG.inv()
-
-          // Show departure date if not today
-          if (departureTime.contains(" ")) {
-              tvFlightStatus.text = "Will Depart On ${departureTime.substringBefore(" ")}"
-          } else {
-              tvFlightStatus.text = "Status: Scheduled"
-          }
-      }
-  }
     private fun setupBookingTabs(uniqueKey: String) {
         val tabStatus = findViewById<TextView>(R.id.tabStatus)
         val tabSender = findViewById<TextView>(R.id.tabSender)
@@ -1444,6 +1592,8 @@ class TravelerProfile : AppCompatActivity() {
 
             underlineStatus.visibility = View.VISIBLE
             underlineSender.visibility = View.GONE
+
+            showMilesStatus(uniqueKey);// for status tab.
         }
 
         tabSenderContainer.setOnClickListener {
@@ -1473,7 +1623,7 @@ class TravelerProfile : AppCompatActivity() {
                     val fromAddressMap = document.get("fromAddress") as? Map<*, *>
                     val toAddressMap = document.get("toAddress") as? Map<*, *>
                     val itemMap = document.get("itemDetails") as? Map<*, *>
-
+                    senderPhoneNumber = document.getString("phoneNumber") ?: ""
                     // Parse values
                     val fromAddress = fromAddressMap?.get("fullAddress") as? String ?: "N/A"
                     val fromLat = (fromAddressMap?.get("latitude") as? Number)?.toDouble() ?: 0.0
@@ -1491,9 +1641,15 @@ class TravelerProfile : AppCompatActivity() {
                     val weightGram = (itemMap?.get("weightGram") as? Number)?.toDouble() ?: 0.0
                     val weightKg = (itemMap?.get("weightKg") as? Number)?.toDouble() ?: 0.0
 
-                    Log.d("FirestoreDebug", "fromAddress: $fromAddress, fromLat: $fromLat, fromLng: $fromLng")
+                    Log.d(
+                        "FirestoreDebug",
+                        "fromAddress: $fromAddress, fromLat: $fromLat, fromLng: $fromLng"
+                    )
                     Log.d("FirestoreDebug", "toAddress: $toAddress, toLat: $toLat, toLng: $toLng")
-                    Log.d("FirestoreDebug", "itemName: $itemName, instructions: $itemInstructions, totalWeight: $totalWeight")
+                    Log.d(
+                        "FirestoreDebug",
+                        "itemName: $itemName, instructions: $itemInstructions, totalWeight: $totalWeight"
+                    )
                     Log.d("FirestoreDebug", "isVerified: $isVerified")
 
                     runOnUiThread {
@@ -1532,6 +1688,249 @@ class TravelerProfile : AppCompatActivity() {
             }
     }
 
+    private fun showMilesStatus(key: String) {
+        println("showMilesStatus called : $senderPhoneNumber ")
+        getTravelerForStatus(key);
+
+    }
+
+    private fun getTravelerForStatus(uniqueKey: String) {
+        // Get Firestore instance
+        val db = FirebaseFirestore.getInstance()
+
+        // Query traveler collection
+        db.collection("traveler")
+            .whereEqualTo("uniqueKey", uniqueKey)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (documents.isEmpty) {
+                    Log.w("TravelerQuery", "No traveler found with uniqueKey: $uniqueKey")
+                    return@addOnSuccessListener
+                }
+
+                // Get first document (assuming uniqueKey is unique)
+                val travelerDoc = documents.first()
+
+                try {
+                    // Extract required fields with null checks
+                    val pickAndDropMode =
+                        travelerDoc.getString("pickAndDropMode") ?: "Not specified"
+                    val leavingDate = travelerDoc.getString("leavingDate") ?: "Not specified"
+                    val leavingTime = travelerDoc.getString("leavingTime") ?: "Not specified"
+                    val firstMile = travelerDoc.getString("FirstMileStatus") ?: "Not specified"
+                    val secMile = travelerDoc.getString("SecondMileStatus") ?: "Not specified"
+
+                    val LastMile = travelerDoc.getString("LastMileStatus") ?: "Not specified"
+                    val firstMileOTP = travelerDoc.getString("FirstMileOTP") ?: "Not specified"
+                    val lastMileOTP = travelerDoc.getString("LastMileOTP") ?: "Not specified"
+                    //val firstMileCompleted = travelerDoc.getBoolean("FirstMileCompleted") ?: false
+                    val phoneNumber = travelerDoc.getString("phoneNumber") ?: "Not specified"
+                    // Update UI on main thread
+                    runOnUiThread {
+                        updateStatusUI_FirstMile(
+                            pickAndDropMode,
+                            leavingTime,
+                            firstMileOTP,
+                            firstMile
+                        )
+                    }
 
 
+
+                    if (secMile == "In Progress") {
+                        // Update UI on main thread
+                        runOnUiThread {
+                            updateStatusUI_SecondMile() // need to show the flight tracking link
+                        }
+                    } else if (secMile == "Not Started") {
+                        // Update UI on main thread
+                        runOnUiThread {
+
+                            findViewById<TextView>(R.id.tvTransitStatusMain)?.text =
+                                "⏳ 2nd Stage - Not Started Yet"
+                            findViewById<TextView>(R.id.tvTransitStatus)?.text = ""
+                            findViewById<TextView>(R.id.tvLastUpdated)?.text = ""
+                        }
+                    } else {
+
+                        findViewById<TextView>(R.id.tvTransitStatusMain)?.text =
+                            "⏳ 2nd Stage - Completed "
+                        findViewById<TextView>(R.id.tvTransitStatus)?.text =
+                            "You Reached Home, We are initiating the final pickup process"
+
+                    }
+
+                    if (LastMile == "In Progress") {
+                        // Update UI on main thread
+                        runOnUiThread {
+                            updateStatusUI_LastMile(lastMileOTP, phoneNumber);
+                        }
+                    } else if (LastMile == "Not Started") {
+                        // Update UI on main thread
+                        runOnUiThread {
+                            findViewById<TextView>(R.id.tvDestinationStatusMain)?.text =
+                                "\uD83D\uDCCD 3rd Stage - Not Started Yet"
+                            findViewById<TextView>(R.id.tvDestinationStatus)?.text = ""
+                            findViewById<TextView>(R.id.tvDeliveryOtp)?.text = ""
+                            findViewById<TextView>(R.id.pickerContact)?.text = ""
+                        }
+                    } else {
+                        // for completion of last mile
+                        findViewById<TextView>(R.id.tvDestinationStatusMain)?.text =
+                            "\uD83D\uDCCD 3rd Stage - Completed"
+                        // findViewById<TextView>(R.id.tvDeliveryOtp)?.text = "Delivery OTP: $LMOTP"
+                        findViewById<TextView>(R.id.pickerContact)?.text = ""
+                        findViewById<TextView>(R.id.tvDestinationStatus)?.text =
+                            "Order Completed, Thanks!"
+                    }
+
+                    Log.d("TravelerQuery", "Successfully fetched traveler data")
+
+                } catch (e: Exception) {
+                    Log.e("TravelerQuery", "Error parsing traveler data", e)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("TravelerQuery", "Error getting traveler document", exception)
+            }
+    }
+
+    private fun updateStatusUI_FirstMile(
+        pickAndDropMode: String,
+        leavingTime: String,
+        firstMileOTP: String,
+        firstMileCompltd: String
+    ) {
+        // Update status content
+        findViewById<TextView>(R.id.subStatus)?.text = when (pickAndDropMode.lowercase()) {
+            "self" -> "Sender Will Pick and Drop"
+            "company" -> "Company Pick and Drop"
+            else -> "Pick/Drop: $pickAndDropMode"
+        }
+
+        if (firstMileCompltd == "In Progress") {
+
+            // Update leaving date and time if needed
+            findViewById<TextView>(R.id.tvPickupOtp)?.text = "OTP : $firstMileOTP"
+            findViewById<TextView>(R.id.tvEta1st)?.text = "ETA : Before $leavingTime"
+            findViewById<TextView>(R.id.tvDriverPhone)?.text =
+                "Sender Phone: +91 $senderPhoneNumber"
+
+        } else {
+
+            findViewById<TextView>(R.id.fileMileMainStatus)?.text = "✓ 1st Stage - Completed"
+            findViewById<TextView>(R.id.tvEta1st)?.text =
+                "Parcel received – you’re now flying with it."
+            findViewById<TextView>(R.id.tvDriverPhone)?.text = ""
+
+        }
+
+
+        // You can update other UI elements as needed
+    }
+
+    private fun updateStatusUI_SecondMile(
+
+    ) {
+
+        findViewById<TextView>(R.id.tvTransitStatusMain)?.text = "⏳ 2nd Stage - In Transit"
+        findViewById<TextView>(R.id.tvTransitStatus)?.text = "You Are Flying With Parcel"
+        findViewById<TextView>(R.id.tvLastUpdated)?.text = ""
+        // You can update other UI elements as needed
+    }
+
+
+    private fun updateTraveler2ndMileStatus(travelerPhNum: String) {
+        // Update UI first
+        findViewById<TextView>(R.id.tvTransitStatus)?.text = "⏳ 2nd Stage - Completed"
+        findViewById<TextView>(R.id.tvTransitStatusMain)?.text =
+            "You Reached Home, We are initiating the final pickup process"
+
+        // Get Firestore reference
+        val db = FirebaseFirestore.getInstance()
+        val travelerRef = db.collection("traveler").document(travelerPhNum)
+
+        // Create updates for only the status fields
+        val statusUpdates = hashMapOf<String, Any>(
+            "SecondMileStatus" to "Completed",
+            "LastMileStatus" to "In Progress" // Or whatever status you want to set
+            // Omit LastMileOTP since we're not changing it
+        )
+
+        // Perform the update
+        travelerRef.update(statusUpdates)
+            .addOnSuccessListener {
+                Log.d("Firestore", "Status fields updated successfully")
+                // You can add any post-update UI changes here
+            }
+            .addOnFailureListener { e ->
+                Log.w("Firestore", "Error updating status fields", e)
+                // You might want to show an error to the user
+                findViewById<TextView>(R.id.tvTransitStatus)?.text =
+                    "Update failed. Please try again."
+            }
+    }
+
+    private fun updateStatusUI_LastMile(LMOTP: String, uniqueKey: String) {
+
+
+        // Setup OTP verification
+        val etOtpInput = findViewById<EditText>(R.id.etOtpInput)
+        val btnVerifyOtp = findViewById<Button>(R.id.btnVerifyOtp)
+
+        btnVerifyOtp.setOnClickListener {
+            val enteredOtp = etOtpInput.text.toString().trim()
+
+            if (enteredOtp.isEmpty()) {
+                etOtpInput.error = "Please enter OTP"
+                return@setOnClickListener
+            }
+
+            if (enteredOtp == LMOTP) {
+                // OTP matched
+                Toast.makeText(this, "OTP Verified Successfully!", Toast.LENGTH_SHORT).show()
+
+
+                findViewById<TextView>(R.id.tvDestinationStatus)?.text = "Status: OTP Verified - Order Completed"
+                // You can proceed with your next steps here
+
+
+
+                // udpate the traveler last mile status and order as complete and move this order to completed traveler db collection
+
+                updateTravelerLastMileStatuses(uniqueKey) // passing the phone number
+            } else {
+                // OTP didn't match
+                Toast.makeText(this, "Invalid OTP. Please try again.", Toast.LENGTH_SHORT).show()
+                etOtpInput.error = "Wrong OTP"
+                etOtpInput.text.clear()
+            }
+        }
+    }
+
+
+    private fun updateTravelerLastMileStatuses(key: String) {
+
+        findViewById<TextView>(R.id.tvDestinationStatusMain)?.text =
+            "\uD83D\uDCCD 3rd Stage - Completed"
+        // findViewById<TextView>(R.id.tvDeliveryOtp)?.text = "Delivery OTP: $LMOTP"
+        findViewById<TextView>(R.id.pickerContact)?.text = ""
+        findViewById<TextView>(R.id.tvDestinationStatus)?.text = "Order Completed, Thanks!"
+
+
+        val db = FirebaseFirestore.getInstance()
+
+        db.collection("traveler")
+            .document(key)
+            .update(
+                "LastMileStatus", "Completed",  // Use commas instead of 'to'
+                "status", "Completed"          // Use commas between key-value pairs
+            )
+            .addOnSuccessListener {
+                Log.d("UpdateStatus", "Traveler $key updated successfully!")
+            }
+            .addOnFailureListener { e ->
+                Log.e("UpdateStatus", "Failed to update traveler $key", e)
+            }
+    }
 }

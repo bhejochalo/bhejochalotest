@@ -39,7 +39,6 @@ android {
         viewBinding = true
     }
 }
-
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -61,25 +60,24 @@ dependencies {
     // OkHttp
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
-    implementation ("com.razorpay:checkout:1.6.33")
-    implementation("com.google.android.material:material")
-    // Firebase dependencies
+
+    // Razorpay
+    implementation("com.razorpay:checkout:1.6.33")
+
+    // Material Design (✅ only once, latest version)
+    implementation("com.google.android.material:material:1.12.0")
+
+    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 
+    implementation("com.google.android.libraries.places:places:3.3.0")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
-    implementation ("com.google.android.libraries.places:places:3.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
-    implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0") // or latest
-
-    implementation ("com.squareup.okhttp3:okhttp:4.9.3")
-   // implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0'
-
-    implementation ("com.google.android.material:material:1.6.0")
-
-    implementation ("com.google.android.material:material:1.6.0")
-
+    // ✅ Slide to Act Library
+    implementation("com.google.android.material:material:1.9.0")
 }
+
