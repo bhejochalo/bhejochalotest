@@ -48,7 +48,6 @@ class SenderProfile : AppCompatActivity() {
         val tabSender = findViewById<TextView>(R.id.tabSender)
 
         tabStatusContainer.setOnClickListener {
-            // Switch to Status tab
             statusContent.visibility = View.VISIBLE
             senderContent.visibility = View.GONE
             underlineStatus.visibility = View.VISIBLE
@@ -58,21 +57,13 @@ class SenderProfile : AppCompatActivity() {
         }
 
         tabSenderContainer.setOnClickListener {
-            // Switch to Traveler tab
             statusContent.visibility = View.GONE
             senderContent.visibility = View.VISIBLE
             underlineStatus.visibility = View.GONE
             underlineSender.visibility = View.VISIBLE
             tabStatus.setTextColor(getColor(R.color.gray_secondary))
             tabSender.setTextColor(getColor(R.color.orange_primary))
-
-            // Load traveler data when tab is clicked
-            loadTravelerData()
-        }
-
-        // Set up "View Complete Details" button
-        findViewById<Button>(R.id.btnViewFullDetails).setOnClickListener {
-            showCompleteTravelerDetails()
+            loadTravelerData() // Load traveler data when tab is clicked
         }
     }
 
@@ -214,38 +205,62 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun loadTravelerData() {
-        if (uniqueKey.isNullOrEmpty()) {
-            Toast.makeText(this, "No traveler information available", Toast.LENGTH_SHORT).show()
-            return
+        // Get the uniqueKey from SharedPreferences first
+        val uniqueKey = "TX_ede17352f5be9078b1d86e870267d06d5f79a187d4cbc1559524c469c7f6427b"
+
+        if (uniqueKey.isEmpty()) {
+            // Try to get from intent as fallback
+            val intentKey = intent.getStringExtra("UNIQUE_KEY")
+            if (intentKey.isNullOrEmpty()) {
+                Toast.makeText(this, "No traveler information available", Toast.LENGTH_SHORT).show()
+                Log.e("SenderProfile", "Both SharedPreferences and Intent uniqueKey are null")
+                return
+            } else {
+                this@SenderProfile.uniqueKey = intentKey
+            }
         }
+
+        Log.d("SenderProfile", "Loading traveler data with uniqueKey: $uniqueKey")
 
         db.collection("traveler")
             .whereEqualTo("uniqueKey", uniqueKey)
             .limit(1)
             .get()
             .addOnSuccessListener { querySnapshot ->
+                Log.d("SenderProfile", "Query successful, found ${querySnapshot.size()} documents")
                 if (!querySnapshot.isEmpty) {
                     val travelerDoc = querySnapshot.documents[0]
+                    Log.d("SenderProfile", "Traveler document: ${travelerDoc.id}")
+                    Log.d("SenderProfile", "Traveler data: ${travelerDoc.data}")
                     updateTravelerUI(travelerDoc)
                 } else {
                     Toast.makeText(this, "Traveler details not found", Toast.LENGTH_SHORT).show()
+                    Log.w("SenderProfile", "No traveler document found with uniqueKey: $uniqueKey")
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(this, "Error loading traveler details: ${e.message}", Toast.LENGTH_SHORT).show()
-                Log.e("SenderProfile", "Error loading traveler", e)
+                runOnUiThread {
+                    Toast.makeText(this, "Error loading traveler details: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("SenderProfile", "Error loading traveler details", e)
+                }
             }
     }
 
     private fun updateTravelerUI(travelerDoc: DocumentSnapshot) {
-        findViewById<TextView>(R.id.tvTravelerName).text = travelerDoc.getString("lastName") ?: "N/A"
-        findViewById<TextView>(R.id.tvTravelerAirline).text = travelerDoc.getString("airline") ?: "N/A"
-        findViewById<TextView>(R.id.tvTravelerPnr).text = travelerDoc.getString("pnr") ?: "N/A"
-        findViewById<TextView>(R.id.tvTravelerFlightNumber).text = travelerDoc.getString("flightNumber") ?: "N/A"
-        findViewById<TextView>(R.id.tvTravelerDeparture).text = travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
-        findViewById<TextView>(R.id.tvTravelerArrival).text = travelerDoc.getString("arrivalTime") ?: "N/A"
-        findViewById<TextView>(R.id.tvTravelerDestination).text = travelerDoc.getString("destination") ?: "N/A"
-        findViewById<TextView>(R.id.tvTravelerWeight).text = "${travelerDoc.getLong("weightUpto") ?: 0} kg"
+        try {
+            findViewById<TextView>(R.id.tvTravelerName)?.text = travelerDoc.getString("lastName") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerAirline)?.text = travelerDoc.getString("airline") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerPnr)?.text = travelerDoc.getString("pnr") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = travelerDoc.getString("flightNumber") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerDeparture)?.text =
+                travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerArrival)?.text = travelerDoc.getString("arrivalTime") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerDestination)?.text = travelerDoc.getString("destination") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerWeight)?.text = "${travelerDoc.getLong("weightUpto") ?: 0} kg"
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error updating traveler UI", e)
+            Toast.makeText(this, "Error displaying traveler details", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showCompleteTravelerDetails() {
