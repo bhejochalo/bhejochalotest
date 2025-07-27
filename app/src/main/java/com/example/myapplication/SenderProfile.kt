@@ -6,11 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.NestedScrollView
@@ -34,6 +30,7 @@ class SenderProfile : AppCompatActivity() {
         // Initialize UI components
         setupTabSwitching()
         setupEditButtons()
+        setupEditItemButton() // Add this line
         loadInitialData()
     }
 
@@ -63,7 +60,7 @@ class SenderProfile : AppCompatActivity() {
             underlineSender.visibility = View.VISIBLE
             tabStatus.setTextColor(getColor(R.color.gray_secondary))
             tabSender.setTextColor(getColor(R.color.orange_primary))
-            loadTravelerData() // Load traveler data when tab is clicked
+            loadTravelerData()
         }
     }
 
@@ -72,7 +69,6 @@ class SenderProfile : AppCompatActivity() {
         findViewById<Button>(R.id.btnEditFromAddress).setOnClickListener {
             showEditAddressDialog("From") { newAddress ->
                 findViewById<TextView>(R.id.tvFromAddress).text = newAddress
-                // Here you would also update the address in Firestore
                 updateAddressInFirestore("fromAddress", newAddress)
             }
         }
@@ -81,9 +77,14 @@ class SenderProfile : AppCompatActivity() {
         findViewById<Button>(R.id.btnEditToAddress).setOnClickListener {
             showEditAddressDialog("To") { newAddress ->
                 findViewById<TextView>(R.id.tvToAddress).text = newAddress
-                // Here you would also update the address in Firestore
                 updateAddressInFirestore("toAddress", newAddress)
             }
+        }
+    }
+
+    private fun setupEditItemButton() {
+        findViewById<Button>(R.id.btnEditItemDetails).setOnClickListener {
+            showEditItemDialog()
         }
     }
 
@@ -120,14 +121,111 @@ class SenderProfile : AppCompatActivity() {
             .show()
     }
 
-    private fun updateAddressInFirestore(addressType: String, newAddress: String) {
-        // Get current user ID or phone number from SharedPreferences
-        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+    private fun showEditItemDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_item_details, null)
 
-        // Update the address in Firestore
+        // Get current values
+        val currentName = findViewById<TextView>(R.id.tvItemName).text.toString().replace("Item: ", "")
+        val currentWeight = findViewById<TextView>(R.id.tvItemWeight).text.toString().replace("Weight: ", "")
+        val currentInstructions = findViewById<TextView>(R.id.tvItemInstructions).text.toString().replace("Instructions: ", "")
+        val currentDeliveryOption = findViewById<TextView>(R.id.tvDeliveryOption).text.toString().replace("Delivery Option: ", "")
+
+        val etItemName = dialogView.findViewById<EditText>(R.id.etItemName)
+        val etKg = dialogView.findViewById<EditText>(R.id.etKg)
+        val etGram = dialogView.findViewById<EditText>(R.id.etGram)
+        val etInstructions = dialogView.findViewById<EditText>(R.id.etInstructions)
+        val rgDeliveryOption = dialogView.findViewById<RadioGroup>(R.id.rgDeliveryOption)
+
+        // Set current values
+        etItemName.setText(currentName)
+        etInstructions.setText(currentInstructions)
+
+        // Parse weight
+        val weightParts = currentWeight.split(" ")
+        if (weightParts.size >= 2) {
+            val kg = weightParts[0].toIntOrNull() ?: 0
+            etKg.setText(kg.toString())
+        }
+        if (weightParts.size >= 4) {
+            val gram = weightParts[2].toIntOrNull() ?: 0
+            etGram.setText(gram.toString())
+        }
+
+        // Set delivery option
+        when (currentDeliveryOption) {
+            "Self Pickup" -> rgDeliveryOption.check(R.id.rbSelfPickup)
+            "Auto Pickup" -> rgDeliveryOption.check(R.id.rbAutoPickup)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Edit Item Details")
+            .setView(dialogView)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = etItemName.text.toString().trim()
+                val kg = etKg.text.toString().toIntOrNull() ?: 0
+                val gram = etGram.text.toString().toIntOrNull() ?: 0
+                val instructions = etInstructions.text.toString().trim()
+
+                val deliveryOption = when (rgDeliveryOption.checkedRadioButtonId) {
+                    R.id.rbSelfPickup -> "Self Pickup"
+                    R.id.rbAutoPickup -> "Auto Pickup"
+                    else -> "Self Pickup"
+                }
+
+                // Update UI
+                findViewById<TextView>(R.id.tvItemName).text = "Item: $newName"
+                findViewById<TextView>(R.id.tvItemWeight).text = "Weight: $kg kg $gram g"
+                findViewById<TextView>(R.id.tvItemInstructions).text = "Instructions: $instructions"
+                findViewById<TextView>(R.id.tvDeliveryOption).text = "Delivery Option: $deliveryOption"
+
+                // Update Firestore
+                updateItemDetailsInFirestore(newName, kg, gram, instructions, deliveryOption)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateItemDetailsInFirestore(name: String, kg: Int, gram: Int, instructions: String, deliveryOption: String) {
+        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+        val totalWeight = (kg * 1000) + gram
+        val price = when (deliveryOption) {
+            "Self Pickup" -> 750
+            "Auto Pickup" -> 1500
+            else -> 750
+        }
+
+        val updates = hashMapOf<String, Any>(
+            "itemDetails.itemName" to name,
+            "itemDetails.weightKg" to kg,
+            "itemDetails.weightGram" to gram,
+            "itemDetails.totalWeight" to totalWeight,
+            "itemDetails.instructions" to instructions,
+            "deliveryOptionPrice" to price
+        )
+
+        db.collection("Sender")
+            .whereEqualTo("phoneNumber", userId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val document = querySnapshot.documents[0]
+                    document.reference.update(updates)
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "Item details updated", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Failed to update item details", Toast.LENGTH_SHORT).show()
+                            Log.e("SenderProfile", "Error updating item details", e)
+                        }
+                }
+            }
+    }
+
+    private fun updateAddressInFirestore(addressType: String, newAddress: String) {
+        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
         val updates = hashMapOf<String, Any>(
             "$addressType.fullAddress" to newAddress
-            // Add other address fields if needed
         )
 
         db.collection("Sender")
@@ -149,11 +247,9 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun loadInitialData() {
-        // Load address data
         loadAddressData()
-
-        // Load status data by default
         loadStatusData()
+        loadItemDetails() // Add this line
     }
 
     private fun loadAddressData() {
@@ -175,6 +271,39 @@ class SenderProfile : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 Log.e("SenderProfile", "Error loading address data", e)
+            }
+    }
+
+    private fun loadItemDetails() {
+        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+
+        db.collection("Sender")
+            .whereEqualTo("phoneNumber", userId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val document = querySnapshot.documents[0]
+                    val itemDetails = document.get("itemDetails") as? Map<*, *>
+
+                    itemDetails?.let {
+                        val name = it["itemName"] as? String ?: "N/A"
+                        val kg = (it["weightKg"] as? Number)?.toInt() ?: 0
+                        val gram = (it["weightGram"] as? Number)?.toInt() ?: 0
+                        val instructions = it["instructions"] as? String ?: "N/A"
+
+                        val price = document.getLong("deliveryOptionPrice")?.toInt() ?: 750
+                        val deliveryOption = if (price == 750) "Self Pickup" else "Auto Pickup"
+
+                        findViewById<TextView>(R.id.tvItemName).text = "Item: $name"
+                        findViewById<TextView>(R.id.tvItemWeight).text = "Weight: $kg kg $gram g"
+                        findViewById<TextView>(R.id.tvItemInstructions).text = "Instructions: $instructions"
+                        findViewById<TextView>(R.id.tvDeliveryOption).text = "Delivery Option: $deliveryOption"
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error loading item details", e)
             }
     }
 
@@ -205,11 +334,9 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun loadTravelerData() {
-        // Get the uniqueKey from SharedPreferences first
         val uniqueKey = "TX_ede17352f5be9078b1d86e870267d06d5f79a187d4cbc1559524c469c7f6427b"
 
         if (uniqueKey.isEmpty()) {
-            // Try to get from intent as fallback
             val intentKey = intent.getStringExtra("UNIQUE_KEY")
             if (intentKey.isNullOrEmpty()) {
                 Toast.makeText(this, "No traveler information available", Toast.LENGTH_SHORT).show()
@@ -273,7 +400,6 @@ class SenderProfile : AppCompatActivity() {
             .setPositiveButton("Close", null)
             .create()
 
-        // Load data into dialog
         db.collection("traveler")
             .whereEqualTo("uniqueKey", uniqueKey)
             .limit(1)
