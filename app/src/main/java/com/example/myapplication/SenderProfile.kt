@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.NestedScrollView
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class SenderProfile : AppCompatActivity() {
 
@@ -334,18 +336,7 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun loadTravelerData() {
-        val uniqueKey = "TX_ede17352f5be9078b1d86e870267d06d5f79a187d4cbc1559524c469c7f6427b"
-
-        if (uniqueKey.isEmpty()) {
-            val intentKey = intent.getStringExtra("UNIQUE_KEY")
-            if (intentKey.isNullOrEmpty()) {
-                Toast.makeText(this, "No traveler information available", Toast.LENGTH_SHORT).show()
-                Log.e("SenderProfile", "Both SharedPreferences and Intent uniqueKey are null")
-                return
-            } else {
-                this@SenderProfile.uniqueKey = intentKey
-            }
-        }
+        val uniqueKey = "TX_902e81a15155a38d18898c3e9143dd4b1358ef3629008e1e2a74459df9ad187e"
 
         Log.d("SenderProfile", "Loading traveler data with uniqueKey: $uniqueKey")
 
@@ -354,23 +345,75 @@ class SenderProfile : AppCompatActivity() {
             .limit(1)
             .get()
             .addOnSuccessListener { querySnapshot ->
-                Log.d("SenderProfile", "Query successful, found ${querySnapshot.size()} documents")
                 if (!querySnapshot.isEmpty) {
                     val travelerDoc = querySnapshot.documents[0]
-                    Log.d("SenderProfile", "Traveler document: ${travelerDoc.id}")
                     Log.d("SenderProfile", "Traveler data: ${travelerDoc.data}")
+
+                    // Debug log addresses before updating UI
+                    val fromAddress = travelerDoc.get("fromAddress") as? Map<String, Any>
+                    val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
+                    Log.d("AddressDebug", "From Address: $fromAddress")
+                    Log.d("AddressDebug", "To Address: $toAddress")
+
+                    updateFlightUI(travelerDoc)
                     updateTravelerUI(travelerDoc)
-                } else {
-                    Toast.makeText(this, "Traveler details not found", Toast.LENGTH_SHORT).show()
-                    Log.w("SenderProfile", "No traveler document found with uniqueKey: $uniqueKey")
                 }
             }
             .addOnFailureListener { e ->
-                runOnUiThread {
-                    Toast.makeText(this, "Error loading traveler details: ${e.message}", Toast.LENGTH_SHORT).show()
-                    Log.e("SenderProfile", "Error loading traveler details", e)
-                }
+                Log.e("SenderProfile", "Error loading traveler details", e)
             }
+    }
+
+    private fun updateFlightUI(travelerDoc: DocumentSnapshot) {
+        try {
+            // 1. First verify we have the correct document
+            Log.d("FlightDebug", "Document ID: ${travelerDoc.id}")
+            Log.d("FlightDebug", "Document data: ${travelerDoc.data}")
+
+            // 2. Extract address data with proper null checks
+            val fromAddress = (travelerDoc.get("fromAddress") as? Map<*, *>)?.let {
+                Pair(
+                    it["city"] as? String ?: "N/A",
+                    it["state"] as? String ?: "N/A"
+                )
+            } ?: Pair("N/A", "N/A")
+
+            val toAddress = (travelerDoc.get("toAddress") as? Map<*, *>)?.let {
+                Pair(
+                    it["city"] as? String ?: "N/A",
+                    it["state"] as? String ?: "N/A"
+                )
+            } ?: Pair("N/A", "N/A")
+
+            // 3. Log the extracted values
+            Log.d("FlightDebug", "From: ${fromAddress.first}, ${fromAddress.second}")
+            Log.d("FlightDebug", "To: ${toAddress.first}, ${toAddress.second}")
+
+            // 4. Update UI on main thread
+            runOnUiThread {
+                findViewById<TextView>(R.id.tvFromCity).text = "${fromAddress.first}, ${fromAddress.second}"
+                findViewById<TextView>(R.id.tvToCity).text = "${toAddress.first}, ${toAddress.second}"
+
+                // Verify TextView IDs
+                Log.d("ViewDebug", "tvFromCity found: ${findViewById<TextView>(R.id.tvFromCity) != null}")
+                Log.d("ViewDebug", "tvToCity found: ${findViewById<TextView>(R.id.tvToCity) != null}")
+            }
+
+            // Rest of your flight UI updates...
+            val airline = travelerDoc.getString("airline") ?: "N/A"
+            val pnr = travelerDoc.getString("pnr") ?: "N/A"
+            val leavingDate = travelerDoc.getString("leavingDate") ?: "N/A"
+            val leavingTime = travelerDoc.getString("leavingTime") ?: "N/A"
+
+            runOnUiThread {
+                findViewById<TextView>(R.id.tvFlightNumber).text = "PNR: $pnr"
+                findViewById<TextView>(R.id.tvFlightStatus).text = "Airline: $airline"
+                findViewById<TextView>(R.id.tvFromTime).text = "Leaving at: $leavingDate $leavingTime"
+            }
+
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error updating flight UI", e)
+        }
     }
 
     private fun updateTravelerUI(travelerDoc: DocumentSnapshot) {
