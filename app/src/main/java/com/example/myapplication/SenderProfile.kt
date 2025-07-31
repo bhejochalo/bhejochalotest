@@ -418,6 +418,7 @@ class SenderProfile : AppCompatActivity() {
 
     private fun updateTravelerUI(travelerDoc: DocumentSnapshot) {
         try {
+            // Update basic traveler info
             findViewById<TextView>(R.id.tvTravelerName)?.text = travelerDoc.getString("lastName") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerAirline)?.text = travelerDoc.getString("airline") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerPnr)?.text = travelerDoc.getString("pnr") ?: "N/A"
@@ -425,14 +426,21 @@ class SenderProfile : AppCompatActivity() {
             findViewById<TextView>(R.id.tvTravelerDeparture)?.text =
                 travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerArrival)?.text = travelerDoc.getString("arrivalTime") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerDestination)?.text = travelerDoc.getString("destination") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerWeight)?.text = "${travelerDoc.getLong("weightUpto") ?: 0} kg"
+
+            // Update destination from 'toAddress.city'
+            val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
+            val destinationCity = toAddress?.get("city") as? String ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerDestination)?.text = destinationCity
+
+            // Update weight allowance from 'weightUpto'
+            val weightUpto = travelerDoc.getString("weightUpto") ?: 0
+            findViewById<TextView>(R.id.tvTravelerWeight)?.text = "$weightUpto kg"
+
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error updating traveler UI", e)
             Toast.makeText(this, "Error displaying traveler details", Toast.LENGTH_SHORT).show()
         }
     }
-
     private fun showCompleteTravelerDetails() {
         if (uniqueKey.isNullOrEmpty()) return
 
