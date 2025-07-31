@@ -32,8 +32,11 @@ class SenderProfile : AppCompatActivity() {
         // Initialize UI components
         setupTabSwitching()
         setupEditButtons()
-        setupEditItemButton() // Add this line
+        setupEditItemButton()
+
+        // Load all data when activity first launches
         loadInitialData()
+        loadTravelerData() // Add this line to load traveler data initially
     }
 
     private fun setupTabSwitching() {
@@ -336,9 +339,28 @@ class SenderProfile : AppCompatActivity() {
     private fun loadInitialData() {
         loadAddressData()
         loadStatusData()
-        loadItemDetails() // Add this line
-    }
+        loadItemDetails()
 
+        // Also load traveler data to populate status if needed
+        if (uniqueKey != null) {
+            loadTravelerDataForStatus() // New function to just get status
+        }
+    }
+    private fun loadTravelerDataForStatus() {
+        db.collection("traveler")
+            .whereEqualTo("uniqueKey", uniqueKey)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val travelerDoc = querySnapshot.documents[0]
+                    checkAndUpdateBookingStatus(travelerDoc)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error loading traveler status", e)
+            }
+    }
     private fun loadAddressData() {
         val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
 
