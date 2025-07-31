@@ -71,7 +71,6 @@ class SenderProfile : AppCompatActivity() {
         findViewById<Button>(R.id.btnEditFromAddress).setOnClickListener {
             showEditAddressDialog("From") { newAddress ->
                 findViewById<TextView>(R.id.tvFromAddress).text = newAddress
-                updateAddressInFirestore("fromAddress", newAddress)
             }
         }
 
@@ -79,7 +78,6 @@ class SenderProfile : AppCompatActivity() {
         findViewById<Button>(R.id.btnEditToAddress).setOnClickListener {
             showEditAddressDialog("To") { newAddress ->
                 findViewById<TextView>(R.id.tvToAddress).text = newAddress
-                updateAddressInFirestore("toAddress", newAddress)
             }
         }
     }
@@ -99,30 +97,107 @@ class SenderProfile : AppCompatActivity() {
         val etState = dialogView.findViewById<EditText>(R.id.etState)
         val etPostalCode = dialogView.findViewById<EditText>(R.id.etPostalCode)
 
+        // Get current address based on title (From/To)
+        val currentAddressField = if (title == "From") "fromAddress" else "toAddress"
+        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+
+        // Fetch current address details
+        db.collection("Sender")
+            .whereEqualTo("phoneNumber", userId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val document = querySnapshot.documents[0]
+                    val address = document.get(currentAddressField) as? Map<String, Any>
+
+                    // Pre-fill fields with existing data
+                    etStreet.setText(address?.get("street") as? String ?: "")
+                    etHouseNumber.setText(address?.get("houseNumber") as? String ?: "")
+                    etArea.setText(address?.get("area") as? String ?: "")
+                    etCity.setText(address?.get("city") as? String ?: "")
+                    etState.setText(address?.get("state") as? String ?: "")
+                    etPostalCode.setText(address?.get("postalCode") as? String ?: "")
+                }
+            }
+
         AlertDialog.Builder(this)
             .setTitle("Edit $title Address")
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
+                val street = etStreet.text.toString().trim()
+                val houseNumber = etHouseNumber.text.toString().trim()
+                val area = etArea.text.toString().trim()
+                val city = etCity.text.toString().trim()
+                val state = etState.text.toString().trim()
+                val postalCode = etPostalCode.text.toString().trim()
+
                 val newAddress = buildString {
-                    append(etStreet.text.toString().trim())
+                    append(street)
                     append(", ")
-                    append(etHouseNumber.text.toString().trim())
+                    append(houseNumber)
                     append(", ")
-                    append(etArea.text.toString().trim())
+                    append(area)
                     append(", ")
-                    append(etCity.text.toString().trim())
+                    append(city)
                     append(", ")
-                    append(etState.text.toString().trim())
+                    append(state)
                     append(" - ")
-                    append(etPostalCode.text.toString().trim())
+                    append(postalCode)
                 }
+
+                // Update all address fields in Firestore
+                updateCompleteAddressInFirestore(currentAddressField, street, houseNumber, area, city, state, postalCode)
+
                 onSave(newAddress)
                 Toast.makeText(this, "Address updated", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
+    private fun updateCompleteAddressInFirestore(
+        addressType: String,
+        street: String,
+        houseNumber: String,
+        area: String,
+        city: String,
+        state: String,
+        postalCode: String
+    ) {
+        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
 
+        // Create complete address map
+        val addressMap = hashMapOf(
+            "street" to street,
+            "houseNumber" to houseNumber,
+            "area" to area,
+            "city" to city,
+            "state" to state,
+            "postalCode" to postalCode,
+            "fullAddress" to "$street, $houseNumber, $area, $city, $state - $postalCode"
+        )
+
+        val updates = hashMapOf<String, Any>(
+            addressType to addressMap
+        )
+
+        db.collection("Sender")
+            .whereEqualTo("phoneNumber", userId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val document = querySnapshot.documents[0]
+                    document.reference.update(updates)
+                        .addOnSuccessListener {
+                            Log.d("SenderProfile", "Complete address updated successfully")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("SenderProfile", "Error updating complete address", e)
+                        }
+                }
+            }
+    }
     private fun showEditItemDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_item_details, null)
 
