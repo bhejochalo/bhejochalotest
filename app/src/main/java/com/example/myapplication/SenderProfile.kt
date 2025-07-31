@@ -1,6 +1,7 @@
 package com.example.myapplication
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
@@ -37,8 +38,17 @@ class SenderProfile : AppCompatActivity() {
         // Load all data when activity first launches
         loadInitialData()
         loadTravelerData() // Add this line to load traveler data initially
+        findViewById<Button>(R.id.btnBookOtherTravelers).setOnClickListener {
+            navigateToSenderDashboard()
+        }
     }
-
+    private fun navigateToSenderDashboard() {
+        val intent = Intent(this, SenderDashboardActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(intent)
+        finish() // Close current activity
+    }
     private fun setupTabSwitching() {
         val tabStatusContainer = findViewById<LinearLayout>(R.id.tabStatusContainer)
         val tabSenderContainer = findViewById<LinearLayout>(R.id.tabSenderContainer)
@@ -71,12 +81,15 @@ class SenderProfile : AppCompatActivity() {
     private fun checkAndUpdateBookingStatus(travelerDoc: DocumentSnapshot) {
         try {
             val status = travelerDoc.getString("status") ?: ""
-            val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
-            // Create FlightAware tracking URL
-            val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
             runOnUiThread {
                 findViewById<TextView>(R.id.subStatus).text = status
+                val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
+                // Create FlightAware tracking URL
+                val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
+                // Show/hide Book Other Travelers button based on status
+                val bookOtherBtn = findViewById<Button>(R.id.btnBookOtherTravelers)
                 findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
+                bookOtherBtn.visibility = if (status == "Rejected By Traveler") View.VISIBLE else View.GONE
             }
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error checking booking status", e)
