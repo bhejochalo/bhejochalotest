@@ -15,4 +15,5 @@
     <!-- Add these new color definitions -->
     <color name="orange_primary">#F25C05</color>
     <color name="gray_secondary">#888888</color>
+    <color name="blue">#2196F3</color>
 </resources>

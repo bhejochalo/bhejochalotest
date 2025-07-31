@@ -71,8 +71,12 @@ class SenderProfile : AppCompatActivity() {
     private fun checkAndUpdateBookingStatus(travelerDoc: DocumentSnapshot) {
         try {
             val status = travelerDoc.getString("status") ?: ""
+            val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
+            // Create FlightAware tracking URL
+            val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
             runOnUiThread {
                 findViewById<TextView>(R.id.subStatus).text = status
+                findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
             }
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error checking booking status", e)
@@ -419,22 +423,37 @@ class SenderProfile : AppCompatActivity() {
     private fun loadStatusData() {
         if (uniqueKey.isNullOrEmpty()) return
 
+        // First get the order status from borzo_orders
         db.collection("borzo_orders")
             .whereEqualTo("uniqueKey", uniqueKey)
             .limit(1)
             .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val document = querySnapshot.documents[0]
+            .addOnSuccessListener { orderQuery ->
+                if (!orderQuery.isEmpty) {
+                    val document = orderQuery.documents[0]
                     val status = document.getString("order.status") ?: "N/A"
-                    val trackingUrl = document.getString("order.tracking_url") ?: "N/A"
                     val startTime = document.getString("order.required_start_datetime") ?: "N/A"
                     val endTime = document.getString("order.required_finish_datetime") ?: "N/A"
 
                     findViewById<TextView>(R.id.subStatus).text = status
-                    findViewById<TextView>(R.id.trackingUrl).text = "Tracking: $trackingUrl"
                     findViewById<TextView>(R.id.startTimeSender).text = "Pickup: $startTime"
                     findViewById<TextView>(R.id.endTimeSender).text = "Delivery: $endTime"
+
+                    // Now get flight number from traveler collection
+                    db.collection("traveler")
+                        .whereEqualTo("uniqueKey", "asdf")
+                        .limit(1)
+                        .get()
+                        .addOnSuccessListener { travelerQuery ->
+                            if (!travelerQuery.isEmpty) {
+                                val travelerDoc = travelerQuery.documents[0]
+                                val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
+
+                                // Create FlightAware tracking URL
+                                val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
+                                findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
+                            }
+                        }
                 }
             }
             .addOnFailureListener { e ->
@@ -523,7 +542,7 @@ class SenderProfile : AppCompatActivity() {
             findViewById<TextView>(R.id.tvTravelerName)?.text = travelerDoc.getString("lastName") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerAirline)?.text = travelerDoc.getString("airline") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerPnr)?.text = travelerDoc.getString("pnr") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = travelerDoc.getString("flightNumber") ?: "N/A"
+            findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = travelerDoc.getString("FlightNumber") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerDeparture)?.text =
                 travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerArrival)?.text = travelerDoc.getString("arrivalTime") ?: "N/A"

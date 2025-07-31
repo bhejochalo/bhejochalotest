@@ -469,9 +469,10 @@
                             android:id="@+id/trackingUrl"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Tracking URL:"
-                            android:textColor="#333333"
-                            android:textSize="16sp"/>
+                            android:textColor="@color/blue"
+                            android:textColorLink="@color/blue"
+                            android:autoLink="web"
+                            android:linksClickable="true"/>
 
                         <View
                             android:layout_width="match_parent"
