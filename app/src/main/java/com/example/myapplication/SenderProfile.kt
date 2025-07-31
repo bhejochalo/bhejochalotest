@@ -65,6 +65,16 @@ class SenderProfile : AppCompatActivity() {
             loadTravelerData()
         }
     }
+    private fun checkAndUpdateBookingStatus(travelerDoc: DocumentSnapshot) {
+        try {
+            val status = travelerDoc.getString("status") ?: ""
+            runOnUiThread {
+                findViewById<TextView>(R.id.subStatus).text = status
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error checking booking status", e)
+        }
+    }
 
     private fun setupEditButtons() {
         // From Address Edit Button
@@ -411,9 +421,7 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun loadTravelerData() {
-        val uniqueKey = "TX_902e81a15155a38d18898c3e9143dd4b1358ef3629008e1e2a74459df9ad187e"
-
-        Log.d("SenderProfile", "Loading traveler data with uniqueKey: $uniqueKey")
+        val uniqueKey = "asdf" // Or get this from sharedPrefs/intent
 
         db.collection("traveler")
             .whereEqualTo("uniqueKey", uniqueKey)
@@ -422,14 +430,10 @@ class SenderProfile : AppCompatActivity() {
             .addOnSuccessListener { querySnapshot ->
                 if (!querySnapshot.isEmpty) {
                     val travelerDoc = querySnapshot.documents[0]
-                    Log.d("SenderProfile", "Traveler data: ${travelerDoc.data}")
+                    // Update status UI from traveler's status
+                    checkAndUpdateBookingStatus(travelerDoc)
 
-                    // Debug log addresses before updating UI
-                    val fromAddress = travelerDoc.get("fromAddress") as? Map<String, Any>
-                    val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
-                    Log.d("AddressDebug", "From Address: $fromAddress")
-                    Log.d("AddressDebug", "To Address: $toAddress")
-
+                    // Rest of your existing code...
                     updateFlightUI(travelerDoc)
                     updateTravelerUI(travelerDoc)
                 }
