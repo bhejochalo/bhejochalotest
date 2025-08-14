@@ -390,9 +390,19 @@ class SenderProfile : AppCompatActivity() {
                     val document = querySnapshot.documents[0]
                     val fromAddress = document.getString("fromAddress.fullAddress") ?: ""
                     val toAddress = document.getString("toAddress.fullAddress") ?: ""
-
+                    val firstMileStatus = document.getString("FirstMileStatus") ?: "Not Started"
+                    val secondMileStatus = document.getString("SecondMileStatus") ?: "Not Started"
+                    val lastMileStatus = document.getString("LastMileStatus") ?: "Not Started"
+                    findViewById<TextView>(R.id.fileMileMainStatus)?.text = "✓ 1st Stage - $firstMileStatus"
                     findViewById<TextView>(R.id.tvFromAddress).text = fromAddress
                     findViewById<TextView>(R.id.tvToAddress).text = toAddress
+                    if(firstMileStatus == "Completed"){
+                        findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Started"
+                    }
+                    if(secondMileStatus == "Completed"){
+                        findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Completed"
+                        findViewById<TextView>(R.id.lastmilestatussender)?.text = "✓ 3rd stage - Started"
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -449,8 +459,6 @@ class SenderProfile : AppCompatActivity() {
                     val endTime = document.getString("order.required_finish_datetime") ?: "N/A"
 
                     findViewById<TextView>(R.id.subStatus).text = status
-                    findViewById<TextView>(R.id.startTimeSender).text = "Pickup: $startTime"
-                    findViewById<TextView>(R.id.endTimeSender).text = "Delivery: $endTime"
 
                     // Now get flight number from traveler collection
                     db.collection("traveler")
@@ -568,6 +576,7 @@ class SenderProfile : AppCompatActivity() {
             // Update weight allowance from 'weightUpto'
             val weightUpto = travelerDoc.getString("weightUpto") ?: 0
             findViewById<TextView>(R.id.tvTravelerWeight)?.text = "$weightUpto kg"
+
 
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error updating traveler UI", e)

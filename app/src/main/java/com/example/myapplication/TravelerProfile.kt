@@ -883,7 +883,6 @@ class TravelerProfile : AppCompatActivity() {
         val subStatus = findViewById<TextView>(R.id.subStatus)
         val trackingUrlTextView = findViewById<TextView>(R.id.trackingUrl)
         // val startTimeSender = findViewById<TextView>(R.id.startTimeSender)
-        val endTimeSender = findViewById<TextView>(R.id.endTimeSender)
         val mainStatus = findViewById<TextView>(R.id.bookingStatus)
 
         val db = FirebaseFirestore.getInstance()
@@ -957,8 +956,8 @@ class TravelerProfile : AppCompatActivity() {
 
                                     /*  startTimeSender.text =
                                           "Pickup: ${formatDateTime(senderPoint["requiredStartDatetime"])}"*/
-                                    endTimeSender.text =
-                                        "Parcel Arrival Time: ${formatDateTime(senderPoint["requiredFinishDatetime"])}"
+//                                    endTimeSender.text =
+//                                        "Parcel Arrival Time: ${formatDateTime(senderPoint["requiredFinishDatetime"])}"
                                 } ?: run {
                                     subStatus.text =
                                         "No sender point found in ${points.size} points"

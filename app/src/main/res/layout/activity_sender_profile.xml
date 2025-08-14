@@ -433,6 +433,8 @@
                     android:layout_marginTop="16dp">
 
                     <!-- Status Content -->
+                    <!-- Inside the statusContent LinearLayout, replace the existing content with: -->
+
                     <LinearLayout
                         android:id="@+id/statusContent"
                         android:layout_width="match_parent"
@@ -458,12 +460,156 @@
                             android:textColor="#333333"
                             android:textSize="16sp"/>
 
-                        <View
+                        <!-- 1st Stage - First Mile -->
+                        <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="1dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="12dp"
                             android:layout_marginTop="16dp"
+                            android:background="@drawable/card_background">
+
+                            <TextView
+                                android:id="@+id/firstmilesender"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="✓ 1st Stage - Not Started"
+                                android:textStyle="bold"
+                                android:textColor="#F25C05"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvPickupOtp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text=""
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:id="@+id/tvDriverPhone"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=""
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:id="@+id/tvEta1st"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=""
+                                android:textColor="#333333" />
+                        </LinearLayout>
+
+                        <!-- 2nd Stage - In Transit -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="12dp"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/card_background">
+
+                            <TextView
+                                android:id="@+id/secondmilesender"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⏳ 2nd Stage - Not Started"
+                                android:textStyle="bold"
+                                android:textColor="#F25C05"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvTransitStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text=""
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:id="@+id/tvLastUpdated"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=""
+                                android:textColor="#333333" />
+                        </LinearLayout>
+
+                        <!-- Slider for confirming pickup -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="24dp"
+                            android:paddingHorizontal="24dp"
+                            android:gravity="center_horizontal">
+
+
+                        </LinearLayout>
+
+                        <!-- 3rd Stage - Last Mile -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="12dp"
+                            android:layout_marginTop="12dp"
                             android:layout_marginBottom="16dp"
-                            android:background="#DDDDDD"/>
+                            android:background="@drawable/card_background">
+
+                            <TextView
+                                android:id="@+id/lastmilestatussender"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📍 3rd Stage - Not Started"
+                                android:textStyle="bold"
+                                android:textColor="#F25C05"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvDeliveryOtp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text=""
+                                android:textColor="#333333" />
+
+                            <TextView
+                                android:id="@+id/tvDestinationStatus"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=""
+                                android:textColor="#333333" />
+
+                            <!-- OTP Verification Section -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="12dp"
+                                android:gravity="center">
+
+                                <EditText
+                                    android:id="@+id/etOtpInput"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="Enter OTP"
+                                    android:inputType="number"
+                                    android:maxLength="6"
+                                    android:padding="12dp"
+                                    android:background="@drawable/edittext_background"/>
+
+                                <Button
+                                    android:id="@+id/btnVerifyOtp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:text="Verify"
+                                    android:backgroundTint="#F25C05"
+                                    android:textColor="#FFFFFF"/>
+                            </LinearLayout>
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/trackingUrl"
@@ -474,38 +620,6 @@
                             android:autoLink="web"
                             android:linksClickable="true"/>
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginTop="16dp"
-                            android:layout_marginBottom="16dp"
-                            android:background="#DDDDDD"/>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Time Information"
-                            android:textColor="#F25C05"
-                            android:textSize="18sp"
-                            android:textStyle="bold"/>
-
-                        <TextView
-                            android:id="@+id/startTimeSender"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="Start Time:"
-                            android:textColor="#333333"
-                            android:textSize="16sp"/>
-
-                        <TextView
-                            android:id="@+id/endTimeSender"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="End Time:"
-                            android:textColor="#333333"
-                            android:textSize="16sp"/>
                         <Button
                             android:id="@+id/btnBookOtherTravelers"
                             android:layout_width="wrap_content"
