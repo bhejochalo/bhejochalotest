@@ -1,155 +1,153 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient"
-    android:padding="24dp">
+    android:fillViewport="true"
+    android:background="#FAF7FB">
 
-    <!-- Airline Dropdown Label -->
-    <TextView
-        android:id="@+id/airlineLabel"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Airline"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="#888888"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        android:orientation="vertical"
+        android:padding="20dp">
 
-    <!-- Airline Spinner -->
-    <Spinner
-        android:id="@+id/airlineSpinner"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#CCCCCC"
-        app:layout_constraintTop_toBottomOf="@id/airlineLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"
-        app:layout_constraintWidth_percent="0.8" />
+        <!-- Heading -->
+        <TextView
+            android:id="@+id/headingTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tell Us About Your Flight"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#FF6F00"
+            android:gravity="center"
+            android:layout_marginBottom="20dp" />
 
-    <!-- PNR -->
-    <EditText
-        android:id="@+id/etPnr"
-        android:layout_width="0dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/rounded_edittext"
-        android:hint="Enter PNR"
-        android:inputType="text"
-        android:gravity="center_vertical|start"
-        android:padding="12dp"
-        android:textColor="@android:color/black"
-        android:textColorHint="#888888"
-        android:textSize="16sp"
-        android:fontFamily="sans-serif-medium"
-        android:elevation="4dp"
-        app:layout_constraintTop_toBottomOf="@id/airlineSpinner"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.8" />
+        <EditText
+            android:id="@+id/etPnr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter PNR"
+            android:inputType="text"
+            android:backgroundTint="#FF6F00" />
 
-    <!-- Surname -->
-    <EditText
-        android:id="@+id/etSurname"
-        android:layout_width="0dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/rounded_edittext"
-        android:hint="Enter Surname"
-        android:inputType="textPersonName"
-        android:gravity="center_vertical|start"
-        android:padding="12dp"
-        android:textColor="@android:color/black"
-        android:textColorHint="#888888"
-        android:textSize="16sp"
-        android:fontFamily="sans-serif-medium"
-        android:elevation="4dp"
-        app:layout_constraintTop_toBottomOf="@id/etPnr"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.8" />
+        <EditText
+            android:id="@+id/etFirstName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter First Name"
+            android:inputType="text"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF6F00" />
 
-    <!-- Leaving Date -->
-    <EditText
-        android:id="@+id/etLeavingDate"
-        android:layout_width="0dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/rounded_edittext"
-        android:hint="Select Leaving Date"
-        android:focusable="false"
-        android:inputType="none"
-        android:gravity="center_vertical|start"
-        android:padding="12dp"
-        android:textColor="@android:color/black"
-        android:textColorHint="#888888"
-        android:textSize="16sp"
-        android:fontFamily="sans-serif-medium"
-        android:elevation="4dp"
-        app:layout_constraintTop_toBottomOf="@id/etSurname"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.8" />
+        <EditText
+            android:id="@+id/etSurname"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter Last Name"
+            android:inputType="text"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF6F00" />
 
-    <!-- Leaving Time -->
-    <EditText
-        android:id="@+id/etLeavingTime"
-        android:layout_width="0dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/rounded_edittext"
-        android:hint="Select Leaving Time"
-        android:focusable="false"
-        android:inputType="none"
-        android:gravity="center_vertical|start"
-        android:padding="12dp"
-        android:textColor="@android:color/black"
-        android:textColorHint="#888888"
-        android:textSize="16sp"
-        android:fontFamily="sans-serif-medium"
-        android:elevation="4dp"
-        app:layout_constraintTop_toBottomOf="@id/etLeavingDate"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.8" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select Airline"
+            android:layout_marginTop="10dp" />
 
-    <!-- Weight Upto -->
-    <EditText
-        android:id="@+id/etWeightUpto"
-        android:layout_width="0dp"
-        android:layout_height="55dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/rounded_edittext"
-        android:hint="Weight Upto (kg)"
-        android:inputType="numberDecimal"
-        android:gravity="center_vertical|start"
-        android:padding="12dp"
-        android:textColor="@android:color/black"
-        android:textColorHint="#888888"
-        android:textSize="16sp"
-        android:fontFamily="sans-serif-medium"
-        android:elevation="4dp"
-        app:layout_constraintTop_toBottomOf="@id/etLeavingTime"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.8" />
+        <Spinner
+            android:id="@+id/airlineSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
-    <!-- Verify Button -->
-    <Button
-        android:id="@+id/btnVerify"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Verify PNR"
-        app:backgroundTint="@null"
-        android:background="@drawable/bg_rounded_button"
-        app:layout_constraintTop_toBottomOf="@id/etWeightUpto"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp" />
+        <EditText
+            android:id="@+id/etLeavingDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Select date you'll leave home"
+            android:focusable="false"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF6F00" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <EditText
+            android:id="@+id/etLeavingTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Select time you'll leave home for the airport"
+            android:focusable="false"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF6F00" />
+
+        <EditText
+            android:id="@+id/etWeightUpto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Free space in luggage (in kg)"
+            android:inputType="numberDecimal"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF6F00" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Where is Space Available?"
+            android:layout_marginTop="10dp" />
+
+        <Spinner
+            android:id="@+id/spaceAvailableSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="What can you carry?"
+            android:layout_marginTop="10dp" />
+
+        <AutoCompleteTextView
+            android:id="@+id/itemsCarryAutoComplete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Select or type items (comma separated)"
+            android:inputType="text"
+            android:backgroundTint="#FF6F00" />
+
+
+
+        <EditText
+            android:id="@+id/etRemarks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Add Remarks (optional)"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="#FF6F00" />
+
+        <CheckBox
+            android:id="@+id/seeParcelCheckbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="I want to check the parcel before carrying."
+            android:textSize="16sp"
+            android:padding="8dp"/>
+
+        <CheckBox
+            android:id="@+id/checkboxTerms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="I agree to the Terms and Conditions"
+            android:layout_marginTop="10dp" />
+
+        <Button
+            android:id="@+id/btnVerify"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Verify and Continue"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="#FF6F00"
+            android:textColor="#FFFFFF" />
+
+    </LinearLayout>
+</ScrollView>

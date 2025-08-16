@@ -712,7 +712,7 @@
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <!-- CONTENT CONTAINER -->
+            <!-- CONTENT CONTAINER  TABS -->
             <androidx.core.widget.NestedScrollView
                 android:id="@+id/contentContainer"
                 android:layout_width="match_parent"

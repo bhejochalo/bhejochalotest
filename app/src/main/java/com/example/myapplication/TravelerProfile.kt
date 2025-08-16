@@ -59,6 +59,9 @@ import java.time.ZoneId
 import java.util.Calendar
 import java.util.TimeZone
 
+
+import androidx.core.widget.NestedScrollView
+
 class TravelerProfile : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private var houseNumber_Traveler = "";
@@ -104,6 +107,8 @@ class TravelerProfile : AppCompatActivity() {
         key?.let { nonNullKey ->
             setupBookingTabs(nonNullKey)
         }
+
+        println("key ===> $key")
 
         var statusOfRequest = intent.getStringExtra("StatusOnTraveler") ?: ""
 
@@ -1676,6 +1681,9 @@ class TravelerProfile : AppCompatActivity() {
 
                 } else {
                     runOnUiThread {
+                        // Hide the senderContent NestedScrollView
+                        findViewById<NestedScrollView>(R.id.senderContent).visibility = View.GONE
+
                         Toast.makeText(this, "No sender details found", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -1693,27 +1701,36 @@ class TravelerProfile : AppCompatActivity() {
 
     }
 
-    private fun getTravelerForStatus(uniqueKey: String) {
-        // Get Firestore instance
+    private fun getTravelerForStatus(uniqueKey: String?) {
+        val contentContainer = findViewById<NestedScrollView>(R.id.contentContainer)
+
+        // If key is null or empty, hide the container and stop
+        if (uniqueKey.isNullOrEmpty()) {
+            contentContainer.visibility = View.GONE
+            Log.w("TravelerQuery", "UniqueKey is null or empty, hiding content container")
+            return
+        } else {
+            // Show container only when we have a valid key
+            contentContainer.visibility = View.VISIBLE
+        }
+
         val db = FirebaseFirestore.getInstance()
 
-        // Query traveler collection
         db.collection("traveler")
             .whereEqualTo("uniqueKey", uniqueKey)
             .get()
             .addOnSuccessListener { documents ->
                 if (documents.isEmpty) {
                     Log.w("TravelerQuery", "No traveler found with uniqueKey: $uniqueKey")
+                    contentContainer.visibility = View.GONE
+                    Toast.makeText(this, "No sender details found", Toast.LENGTH_SHORT).show()
                     return@addOnSuccessListener
                 }
 
-                // Get first document (assuming uniqueKey is unique)
                 val travelerDoc = documents.first()
 
                 try {
-                    // Extract required fields with null checks
-                    val pickAndDropMode =
-                        travelerDoc.getString("pickAndDropMode") ?: "Not specified"
+                    val pickAndDropMode = travelerDoc.getString("pickAndDropMode") ?: "Not specified"
                     val leavingDate = travelerDoc.getString("leavingDate") ?: "Not specified"
                     val leavingTime = travelerDoc.getString("leavingTime") ?: "Not specified"
                     val firstMile = travelerDoc.getString("FirstMileStatus") ?: "Not specified"
@@ -1722,9 +1739,12 @@ class TravelerProfile : AppCompatActivity() {
                     val LastMile = travelerDoc.getString("LastMileStatus") ?: "Not specified"
                     val firstMileOTP = travelerDoc.getString("FirstMileOTP") ?: "Not specified"
                     val lastMileOTP = travelerDoc.getString("LastMileOTP") ?: "Not specified"
-                    //val firstMileCompleted = travelerDoc.getBoolean("FirstMileCompleted") ?: false
                     val phoneNumber = travelerDoc.getString("phoneNumber") ?: "Not specified"
-                    // Update UI on main thread
+
+                    println("LastMile: $LastMile")
+                    println("secMile: $secMile")
+                    println("firstMile: $firstMile")
+
                     runOnUiThread {
                         updateStatusUI_FirstMile(
                             pickAndDropMode,
@@ -1734,38 +1754,29 @@ class TravelerProfile : AppCompatActivity() {
                         )
                     }
 
-
-
                     if (secMile == "In Progress") {
-                        // Update UI on main thread
                         runOnUiThread {
-                            updateStatusUI_SecondMile() // need to show the flight tracking link
+                            updateStatusUI_SecondMile()
                         }
                     } else if (secMile == "Not Started") {
-                        // Update UI on main thread
                         runOnUiThread {
-
                             findViewById<TextView>(R.id.tvTransitStatusMain)?.text =
                                 "⏳ 2nd Stage - Not Started Yet"
                             findViewById<TextView>(R.id.tvTransitStatus)?.text = ""
                             findViewById<TextView>(R.id.tvLastUpdated)?.text = ""
                         }
                     } else {
-
                         findViewById<TextView>(R.id.tvTransitStatusMain)?.text =
                             "⏳ 2nd Stage - Completed "
                         findViewById<TextView>(R.id.tvTransitStatus)?.text =
                             "You Reached Home, We are initiating the final pickup process"
-
                     }
 
                     if (LastMile == "In Progress") {
-                        // Update UI on main thread
                         runOnUiThread {
-                            updateStatusUI_LastMile(lastMileOTP, phoneNumber);
+                            updateStatusUI_LastMile(lastMileOTP, phoneNumber)
                         }
                     } else if (LastMile == "Not Started") {
-                        // Update UI on main thread
                         runOnUiThread {
                             findViewById<TextView>(R.id.tvDestinationStatusMain)?.text =
                                 "\uD83D\uDCCD 3rd Stage - Not Started Yet"
@@ -1774,10 +1785,8 @@ class TravelerProfile : AppCompatActivity() {
                             findViewById<TextView>(R.id.pickerContact)?.text = ""
                         }
                     } else {
-                        // for completion of last mile
                         findViewById<TextView>(R.id.tvDestinationStatusMain)?.text =
                             "\uD83D\uDCCD 3rd Stage - Completed"
-                        // findViewById<TextView>(R.id.tvDeliveryOtp)?.text = "Delivery OTP: $LMOTP"
                         findViewById<TextView>(R.id.pickerContact)?.text = ""
                         findViewById<TextView>(R.id.tvDestinationStatus)?.text =
                             "Order Completed, Thanks!"
@@ -1787,10 +1796,12 @@ class TravelerProfile : AppCompatActivity() {
 
                 } catch (e: Exception) {
                     Log.e("TravelerQuery", "Error parsing traveler data", e)
+                    contentContainer.visibility = View.GONE
                 }
             }
             .addOnFailureListener { exception ->
                 Log.e("TravelerQuery", "Error getting traveler document", exception)
+                contentContainer.visibility = View.GONE
             }
     }
 
