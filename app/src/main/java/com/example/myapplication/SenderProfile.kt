@@ -582,34 +582,4 @@ class SenderProfile : AppCompatActivity() {
             Toast.makeText(this, "Error displaying traveler details", Toast.LENGTH_SHORT).show()
         }
     }
-    private fun showCompleteTravelerDetails() {
-        if (uniqueKey.isNullOrEmpty()) return
-
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_complete_traveler_details, null)
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .setTitle("Complete Traveler Details")
-            .setPositiveButton("Close", null)
-            .create()
-
-        db.collection("traveler")
-            .whereEqualTo("uniqueKey", uniqueKey)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val travelerDoc = querySnapshot.documents[0]
-                    dialogView.findViewById<TextView>(R.id.tvFullName).text = travelerDoc.getString("lastName") ?: "N/A"
-                    dialogView.findViewById<TextView>(R.id.tvFullAirline).text = travelerDoc.getString("airline") ?: "N/A"
-                    dialogView.findViewById<TextView>(R.id.tvFullFlight).text = travelerDoc.getString("flightNumber") ?: "N/A"
-                    dialogView.findViewById<TextView>(R.id.tvFullDeparture).text = travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
-                    dialogView.findViewById<TextView>(R.id.tvFullArrival).text = travelerDoc.getString("arrivalTime") ?: "N/A"
-                    dialogView.findViewById<TextView>(R.id.tvFullDestination).text = travelerDoc.getString("destination") ?: "N/A"
-                    dialogView.findViewById<TextView>(R.id.tvFullWeight).text = "${travelerDoc.getLong("weightUpto") ?: 0} kg"
-                    dialogView.findViewById<TextView>(R.id.tvFullPhone).text = travelerDoc.getString("phoneNumber") ?: "N/A"
-                }
-            }
-
-        dialog.show()
-    }
 }

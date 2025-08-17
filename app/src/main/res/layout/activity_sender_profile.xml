@@ -434,7 +434,11 @@
 
                     <!-- Status Content -->
                     <!-- Inside the statusContent LinearLayout, replace the existing content with: -->
-
+                    <androidx.core.widget.NestedScrollView
+                        android:id="@+id/statusScrollView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="vertical">
                     <LinearLayout
                         android:id="@+id/statusContent"
                         android:layout_width="match_parent"
@@ -632,7 +636,7 @@
                             android:textSize="18sp"
                             android:textStyle="bold" />
                     </LinearLayout>
-
+                    </androidx.core.widget.NestedScrollView>
                     <!-- Traveler Content -->
                     <androidx.core.widget.NestedScrollView
                         android:id="@+id/senderContent"
@@ -640,7 +644,6 @@
                         android:layout_height="wrap_content"
                         android:visibility="gone"
                         android:padding="8dp">
-
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -823,16 +826,6 @@
                                     android:textColor="#333333"
                                     android:textSize="16sp"/>
                             </LinearLayout>
-
-                            <Button
-                                android:id="@+id/btnViewFullDetails"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:layout_marginTop="16dp"
-                                android:text="View Complete Details"
-                                android:textColor="#FFFFFF"
-                                android:backgroundTint="#F25C05"/>
                         </LinearLayout>
                     </androidx.core.widget.NestedScrollView>
                 </FrameLayout>
