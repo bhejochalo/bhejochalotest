@@ -542,14 +542,14 @@ class SenderProfile : AppCompatActivity() {
 
             // Rest of your flight UI updates...
             val airline = travelerDoc.getString("airline") ?: "N/A"
-            val pnr = travelerDoc.getString("pnr") ?: "N/A"
             val leavingDate = travelerDoc.getString("leavingDate") ?: "N/A"
             val leavingTime = travelerDoc.getString("leavingTime") ?: "N/A"
+            val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
 
             runOnUiThread {
-                findViewById<TextView>(R.id.tvFlightNumber).text = "PNR: $pnr"
                 findViewById<TextView>(R.id.tvFlightStatus).text = "Airline: $airline"
                 findViewById<TextView>(R.id.tvFromTime).text = "Leaving at: $leavingDate $leavingTime"
+                findViewById<TextView>(R.id.tvFlightNumber).text = "Flight: $flightNumber"
             }
 
         } catch (e: Exception) {
@@ -562,7 +562,6 @@ class SenderProfile : AppCompatActivity() {
             // Update basic traveler info
             findViewById<TextView>(R.id.tvTravelerName)?.text = travelerDoc.getString("lastName") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerAirline)?.text = travelerDoc.getString("airline") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerPnr)?.text = travelerDoc.getString("pnr") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = travelerDoc.getString("FlightNumber") ?: "N/A"
             findViewById<TextView>(R.id.tvTravelerDeparture)?.text =
                 travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
@@ -602,7 +601,6 @@ class SenderProfile : AppCompatActivity() {
                     val travelerDoc = querySnapshot.documents[0]
                     dialogView.findViewById<TextView>(R.id.tvFullName).text = travelerDoc.getString("lastName") ?: "N/A"
                     dialogView.findViewById<TextView>(R.id.tvFullAirline).text = travelerDoc.getString("airline") ?: "N/A"
-                    dialogView.findViewById<TextView>(R.id.tvFullPnr).text = travelerDoc.getString("pnr") ?: "N/A"
                     dialogView.findViewById<TextView>(R.id.tvFullFlight).text = travelerDoc.getString("flightNumber") ?: "N/A"
                     dialogView.findViewById<TextView>(R.id.tvFullDeparture).text = travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
                     dialogView.findViewById<TextView>(R.id.tvFullArrival).text = travelerDoc.getString("arrivalTime") ?: "N/A"
