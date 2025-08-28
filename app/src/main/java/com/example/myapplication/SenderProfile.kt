@@ -347,8 +347,15 @@ class SenderProfile : AppCompatActivity() {
             .show()
     }
 
-    private fun updateItemDetailsInFirestore(name: String, kg: Int, gram: Int, instructions: String, deliveryOption: String) {
-        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+    private fun updateItemDetailsInFirestore(
+        name: String,
+        kg: Int,
+        gram: Int,
+        instructions: String,
+        deliveryOption: String
+    ) {
+        val phoneNumber = sharedPref.getString("PHONE_NUMBER", null) ?: return
+
         val totalWeight = (kg * 1000) + gram
         val price = when (deliveryOption) {
             "Self Pickup" -> 750
@@ -365,22 +372,14 @@ class SenderProfile : AppCompatActivity() {
             "deliveryOptionPrice" to price
         )
 
-        db.collection("Sender")
-            .whereEqualTo("phoneNumber", userId)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val document = querySnapshot.documents[0]
-                    document.reference.update(updates)
-                        .addOnSuccessListener {
-                            Toast.makeText(this, "Item details updated", Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "Failed to update item details", Toast.LENGTH_SHORT).show()
-                            Log.e("SenderProfile", "Error updating item details", e)
-                        }
-                }
+        db.collection("Sender").document(phoneNumber)
+            .update(updates)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Item details updated", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to update item details", Toast.LENGTH_SHORT).show()
+                Log.e("SenderProfile", "Error updating item details", e)
             }
     }
 
