@@ -5,11 +5,15 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.widget.NestedScrollView
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -90,10 +94,61 @@ class SenderProfile : AppCompatActivity() {
                 val bookOtherBtn = findViewById<Button>(R.id.btnBookOtherTravelers)
                 findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
                 bookOtherBtn.visibility = if (status == "Rejected By Traveler") View.VISIBLE else View.GONE
+                reorganizeItemDetailsLayout(status)
             }
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error checking booking status", e)
         }
+    }
+    private fun reorganizeItemDetailsLayout(status: String) {
+        val itemDetailsCard = findViewById<CardView>(R.id.itemDetailsCard)
+        val flightInfoCard = findViewById<CardView>(R.id.flightInfoCard)
+        val addressCard = findViewById<CardView>(R.id.addressCard)
+        val statusCard = findViewById<CardView>(R.id.statusCard)
+
+        if (status == "Request Accepted By Traveler") {
+            // Flight Info first, then Item Details, then Address, then Status
+            val flightParams = flightInfoCard.layoutParams as ConstraintLayout.LayoutParams
+            flightParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+            flightParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            flightInfoCard.layoutParams = flightParams
+
+            val itemParams = itemDetailsCard.layoutParams as ConstraintLayout.LayoutParams
+            itemParams.topToBottom = R.id.flightInfoCard
+            itemParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            itemDetailsCard.layoutParams = itemParams
+
+            val addressParams = addressCard.layoutParams as ConstraintLayout.LayoutParams
+            addressParams.topToBottom = R.id.itemDetailsCard
+            addressCard.layoutParams = addressParams
+
+            val statusParams = statusCard.layoutParams as ConstraintLayout.LayoutParams
+            statusParams.topToBottom = R.id.addressCard
+            statusCard.layoutParams = statusParams
+
+        } else {
+            // Flight Info first, then Address, then Status, then Item Details at bottom
+            val flightParams = flightInfoCard.layoutParams as ConstraintLayout.LayoutParams
+            flightParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+            flightParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+            flightInfoCard.layoutParams = flightParams
+
+            val addressParams = addressCard.layoutParams as ConstraintLayout.LayoutParams
+            addressParams.topToBottom = R.id.flightInfoCard
+            addressCard.layoutParams = addressParams
+
+            val statusParams = statusCard.layoutParams as ConstraintLayout.LayoutParams
+            statusParams.topToBottom = R.id.addressCard
+            statusCard.layoutParams = statusParams
+
+            val itemParams = itemDetailsCard.layoutParams as ConstraintLayout.LayoutParams
+            itemParams.topToBottom = R.id.statusCard
+            itemParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+            itemDetailsCard.layoutParams = itemParams
+        }
+
+        // Request layout update
+        (itemDetailsCard.parent as? ViewGroup)?.requestLayout()
     }
 
     private fun setupEditButtons() {
