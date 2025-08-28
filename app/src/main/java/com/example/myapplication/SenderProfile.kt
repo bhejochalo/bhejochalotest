@@ -251,7 +251,7 @@ class SenderProfile : AppCompatActivity() {
     ) {
         val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
 
-        // Create complete address map
+        // Create address map
         val addressMap = hashMapOf(
             "street" to street,
             "houseNumber" to houseNumber,
@@ -266,21 +266,13 @@ class SenderProfile : AppCompatActivity() {
             addressType to addressMap
         )
 
-        db.collection("Sender")
-            .whereEqualTo("phoneNumber", userId)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val document = querySnapshot.documents[0]
-                    document.reference.update(updates)
-                        .addOnSuccessListener {
-                            Log.d("SenderProfile", "Complete address updated successfully")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("SenderProfile", "Error updating complete address", e)
-                        }
-                }
+        db.collection("Sender").document(userId)
+            .update(updates)
+            .addOnSuccessListener {
+                Log.d("SenderProfile", "Complete address updated successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error updating complete address", e)
             }
     }
     private fun showEditItemDialog() {
