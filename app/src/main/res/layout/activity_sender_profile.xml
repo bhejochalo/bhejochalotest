@@ -813,12 +813,36 @@
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="Weight Allowance:"
+                                    android:text="Traveler accepting weight upto :"
                                     android:textColor="#444444"
                                     android:textSize="16sp"/>
 
                                 <TextView
                                     android:id="@+id/tvTravelerWeight"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+                            <!-- Add this after the Destination section in traveler_content.xml -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Flight Duration:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerFlightDuration"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
