@@ -25,6 +25,9 @@ class SenderProfile : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
     private lateinit var sharedPref: SharedPreferences
     private var uniqueKey: String? = null
+    private var senderDoc: DocumentSnapshot? = null
+    private var travelerDoc: DocumentSnapshot? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,18 +37,26 @@ class SenderProfile : AppCompatActivity() {
         sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         uniqueKey = sharedPref.getString("UNIQUE_KEY", null) ?: intent.getStringExtra("UNIQUE_KEY")
 
-        // Initialize UI components
         setupTabSwitching()
         setupEditButtons()
         setupEditItemButton()
 
-        // Load all data when activity first launches
-        loadInitialData()
-        loadTravelerData() // Add this line to load traveler data initially
+        loadSenderData {
+            loadAddressData()
+            loadItemDetails()
+        }
+
+        loadTravelerDataOnce {
+            updateFlightUI(travelerDoc!!)
+            updateTravelerUI(travelerDoc!!)
+            checkAndUpdateBookingStatus(travelerDoc!!)
+        }
+
         findViewById<Button>(R.id.btnBookOtherTravelers).setOnClickListener {
             navigateToSenderDashboard()
         }
     }
+
     private fun navigateToSenderDashboard() {
         val intent = Intent(this, SenderDashboardActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -53,6 +64,41 @@ class SenderProfile : AppCompatActivity() {
         startActivity(intent)
         finish() // Close current activity
     }
+    private fun loadSenderData(onLoaded: () -> Unit) {
+        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+
+        db.collection("Sender")
+            .whereEqualTo("phoneNumber", userId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    senderDoc = querySnapshot.documents[0]
+                    onLoaded()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error loading sender data", e)
+            }
+    }
+    private fun loadTravelerDataOnce(onLoaded: () -> Unit) {
+        if (uniqueKey.isNullOrEmpty()) return
+
+        db.collection("traveler")
+            .whereEqualTo("uniqueKey", uniqueKey)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    travelerDoc = querySnapshot.documents[0]
+                    onLoaded()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error loading traveler data", e)
+            }
+    }
+
     private fun setupTabSwitching() {
         val tabStatusContainer = findViewById<LinearLayout>(R.id.tabStatusContainer)
         val tabSenderContainer = findViewById<LinearLayout>(R.id.tabSenderContainer)
@@ -457,37 +503,25 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun loadItemDetails() {
-        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+        val doc = senderDoc ?: return
 
-        db.collection("Sender")
-            .whereEqualTo("phoneNumber", userId)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val document = querySnapshot.documents[0]
-                    val itemDetails = document.get("itemDetails") as? Map<*, *>
+        val itemDetails = doc.get("itemDetails") as? Map<*, *>
+        itemDetails?.let {
+            val name = it["itemName"] as? String ?: "N/A"
+            val kg = (it["weightKg"] as? Number)?.toInt() ?: 0
+            val gram = (it["weightGram"] as? Number)?.toInt() ?: 0
+            val instructions = it["instructions"] as? String ?: "N/A"
 
-                    itemDetails?.let {
-                        val name = it["itemName"] as? String ?: "N/A"
-                        val kg = (it["weightKg"] as? Number)?.toInt() ?: 0
-                        val gram = (it["weightGram"] as? Number)?.toInt() ?: 0
-                        val instructions = it["instructions"] as? String ?: "N/A"
+            val price = doc.getLong("deliveryOptionPrice")?.toInt() ?: 750
+            val deliveryOption = if (price == 750) "Self Pickup" else "Auto Pickup"
 
-                        val price = document.getLong("deliveryOptionPrice")?.toInt() ?: 750
-                        val deliveryOption = if (price == 750) "Self Pickup" else "Auto Pickup"
-
-                        findViewById<TextView>(R.id.tvItemName).text = "Item: $name"
-                        findViewById<TextView>(R.id.tvItemWeight).text = "Weight: $kg kg $gram g"
-                        findViewById<TextView>(R.id.tvItemInstructions).text = "Instructions: $instructions"
-                        findViewById<TextView>(R.id.tvDeliveryOption).text = "Delivery Option: $deliveryOption"
-                    }
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error loading item details", e)
-            }
+            findViewById<TextView>(R.id.tvItemName).text = "Item: $name"
+            findViewById<TextView>(R.id.tvItemWeight).text = "Weight: $kg kg $gram g"
+            findViewById<TextView>(R.id.tvItemInstructions).text = "Instructions: $instructions"
+            findViewById<TextView>(R.id.tvDeliveryOption).text = "Delivery Option: $deliveryOption"
+        }
     }
+
 
     private fun loadStatusData() {
         if (uniqueKey.isNullOrEmpty()) return
