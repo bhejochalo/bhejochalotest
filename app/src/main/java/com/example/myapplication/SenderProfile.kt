@@ -3,6 +3,7 @@ package com.example.myapplication
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -18,6 +19,7 @@ import androidx.core.widget.NestedScrollView
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 class SenderProfile : AppCompatActivity() {
@@ -35,7 +37,7 @@ class SenderProfile : AppCompatActivity() {
 
         db = FirebaseFirestore.getInstance()
         sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
-        uniqueKey = sharedPref.getString("UNIQUE_KEY", null) ?: intent.getStringExtra("UNIQUE_KEY")
+        uniqueKey = sharedPref.getString("uniqueKey", null) ?: intent.getStringExtra("uniqueKey")
 
         setupTabSwitching()
         setupEditButtons()
@@ -47,15 +49,17 @@ class SenderProfile : AppCompatActivity() {
         }
 
         loadTravelerDataOnce {
-            updateFlightUI(travelerDoc!!)
+            updateFlightUI(travelerDoc!!) // This will now load flight data on activity creation
             updateTravelerUI(travelerDoc!!)
             checkAndUpdateBookingStatus(travelerDoc!!)
+            loadStatusData()
         }
 
         findViewById<Button>(R.id.btnBookOtherTravelers).setOnClickListener {
             navigateToSenderDashboard()
         }
     }
+
 
     private fun navigateToSenderDashboard() {
         val intent = Intent(this, SenderDashboardActivity::class.java).apply {
@@ -82,7 +86,7 @@ class SenderProfile : AppCompatActivity() {
             }
     }
     private fun loadTravelerDataOnce(onLoaded: () -> Unit) {
-        if (uniqueKey.isNullOrEmpty()) return
+//        if (uniqueKey.isNullOrEmpty()) return
 
         db.collection("traveler")
             .whereEqualTo("uniqueKey", uniqueKey)
@@ -471,36 +475,28 @@ class SenderProfile : AppCompatActivity() {
             }
     }
     private fun loadAddressData() {
-        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
+        val doc = senderDoc ?: return
 
-        db.collection("Sender")
-            .whereEqualTo("phoneNumber", userId)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val document = querySnapshot.documents[0]
-                    val fromAddress = document.getString("fromAddress.fullAddress") ?: ""
-                    val toAddress = document.getString("toAddress.fullAddress") ?: ""
-                    val firstMileStatus = document.getString("FirstMileStatus") ?: "Not Started"
-                    val secondMileStatus = document.getString("SecondMileStatus") ?: "Not Started"
-                    val lastMileStatus = document.getString("LastMileStatus") ?: "Not Started"
-                    findViewById<TextView>(R.id.fileMileMainStatus)?.text = "✓ 1st Stage - $firstMileStatus"
-                    findViewById<TextView>(R.id.tvFromAddress).text = fromAddress
-                    findViewById<TextView>(R.id.tvToAddress).text = toAddress
-                    if(firstMileStatus == "Completed"){
-                        findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Started"
-                    }
-                    if(secondMileStatus == "Completed"){
-                        findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Completed"
-                        findViewById<TextView>(R.id.lastmilestatussender)?.text = "✓ 3rd stage - Started"
-                    }
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error loading address data", e)
-            }
+        val fromAddress = doc.getString("fromAddress.fullAddress") ?: ""
+        val toAddress = doc.getString("toAddress.fullAddress") ?: ""
+
+        val firstMileStatus = doc.getString("FirstMileStatus") ?: "Not Started"
+        val secondMileStatus = doc.getString("SecondMileStatus") ?: "Not Started"
+        val lastMileStatus = doc.getString("LastMileStatus") ?: "Not Started"
+
+        findViewById<TextView>(R.id.fileMileMainStatus)?.text = "✓ 1st Stage - $firstMileStatus"
+        findViewById<TextView>(R.id.tvFromAddress).text = fromAddress
+        findViewById<TextView>(R.id.tvToAddress).text = toAddress
+
+        if (firstMileStatus == "Completed") {
+            findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Started"
+        }
+        if (secondMileStatus == "Completed") {
+            findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Completed"
+            findViewById<TextView>(R.id.lastmilestatussender)?.text = "✓ 3rd stage - Started"
+        }
     }
+
 
     private fun loadItemDetails() {
         val doc = senderDoc ?: return
@@ -526,7 +522,6 @@ class SenderProfile : AppCompatActivity() {
     private fun loadStatusData() {
         if (uniqueKey.isNullOrEmpty()) return
 
-        // First get the order status from borzo_orders
         db.collection("borzo_orders")
             .whereEqualTo("uniqueKey", uniqueKey)
             .limit(1)
@@ -540,27 +535,16 @@ class SenderProfile : AppCompatActivity() {
 
                     findViewById<TextView>(R.id.subStatus).text = status
 
-                    // Now get flight number from traveler collection
-                    db.collection("traveler")
-                        .whereEqualTo("uniqueKey", "asdf")
-                        .limit(1)
-                        .get()
-                        .addOnSuccessListener { travelerQuery ->
-                            if (!travelerQuery.isEmpty) {
-                                val travelerDoc = travelerQuery.documents[0]
-                                val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
-
-                                // Create FlightAware tracking URL
-                                val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
-                                findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
-                            }
-                        }
+                    val flightNumber = travelerDoc?.getString("FlightNumber") ?: "N/A"
+                    val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
+                    findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
                 }
             }
             .addOnFailureListener { e ->
                 Log.e("SenderProfile", "Error loading status data", e)
             }
     }
+
 
     private fun loadTravelerData() {
         val uniqueKey = "asdf" // Or get this from sharedPrefs/intent
@@ -587,49 +571,47 @@ class SenderProfile : AppCompatActivity() {
 
     private fun updateFlightUI(travelerDoc: DocumentSnapshot) {
         try {
-            // 1. First verify we have the correct document
-            Log.d("FlightDebug", "Document ID: ${travelerDoc.id}")
-            Log.d("FlightDebug", "Document data: ${travelerDoc.data}")
+            // Get flight details from traveler document
+            val fromAddress = travelerDoc.get("fromAddress") as? Map<String, Any>
+            val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
 
-            // 2. Extract address data with proper null checks
-            val fromAddress = (travelerDoc.get("fromAddress") as? Map<*, *>)?.let {
-                Pair(
-                    it["city"] as? String ?: "N/A",
-                    it["state"] as? String ?: "N/A"
-                )
-            } ?: Pair("N/A", "N/A")
+            val fromCity = fromAddress?.get("city") as? String ?: "N/A"
+            val toCity = toAddress?.get("city") as? String ?: "N/A"
 
-            val toAddress = (travelerDoc.get("toAddress") as? Map<*, *>)?.let {
-                Pair(
-                    it["city"] as? String ?: "N/A",
-                    it["state"] as? String ?: "N/A"
-                )
-            } ?: Pair("N/A", "N/A")
-
-            // 3. Log the extracted values
-            Log.d("FlightDebug", "From: ${fromAddress.first}, ${fromAddress.second}")
-            Log.d("FlightDebug", "To: ${toAddress.first}, ${toAddress.second}")
-
-            // 4. Update UI on main thread
-            runOnUiThread {
-                findViewById<TextView>(R.id.tvFromCity).text = "${fromAddress.first}, ${fromAddress.second}"
-                findViewById<TextView>(R.id.tvToCity).text = "${toAddress.first}, ${toAddress.second}"
-
-                // Verify TextView IDs
-                Log.d("ViewDebug", "tvFromCity found: ${findViewById<TextView>(R.id.tvFromCity) != null}")
-                Log.d("ViewDebug", "tvToCity found: ${findViewById<TextView>(R.id.tvToCity) != null}")
-            }
-
-            // Rest of your flight UI updates...
             val airline = travelerDoc.getString("airline") ?: "N/A"
-            val leavingDate = travelerDoc.getString("leavingDate") ?: "N/A"
-            val leavingTime = travelerDoc.getString("leavingTime") ?: "N/A"
             val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
 
+            // Parse departure time
+            val departureTimeStr = travelerDoc.getString("departureTime") ?: "N/A"
+            val formattedDepartureTime = formatDateTime(departureTimeStr)
+
+            // Calculate arrival time (assuming 2 hours flight duration for demo)
+            val formattedArrivalTime = calculateArrivalTime(departureTimeStr)
+
+            val status = travelerDoc.getString("status") ?: "N/A"
+
             runOnUiThread {
+                // Update flight information UI
+                findViewById<TextView>(R.id.tvFromCity).text = fromCity
+                findViewById<TextView>(R.id.tvToCity).text = toCity
                 findViewById<TextView>(R.id.tvFlightStatus).text = "Airline: $airline"
-                findViewById<TextView>(R.id.tvFromTime).text = "Leaving at: $leavingDate $leavingTime"
+                findViewById<TextView>(R.id.tvFromTime).text = "Departure: $formattedDepartureTime"
+                findViewById<TextView>(R.id.tvToTime).text = "Arrival: $formattedArrivalTime"
                 findViewById<TextView>(R.id.tvFlightNumber).text = "Flight: $flightNumber"
+
+                // Update flight status with color coding
+                val statusTextView = findViewById<TextView>(R.id.subStatus)
+                statusTextView.text = "Flight Status: $status"
+
+                when (status.lowercase()) {
+                    "scheduled", "ontime", "request accepted by traveler" -> statusTextView.setTextColor(Color.GREEN)
+                    "delayed", "in progress" -> statusTextView.setTextColor(Color.YELLOW)
+                    "cancelled", "rejected" -> statusTextView.setTextColor(Color.RED)
+                    else -> statusTextView.setTextColor(Color.GRAY)
+                }
+
+                // Also update the traveler UI section
+                updateTravelerUI(travelerDoc)
             }
 
         } catch (e: Exception) {
@@ -637,25 +619,64 @@ class SenderProfile : AppCompatActivity() {
         }
     }
 
+    private fun formatDateTime(dateTimeStr: String): String {
+        return try {
+            if (dateTimeStr.contains("T")) {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault())
+                val date = inputFormat.parse(dateTimeStr)
+                outputFormat.format(date)
+            } else {
+                // Handle other date formats if needed
+                dateTimeStr
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error formatting date", e)
+            dateTimeStr
+        }
+    }
+
+    private fun calculateArrivalTime(departureTimeStr: String): String {
+        return try {
+            if (departureTimeStr.contains("T")) {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault())
+                val date = inputFormat.parse(departureTimeStr)
+
+                // Add 2 hours for flight duration (adjust as needed)
+                val arrivalDate = Date(date.time + (2 * 60 * 60 * 1000))
+                outputFormat.format(arrivalDate)
+            } else {
+                // Handle other date formats if needed
+                "N/A"
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error calculating arrival time", e)
+            "N/A"
+        }
+    }
     private fun updateTravelerUI(travelerDoc: DocumentSnapshot) {
         try {
-            // Update basic traveler info
-            findViewById<TextView>(R.id.tvTravelerName)?.text = travelerDoc.getString("lastName") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerAirline)?.text = travelerDoc.getString("airline") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = travelerDoc.getString("FlightNumber") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerDeparture)?.text =
-                travelerDoc.getString("departureTime") ?: travelerDoc.getString("leavingTime") ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerArrival)?.text = travelerDoc.getString("arrivalTime") ?: "N/A"
+            // Get traveler details from PNR verification fields
+            val lastName = travelerDoc.getString("lastName") ?: "N/A"
+            val airline = travelerDoc.getString("airline") ?: "N/A"
+            val flightNumber = travelerDoc.getString("flightNumber") ?: "N/A"
+            val departureTime = travelerDoc.getString("departureTime") ?: "N/A"
+            val arrivalTime = travelerDoc.getString("arrivalTime") ?: "N/A"
+            val weightUpto = travelerDoc.getString("weightUpto") ?: "0"
 
-            // Update destination from 'toAddress.city'
-            val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
-            val destinationCity = toAddress?.get("city") as? String ?: "N/A"
-            findViewById<TextView>(R.id.tvTravelerDestination)?.text = destinationCity
+            // Get destination from toPlace (PNR field) instead of toAddress
+            val destination = travelerDoc.getString("toPlace") ?: "N/A"
 
-            // Update weight allowance from 'weightUpto'
-            val weightUpto = travelerDoc.getString("weightUpto") ?: 0
-            findViewById<TextView>(R.id.tvTravelerWeight)?.text = "$weightUpto kg"
-
+            runOnUiThread {
+                findViewById<TextView>(R.id.tvTravelerName)?.text = lastName
+                findViewById<TextView>(R.id.tvTravelerAirline)?.text = airline
+                findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = flightNumber
+                findViewById<TextView>(R.id.tvTravelerDeparture)?.text = departureTime
+                findViewById<TextView>(R.id.tvTravelerArrival)?.text = arrivalTime
+                findViewById<TextView>(R.id.tvTravelerDestination)?.text = destination
+                findViewById<TextView>(R.id.tvTravelerWeight)?.text = "$weightUpto kg"
+            }
 
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error updating traveler UI", e)
