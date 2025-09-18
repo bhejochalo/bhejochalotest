@@ -46,15 +46,23 @@ class SenderProfile : AppCompatActivity() {
         loadSenderData {
             loadAddressData()
             loadItemDetails()
+
+            // Check traveler acceptance and update UI/editing permissions
             refreshTravelerDoc { tDoc ->
                 val travelerStatus = tDoc?.getString("status") ?: ""
                 if (travelerStatus == "Request Accepted By Traveler") {
+                    // show contact + location and disable edits
+                    showTravelerContactAndLocation(tDoc)
                     setSenderEditingEnabled(false)
+                    showTravelerContactAndLocation(tDoc)
                 } else {
+                    // hide sensitive details & enable edits
                     setSenderEditingEnabled(true)
+                    hideTravelerContactAndLocation()
                 }
             }
         }
+
 
         loadTravelerDataOnce {
             travelerDoc?.let {
@@ -582,18 +590,56 @@ class SenderProfile : AppCompatActivity() {
         val btnEditTo = findViewById<Button>(R.id.btnEditToAddress)
         val btnEditItem = findViewById<Button>(R.id.btnEditItemDetails)
 
-        // Guard in case view not yet inflated
         btnEditFrom?.let {
             it.isEnabled = enabled
-            it.alpha = if (enabled) 1f else 0.5f
+            it.alpha = if (enabled) 1f else 0.45f
         }
         btnEditTo?.let {
             it.isEnabled = enabled
-            it.alpha = if (enabled) 1f else 0.5f
+            it.alpha = if (enabled) 1f else 0.45f
         }
         btnEditItem?.let {
             it.isEnabled = enabled
-            it.alpha = if (enabled) 1f else 0.5f
+            it.alpha = if (enabled) 1f else 0.45f
+        }
+    }
+    private fun showTravelerContactAndLocation(doc: DocumentSnapshot?) {
+        if (doc == null) return
+
+        // Get phone number (fall back to phoneNumber / phone)
+        val phone = doc.getString("phoneNumber") ?: doc.getString("phone") ?: "N/A"
+
+        // Try nested fromAddress or toAddress coordinates
+        val fromAddress = doc.get("fromAddress") as? Map<*, *>
+        val toAddress = doc.get("toAddress") as? Map<*, *>
+
+        val lat = (fromAddress?.get("latitude") as? Number)?.toDouble()
+            ?: (toAddress?.get("latitude") as? Number)?.toDouble()
+        val lng = (fromAddress?.get("longitude") as? Number)?.toDouble()
+            ?: (toAddress?.get("longitude") as? Number)?.toDouble()
+
+        val tvPhone = findViewById<TextView>(R.id.tvTravelerPhone)
+        val tvLocation = findViewById<TextView>(R.id.tvTravelerLocation)
+
+        runOnUiThread {
+            tvPhone?.text = if (phone.isNotBlank()) phone else "N/A"
+            tvLocation?.text = if (lat != null && lng != null) {
+                "Lat: %.6f, Lng: %.6f".format(lat, lng)
+            } else {
+                // fallback to any textual fullAddress if coords missing
+                val fa = (fromAddress?.get("fullAddress") as? String)
+                    ?: (toAddress?.get("fullAddress") as? String) ?: "Location not available"
+                fa
+            }
+            // Make visible (in case you hide it by default)
+            tvPhone?.visibility = View.VISIBLE
+            tvLocation?.visibility = View.VISIBLE
+        }
+    }
+    private fun hideTravelerContactAndLocation() {
+        runOnUiThread {
+            findViewById<TextView>(R.id.tvTravelerPhone)?.text = "N/A"
+            findViewById<TextView>(R.id.tvTravelerLocation)?.text = "Lat: N/A, Lng: N/A"
         }
     }
     // -------------------------

@@ -832,6 +832,54 @@
                                     android:textColor="#333333"
                                     android:textSize="16sp"/>
                             </LinearLayout>
+                            <!-- Add these inside senderContent (traveler info panel), e.g. after the Destination block -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Contact:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerPhone"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Traveler Location:"
+                                    android:textColor="#444444"
+                                    android:textSize="16sp"/>
+
+                                <TextView
+                                    android:id="@+id/tvTravelerLocation"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Lat: N/A, Lng: N/A"
+                                    android:textColor="#333333"
+                                    android:textSize="16sp"/>
+                            </LinearLayout>
 
                             <LinearLayout
                                 android:layout_width="match_parent"
