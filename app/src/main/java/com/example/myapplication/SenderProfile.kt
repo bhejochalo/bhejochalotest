@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -10,16 +11,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.widget.NestedScrollView
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 import kotlin.random.Random
 
 class SenderProfile : AppCompatActivity() {
@@ -29,7 +29,6 @@ class SenderProfile : AppCompatActivity() {
     private var uniqueKey: String? = null
     private var senderDoc: DocumentSnapshot? = null
     private var travelerDoc: DocumentSnapshot? = null
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,32 +46,28 @@ class SenderProfile : AppCompatActivity() {
         loadSenderData {
             loadAddressData()
             loadItemDetails()
+            refreshTravelerDoc { tDoc ->
+                val travelerStatus = tDoc?.getString("status") ?: ""
+                if (travelerStatus == "Request Accepted By Traveler") {
+                    setSenderEditingEnabled(false)
+                } else {
+                    setSenderEditingEnabled(true)
+                }
+            }
         }
 
         loadTravelerDataOnce {
-            // load travelerDoc if found
             travelerDoc?.let {
-                updateFlightUI(it) // This will now load flight data on activity creation
+                updateFlightUI(it)
                 updateTravelerUI(it)
                 checkAndUpdateBookingStatus(it)
                 loadStatusData()
-                // set up listeners for mile controls
-                setupMileControls()
             }
+            setupMileControls()
         }
 
         findViewById<Button>(R.id.btnBookOtherTravelers).setOnClickListener {
             navigateToSenderDashboard()
-        }
-
-        // Wire up OTP verify button (present in layout)
-        findViewById<Button?>(R.id.btnVerifyOtp)?.setOnClickListener {
-            val entered = findViewById<EditText>(R.id.etOtpInput).text.toString().trim()
-            if (entered.isEmpty()) {
-                Toast.makeText(this, "Enter OTP", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            verifyLastMileOtp(entered)
         }
     }
 
@@ -81,7 +76,7 @@ class SenderProfile : AppCompatActivity() {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         startActivity(intent)
-        finish() // Close current activity
+        finish()
     }
 
     private fun loadSenderData(onLoaded: () -> Unit) {
@@ -103,21 +98,15 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun loadTravelerDataOnce(onLoaded: () -> Unit) {
-        if (uniqueKey.isNullOrEmpty()) {
-            Log.w("SenderProfile", "uniqueKey is null or empty, skipping traveler load")
-            return
-        }
-
+        val key = uniqueKey ?: return
         db.collection("traveler")
-            .whereEqualTo("uniqueKey", uniqueKey)
+            .whereEqualTo("uniqueKey", key)
             .limit(1)
             .get()
             .addOnSuccessListener { querySnapshot ->
                 if (!querySnapshot.isEmpty) {
                     travelerDoc = querySnapshot.documents[0]
                     onLoaded()
-                } else {
-                    Log.w("SenderProfile", "No traveler found for uniqueKey=$uniqueKey")
                 }
             }
             .addOnFailureListener { e ->
@@ -151,7 +140,16 @@ class SenderProfile : AppCompatActivity() {
             underlineSender.visibility = View.VISIBLE
             tabStatus.setTextColor(getColor(R.color.gray_secondary))
             tabSender.setTextColor(getColor(R.color.orange_primary))
-            loadTravelerData()
+
+            // refresh traveler details when opening traveler tab
+            refreshTravelerDoc { doc ->
+                doc?.let {
+                    updateFlightUI(it)
+                    updateTravelerUI(it)
+                    checkAndUpdateBookingStatus(it)
+                    loadStatusData()
+                }
+            }
         }
     }
 
@@ -160,10 +158,12 @@ class SenderProfile : AppCompatActivity() {
             val status = travelerDoc.getString("status") ?: ""
             runOnUiThread {
                 findViewById<TextView>(R.id.subStatus).text = status
-                val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
+                val flightNumber =
+                    travelerDoc.getString("flightNumber") ?: travelerDoc.getString("FlightNumber")
+                    ?: "N/A"
                 val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
-                val bookOtherBtn = findViewById<Button>(R.id.btnBookOtherTravelers)
                 findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
+                val bookOtherBtn = findViewById<Button>(R.id.btnBookOtherTravelers)
                 bookOtherBtn.visibility = if (status == "Rejected By Traveler") View.VISIBLE else View.GONE
                 reorganizeItemDetailsLayout(status)
             }
@@ -173,78 +173,598 @@ class SenderProfile : AppCompatActivity() {
     }
 
     private fun reorganizeItemDetailsLayout(status: String) {
-        val itemDetailsCard = findViewById<CardView>(R.id.itemDetailsCard)
-        val flightInfoCard = findViewById<CardView>(R.id.flightInfoCard)
-        val addressCard = findViewById<CardView>(R.id.addressCard)
-        val statusCard = findViewById<CardView>(R.id.statusCard)
+        try {
+            val itemDetailsCard = findViewById<CardView>(R.id.itemDetailsCard)
+            val flightInfoCard = findViewById<CardView>(R.id.flightInfoCard)
+            val addressCard = findViewById<CardView>(R.id.addressCard)
+            val statusCard = findViewById<CardView>(R.id.statusCard)
 
-        if (status == "Request Accepted By Traveler") {
-            // Flight Info first, then Item Details, then Address, then Status
-            val flightParams = flightInfoCard.layoutParams as ConstraintLayout.LayoutParams
-            flightParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-            flightParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
-            flightInfoCard.layoutParams = flightParams
+            if (status == "Request Accepted By Traveler") {
+                // Flight Info first, then Item Details, then Address, then Status
+                val flightParams = flightInfoCard.layoutParams as ConstraintLayout.LayoutParams
+                flightParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                flightParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+                flightInfoCard.layoutParams = flightParams
 
-            val itemParams = itemDetailsCard.layoutParams as ConstraintLayout.LayoutParams
-            itemParams.topToBottom = R.id.flightInfoCard
-            itemParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
-            itemDetailsCard.layoutParams = itemParams
+                val itemParams = itemDetailsCard.layoutParams as ConstraintLayout.LayoutParams
+                itemParams.topToBottom = R.id.flightInfoCard
+                itemParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+                itemDetailsCard.layoutParams = itemParams
 
-            val addressParams = addressCard.layoutParams as ConstraintLayout.LayoutParams
-            addressParams.topToBottom = R.id.itemDetailsCard
-            addressCard.layoutParams = addressParams
+                val addressParams = addressCard.layoutParams as ConstraintLayout.LayoutParams
+                addressParams.topToBottom = R.id.itemDetailsCard
+                addressCard.layoutParams = addressParams
 
-            val statusParams = statusCard.layoutParams as ConstraintLayout.LayoutParams
-            statusParams.topToBottom = R.id.addressCard
-            statusCard.layoutParams = statusParams
+                val statusParams = statusCard.layoutParams as ConstraintLayout.LayoutParams
+                statusParams.topToBottom = R.id.addressCard
+                statusCard.layoutParams = statusParams
 
-        } else {
-            // Flight Info first, then Address, then Status, then Item Details at bottom
-            val flightParams = flightInfoCard.layoutParams as ConstraintLayout.LayoutParams
-            flightParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
-            flightParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
-            flightInfoCard.layoutParams = flightParams
+            } else {
+                // Flight Info first, then Address, then Status, then Item Details at bottom
+                val flightParams = flightInfoCard.layoutParams as ConstraintLayout.LayoutParams
+                flightParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID
+                flightParams.bottomToTop = ConstraintLayout.LayoutParams.UNSET
+                flightInfoCard.layoutParams = flightParams
 
-            val addressParams = addressCard.layoutParams as ConstraintLayout.LayoutParams
-            addressParams.topToBottom = R.id.flightInfoCard
-            addressCard.layoutParams = addressParams
+                val addressParams = addressCard.layoutParams as ConstraintLayout.LayoutParams
+                addressParams.topToBottom = R.id.flightInfoCard
+                addressCard.layoutParams = addressParams
 
-            val statusParams = statusCard.layoutParams as ConstraintLayout.LayoutParams
-            statusParams.topToBottom = R.id.addressCard
-            statusCard.layoutParams = statusParams
+                val statusParams = statusCard.layoutParams as ConstraintLayout.LayoutParams
+                statusParams.topToBottom = R.id.addressCard
+                statusCard.layoutParams = statusParams
 
-            val itemParams = itemDetailsCard.layoutParams as ConstraintLayout.LayoutParams
-            itemParams.topToBottom = R.id.statusCard
-            itemParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
-            itemDetailsCard.layoutParams = itemParams
+                val itemParams = itemDetailsCard.layoutParams as ConstraintLayout.LayoutParams
+                itemParams.topToBottom = R.id.statusCard
+                itemParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID
+                itemDetailsCard.layoutParams = itemParams
+            }
+
+            // Request layout update
+            (itemDetailsCard.parent as? ViewGroup)?.requestLayout()
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error reorganizing layout", e)
         }
-
-        (itemDetailsCard.parent as? ViewGroup)?.requestLayout()
     }
 
     private fun setupEditButtons() {
-        // From Address Edit Button
-        findViewById<Button>(R.id.btnEditFromAddress).setOnClickListener {
+        val fromBtn = findViewById<Button>(R.id.btnEditFromAddress)
+        val toBtn = findViewById<Button>(R.id.btnEditToAddress)
+
+        fromBtn.setOnClickListener {
+            if (!fromBtn.isEnabled) {
+                Toast.makeText(this, "Editing disabled — traveler already accepted the request", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             showEditAddressDialog("From") { newAddress ->
                 findViewById<TextView>(R.id.tvFromAddress).text = newAddress
             }
         }
 
-        // To Address Edit Button
-        findViewById<Button>(R.id.btnEditToAddress).setOnClickListener {
+        toBtn.setOnClickListener {
+            if (!toBtn.isEnabled) {
+                Toast.makeText(this, "Editing disabled — traveler already accepted the request", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             showEditAddressDialog("To") { newAddress ->
                 findViewById<TextView>(R.id.tvToAddress).text = newAddress
             }
         }
     }
 
+
     private fun setupEditItemButton() {
-        findViewById<Button>(R.id.btnEditItemDetails).setOnClickListener {
+        val btn = findViewById<Button>(R.id.btnEditItemDetails)
+        btn.setOnClickListener {
+            if (!btn.isEnabled) {
+                Toast.makeText(this, "Editing disabled — traveler already accepted the request", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             showEditItemDialog()
         }
     }
 
-    private fun showEditAddressDialog(title: String, onSave: (String) -> Unit) {
+
+    // -------------------------
+    // Mile controls and refresh
+    // -------------------------
+    private fun setupMileControls() {
+        val btnRefreshAll = findViewById<Button>(R.id.btnRefreshAll)
+        val btnVerifyPickupOtp = findViewById<Button>(R.id.btnVerifyPickupOtp)
+        val btnVerifyLastOtp = findViewById<Button>(R.id.btnVerifyOtp)
+
+        btnRefreshAll.setOnClickListener {
+            refreshTravelerDoc { doc ->
+                if (doc == null) {
+                    Toast.makeText(this, "No traveler found", Toast.LENGTH_SHORT).show()
+                    return@refreshTravelerDoc
+                }
+
+                // Update first mile section
+                val firstStatus = doc.getString("FirstMileStatus") ?: "Not Started"
+                val firstOtp = doc.getString("FirstMileOTP") ?: ""
+                updateFirstMileSectionUI(firstOtp, firstStatus)
+
+                // Update second mile (flight-based) and prepare last when landed
+                refreshSecondMileAndMaybeStartLast(doc)
+
+                // Update last mile UI
+                val lastStatus = doc.getString("LastMileStatus") ?: "Not Started"
+                val lastOtp = doc.getString("LastMileOTP") ?: ""
+                updateLastMileSectionUI(lastOtp, lastStatus)
+            }
+        }
+
+        btnVerifyPickupOtp.setOnClickListener {
+            val entered = findViewById<EditText>(R.id.etPickupOtpInput).text.toString().trim()
+            if (entered.isEmpty()) {
+                Toast.makeText(this, "Enter Pickup OTP", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            verifyFirstMileOtp(entered)
+        }
+
+        btnVerifyLastOtp.setOnClickListener {
+            val entered = findViewById<EditText>(R.id.etOtpInput).text.toString().trim()
+            if (entered.isEmpty()) {
+                Toast.makeText(this, "Enter OTP", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            verifyLastMileOtp(entered)
+        }
+    }
+
+    /**
+     * Read current traveler doc from Firestore (by uniqueKey). Callback returns DocumentSnapshot? (null if not found)
+     */
+    private fun refreshTravelerDoc(callback: (DocumentSnapshot?) -> Unit) {
+        val key = uniqueKey ?: sharedPref.getString("uniqueKey", null)
+        if (key.isNullOrEmpty()) {
+            callback(null)
+            return
+        }
+
+        db.collection("traveler")
+            .whereEqualTo("uniqueKey", key)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snap ->
+                if (!snap.isEmpty) {
+                    val doc = snap.documents[0]
+                    travelerDoc = doc
+                    callback(doc)
+                    val travelerStatus = doc.getString("status") ?: ""
+                    if (travelerStatus == "Request Accepted By Traveler") {
+                        setSenderEditingEnabled(false)
+                    } else {
+                        setSenderEditingEnabled(true)
+                    }
+
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error refreshing traveler doc", e)
+                callback(null)
+            }
+    }
+
+    // -------------------------
+    // First Mile
+    // -------------------------
+    private fun updateFirstMileSectionUI(otp: String, status: String) {
+        runOnUiThread {
+            findViewById<TextView>(R.id.firstmilesender).text = when (status) {
+                "In Progress" -> "✓ 1st Stage - In Progress"
+                "Completed" -> "✓ 1st Stage - Completed"
+                else -> "✓ 1st Stage - Not Started"
+            }
+            findViewById<TextView>(R.id.tvPickupOtp).text = if (otp.isNotEmpty()) "Pickup OTP: $otp" else ""
+        }
+    }
+
+    private fun verifyFirstMileOtp(enteredOtp: String) {
+        val doc = travelerDoc
+        if (doc == null) {
+            Toast.makeText(this, "No traveler loaded", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val realOtp = doc.getString("FirstMileOTP") ?: ""
+        val docRef = doc.reference
+
+        if (enteredOtp == realOtp && realOtp.isNotEmpty()) {
+            docRef.update("FirstMileStatus", "Completed")
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Pickup OTP Verified. First mile completed.", Toast.LENGTH_SHORT).show()
+                    refreshTravelerDoc { refreshed ->
+                        refreshed?.let {
+                            updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("SenderProfile", "Error updating first mile status", e)
+                    Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
+                }
+        } else {
+            Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Optional helper to initiate first mile (generates OTP & sets In Progress) — not auto-called by Refresh
+    private fun initiateFirstMile() {
+        val doc = travelerDoc ?: return
+        val firstStatus = doc.getString("FirstMileStatus") ?: "Not Started"
+        if (firstStatus == "Not Started") {
+            val generated = generateOtp()
+            doc.reference.update(mapOf(
+                "FirstMileOTP" to generated,
+                "FirstMileStatus" to "In Progress"
+            )).addOnSuccessListener {
+                Toast.makeText(this, "First mile started. OTP generated.", Toast.LENGTH_SHORT).show()
+                refreshTravelerDoc { refreshed ->
+                    refreshed?.let {
+                        updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "In Progress")
+                    }
+                }
+            }.addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error initiating first mile", e)
+            }
+        } else {
+            Toast.makeText(this, "First mile already in progress or completed", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // -------------------------
+    // Second Mile (flight-based)
+    // -------------------------
+    private fun refreshSecondMileAndMaybeStartLast(doc: DocumentSnapshot) {
+        val departureStr = doc.getString("departureTime") ?: doc.getString("leavingDate") ?: ""
+        val arrivalStr = doc.getString("arrivalTime") ?: ""
+        val flightNumber = doc.getString("flightNumber") ?: ""
+        val secondTv = findViewById<TextView>(R.id.secondmilesender)
+        val transitStatusTv = findViewById<TextView>(R.id.tvTransitStatus)
+        val lastUpdatedTv = findViewById<TextView>(R.id.tvLastUpdated)
+
+        try {
+            val now = Date()
+            val parserCandidates = listOf(
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()),
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            )
+
+            fun parseFlexible(input: String): Date? {
+                if (input.isBlank()) return null
+                for (p in parserCandidates) {
+                    try {
+                        p.timeZone = TimeZone.getDefault()
+                        return p.parse(input)
+                    } catch (_: Exception) {
+                    }
+                }
+                return null
+            }
+
+            val dep = parseFlexible(departureStr)
+            val arr = parseFlexible(arrivalStr)
+
+            if (dep == null || arr == null) {
+                secondTv.text = "⏳ 2nd Stage - Unknown (flight info missing)"
+                transitStatusTv.text = "Flight: $flightNumber"
+                lastUpdatedTv.text = "Updated: ${SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault()).format(Date())}"
+                if (flightNumber.isNotBlank()) {
+                    fetchFlightStatusFromFlightAware(flightNumber) { statusText ->
+                        runOnUiThread { transitStatusTv.text = statusText }
+                    }
+                }
+                return
+            }
+
+            when {
+                now.before(dep) -> {
+                    secondTv.text = "⏳ 2nd Stage - Not Started"
+                    transitStatusTv.text = "Flight scheduled to depart at ${formatLocal(dep)}"
+                }
+                now.after(dep) && now.before(arr) -> {
+                    secondTv.text = "⏳ 2nd Stage - In Transit"
+                    transitStatusTv.text = "Flight is airborne"
+                    if (doc.getString("SecondMileStatus") != "In Progress") {
+                        doc.reference.update("SecondMileStatus", "In Progress")
+                    }
+                    if (flightNumber.isNotBlank()) {
+                        fetchFlightStatusFromFlightAware(flightNumber) { statusText ->
+                            runOnUiThread { transitStatusTv.text = statusText }
+                        }
+                    }
+                }
+                now.after(arr) -> {
+                    secondTv.text = "✓ 2nd Stage - Completed"
+                    transitStatusTv.text = "Flight landed at ${formatLocal(arr)}"
+                    if (doc.getString("SecondMileStatus") != "Completed") {
+                        doc.reference.update("SecondMileStatus", "Completed")
+                    }
+
+                    val lastStatus = doc.getString("LastMileStatus") ?: "Not Started"
+                    if (lastStatus == "Not Started") {
+                        val lastOtp = generateOtp()
+                        doc.reference.update(
+                            mapOf(
+                                "LastMileOTP" to lastOtp,
+                                "LastMileStatus" to "In Progress"
+                            )
+                        ).addOnSuccessListener {
+                            refreshTravelerDoc { refreshed ->
+                                refreshed?.let {
+                                    updateLastMileSectionUI(it.getString("LastMileOTP") ?: "", it.getString("LastMileStatus") ?: "In Progress")
+                                }
+                            }
+                        }.addOnFailureListener { e ->
+                            Log.e("SenderProfile", "Error initiating last mile", e)
+                        }
+                    }
+                }
+            }
+
+            lastUpdatedTv.text = "Updated: ${SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault()).format(Date())}"
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error processing second mile", e)
+            findViewById<TextView>(R.id.secondmilesender).text = "⏳ 2nd Stage - Unknown"
+        }
+    }
+
+    private fun formatLocal(d: Date): String {
+        return SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault()).format(d)
+    }
+
+    // Placeholder for FlightAware integration (replace with real API)
+    private fun fetchFlightStatusFromFlightAware(flightNumber: String, callback: (String) -> Unit) {
+        callback("Flight $flightNumber — live status unavailable (add FlightAware integration)")
+    }
+
+    // -------------------------
+    // Last Mile
+    // -------------------------
+    private fun updateLastMileSectionUI(otp: String, status: String) {
+        runOnUiThread {
+            findViewById<TextView>(R.id.lastmilestatussender).text = when (status) {
+                "In Progress" -> "📍 3rd Stage - In Progress"
+                "Completed" -> "📍 3rd Stage - Completed"
+                else -> "📍 3rd Stage - Not Started"
+            }
+            findViewById<TextView>(R.id.tvDeliveryOtp).text = if (otp.isNotEmpty()) "Delivery OTP: $otp" else ""
+        }
+    }
+
+    private fun verifyLastMileOtp(enteredOtp: String) {
+        val doc = travelerDoc
+        if (doc == null) {
+            Toast.makeText(this, "No traveler loaded", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val realOtp = doc.getString("LastMileOTP") ?: ""
+        val docRef = doc.reference
+
+        if (enteredOtp == realOtp && realOtp.isNotEmpty()) {
+            docRef.update(mapOf(
+                "LastMileStatus" to "Completed",
+                "status" to "Completed"
+            )).addOnSuccessListener {
+                Toast.makeText(this, "Delivery OTP Verified. Order completed.", Toast.LENGTH_SHORT).show()
+                refreshTravelerDoc { refreshed ->
+                    refreshed?.let {
+                        updateLastMileSectionUI(it.getString("LastMileOTP") ?: "", it.getString("LastMileStatus") ?: "Completed")
+                    }
+                }
+            }.addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error updating last mile status", e)
+                Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // -------------------------
+    // Small helpers
+    // -------------------------
+    private fun generateOtp(): String {
+        val number = Random.nextInt(100000, 999999)
+        return number.toString()
+    }
+
+    private fun setSenderEditingEnabled(enabled: Boolean) {
+        val btnEditFrom = findViewById<Button>(R.id.btnEditFromAddress)
+        val btnEditTo = findViewById<Button>(R.id.btnEditToAddress)
+        val btnEditItem = findViewById<Button>(R.id.btnEditItemDetails)
+
+        // Guard in case view not yet inflated
+        btnEditFrom?.let {
+            it.isEnabled = enabled
+            it.alpha = if (enabled) 1f else 0.5f
+        }
+        btnEditTo?.let {
+            it.isEnabled = enabled
+            it.alpha = if (enabled) 1f else 0.5f
+        }
+        btnEditItem?.let {
+            it.isEnabled = enabled
+            it.alpha = if (enabled) 1f else 0.5f
+        }
+    }
+    // -------------------------
+    // UI load functions (flight/item/address)
+    // -------------------------
+    private fun loadAddressData() {
+        val doc = senderDoc ?: return
+
+        val fromAddress = doc.getString("fromAddress.fullAddress") ?: ""
+        val toAddress = doc.getString("toAddress.fullAddress") ?: ""
+
+        val firstMileStatus = doc.getString("FirstMileStatus") ?: "Not Started"
+        val secondMileStatus = doc.getString("SecondMileStatus") ?: "Not Started"
+        val lastMileStatus = doc.getString("LastMileStatus") ?: "Not Started"
+
+        findViewById<TextView>(R.id.fileMileMainStatus)?.text = "✓ 1st Stage - $firstMileStatus"
+        findViewById<TextView>(R.id.tvFromAddress).text = fromAddress
+        findViewById<TextView>(R.id.tvToAddress).text = toAddress
+
+        if (firstMileStatus == "Completed") {
+            findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Started"
+        }
+        if (secondMileStatus == "Completed") {
+            findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Completed"
+            findViewById<TextView>(R.id.lastmilestatussender)?.text = "✓ 3rd stage - Started"
+        }
+    }
+
+    private fun loadItemDetails() {
+        val doc = senderDoc ?: return
+
+        val itemDetails = doc.get("itemDetails") as? Map<*, *>
+        itemDetails?.let {
+            val name = it["itemName"] as? String ?: "N/A"
+            val kg = (it["weightKg"] as? Number)?.toInt() ?: 0
+            val gram = (it["weightGram"] as? Number)?.toInt() ?: 0
+            val instructions = it["instructions"] as? String ?: "N/A"
+
+            val price = doc.getLong("deliveryOptionPrice")?.toInt() ?: 750
+            val deliveryOption = if (price == 750) "Self Pickup" else "Auto Pickup"
+
+            findViewById<TextView>(R.id.tvItemName).text = "Item: $name"
+            findViewById<TextView>(R.id.tvItemWeight).text = "Weight: $kg kg $gram g"
+            findViewById<TextView>(R.id.tvItemInstructions).text = "Instructions: $instructions"
+            findViewById<TextView>(R.id.tvDeliveryOption).text = "Delivery Option: $deliveryOption"
+        }
+    }
+
+    private fun loadStatusData() {
+        if (uniqueKey.isNullOrEmpty()) return
+
+        db.collection("borzo_orders")
+            .whereEqualTo("uniqueKey", uniqueKey)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { orderQuery ->
+                if (!orderQuery.isEmpty) {
+                    val document = orderQuery.documents[0]
+                    val status = document.getString("order.status") ?: "N/A"
+                    findViewById<TextView>(R.id.subStatus).text = status
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error loading status data", e)
+            }
+    }
+
+    private fun updateFlightUI(travelerDoc: DocumentSnapshot) {
+        try {
+            val fromAddress = travelerDoc.get("fromAddress") as? Map<String, Any>
+            val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
+
+            val fromCity = fromAddress?.get("city") as? String ?: "N/A"
+            val toCity = toAddress?.get("city") as? String ?: "N/A"
+
+            val airline = travelerDoc.getString("airline") ?: "N/A"
+            val flightNumber = travelerDoc.getString("flightNumber") ?: travelerDoc.getString("FlightNumber") ?: "N/A"
+
+            val departureTimeStr = travelerDoc.getString("departureTime") ?: "N/A"
+            val formattedDepartureTime = formatDateTime(departureTimeStr)
+            val formattedArrivalTime = calculateArrivalTime(departureTimeStr)
+
+            val status = travelerDoc.getString("status") ?: "N/A"
+
+            runOnUiThread {
+                findViewById<TextView>(R.id.tvFromCity).text = fromCity
+                findViewById<TextView>(R.id.tvToCity).text = toCity
+                findViewById<TextView>(R.id.tvFlightStatus).text = "Airline: $airline"
+                findViewById<TextView>(R.id.tvFromTime).text = "Departure: $formattedDepartureTime"
+                findViewById<TextView>(R.id.tvToTime).text = "Arrival: $formattedArrivalTime"
+                findViewById<TextView>(R.id.tvFlightNumber).text = "Flight: $flightNumber"
+
+                val statusTextView = findViewById<TextView>(R.id.subStatus)
+                statusTextView.text = "Flight Status: $status"
+
+                when (status.lowercase()) {
+                    "scheduled", "ontime", "request accepted by traveler" -> statusTextView.setTextColor(Color.GREEN)
+                    "delayed", "in progress" -> statusTextView.setTextColor(Color.YELLOW)
+                    "cancelled", "rejected" -> statusTextView.setTextColor(Color.RED)
+                    else -> statusTextView.setTextColor(Color.GRAY)
+                }
+
+                updateTravelerUI(travelerDoc)
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error updating flight UI", e)
+        }
+    }
+
+    private fun formatDateTime(dateTimeStr: String): String {
+        return try {
+            if (dateTimeStr.contains("T")) {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault())
+                val date = inputFormat.parse(dateTimeStr)
+                outputFormat.format(date)
+            } else {
+                dateTimeStr
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error formatting date", e)
+            dateTimeStr
+        }
+    }
+
+    private fun calculateArrivalTime(departureTimeStr: String): String {
+        return try {
+            if (departureTimeStr.contains("T")) {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault())
+                val date = inputFormat.parse(departureTimeStr)
+                val arrivalDate = Date(date.time + (2 * 60 * 60 * 1000))
+                outputFormat.format(arrivalDate)
+            } else {
+                "N/A"
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error calculating arrival time", e)
+            "N/A"
+        }
+    }
+
+    private fun updateTravelerUI(travelerDoc: DocumentSnapshot) {
+        try {
+            val lastName = travelerDoc.getString("lastName") ?: "N/A"
+            val airline = travelerDoc.getString("airline") ?: "N/A"
+            val flightNumber = travelerDoc.getString("flightNumber") ?: "N/A"
+            val departureTime = travelerDoc.getString("departureTime") ?: "N/A"
+            val arrivalTime = travelerDoc.getString("arrivalTime") ?: "N/A"
+            val weightUpto = travelerDoc.getString("weightUpto") ?: "0"
+            val destination = travelerDoc.getString("toPlace") ?: "N/A"
+
+            runOnUiThread {
+                findViewById<TextView>(R.id.tvTravelerName)?.text = lastName
+                findViewById<TextView>(R.id.tvTravelerAirline)?.text = airline
+                findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = flightNumber
+                findViewById<TextView>(R.id.tvTravelerDeparture)?.text = departureTime
+                findViewById<TextView>(R.id.tvTravelerArrival)?.text = arrivalTime
+                findViewById<TextView>(R.id.tvTravelerDestination)?.text = destination
+                findViewById<TextView>(R.id.tvTravelerWeight)?.text = "$weightUpto kg"
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error updating traveler UI", e)
+            Toast.makeText(this, "Error displaying traveler details", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // -------------------------
+    // Address / Item edit dialogs and Firestore updates
+    // -------------------------
+    private fun showEditAddressDialog(currentAddressField: String, onSave: (String) -> Unit) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_address, null)
         val etStreet = dialogView.findViewById<EditText>(R.id.etStreet)
         val etHouseNumber = dialogView.findViewById<EditText>(R.id.etHouseNumber)
@@ -253,9 +773,9 @@ class SenderProfile : AppCompatActivity() {
         val etState = dialogView.findViewById<EditText>(R.id.etState)
         val etPostalCode = dialogView.findViewById<EditText>(R.id.etPostalCode)
 
-        val currentAddressField = if (title == "From") "fromAddress" else "toAddress"
         val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
 
+        // Fetch current address details
         db.collection("Sender")
             .whereEqualTo("phoneNumber", userId)
             .limit(1)
@@ -275,7 +795,7 @@ class SenderProfile : AppCompatActivity() {
             }
 
         AlertDialog.Builder(this)
-            .setTitle("Edit $title Address")
+            .setTitle("Edit Address")
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
                 val street = etStreet.text.toString().trim()
@@ -285,23 +805,17 @@ class SenderProfile : AppCompatActivity() {
                 val state = etState.text.toString().trim()
                 val postalCode = etPostalCode.text.toString().trim()
 
-                val newAddress = buildString {
-                    append(street)
-                    append(", ")
-                    append(houseNumber)
-                    append(", ")
-                    append(area)
-                    append(", ")
-                    append(city)
-                    append(", ")
-                    append(state)
-                    append(" - ")
-                    append(postalCode)
+                val fullAddress = buildString {
+                    if (street.isNotEmpty()) append(street)
+                    if (houseNumber.isNotEmpty()) append(", $houseNumber")
+                    if (area.isNotEmpty()) append(", $area")
+                    if (city.isNotEmpty()) append(", $city")
+                    if (state.isNotEmpty()) append(", $state")
+                    if (postalCode.isNotEmpty()) append(" - $postalCode")
                 }
 
                 updateCompleteAddressInFirestore(currentAddressField, street, houseNumber, area, city, state, postalCode)
-
-                onSave(newAddress)
+                onSave(fullAddress)
                 Toast.makeText(this, "Address updated", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
@@ -460,516 +974,4 @@ class SenderProfile : AppCompatActivity() {
                 }
             }
     }
-
-    private fun loadInitialData() {
-        loadAddressData()
-        loadStatusData()
-        loadItemDetails()
-        if (uniqueKey != null) {
-            loadTravelerDataForStatus()
-        }
-    }
-
-    private fun loadTravelerDataForStatus() {
-        if (uniqueKey.isNullOrEmpty()) return
-
-        db.collection("traveler")
-            .whereEqualTo("uniqueKey", uniqueKey)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val travelerDocLocal = querySnapshot.documents[0]
-                    checkAndUpdateBookingStatus(travelerDocLocal)
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error loading traveler status", e)
-            }
-    }
-
-    private fun loadAddressData() {
-        val doc = senderDoc ?: return
-
-        val fromAddress = doc.getString("fromAddress.fullAddress") ?: ""
-        val toAddress = doc.getString("toAddress.fullAddress") ?: ""
-
-        val firstMileStatus = doc.getString("FirstMileStatus") ?: "Not Started"
-        val secondMileStatus = doc.getString("SecondMileStatus") ?: "Not Started"
-        val lastMileStatus = doc.getString("LastMileStatus") ?: "Not Started"
-
-        findViewById<TextView>(R.id.fileMileMainStatus)?.text = "✓ 1st Stage - $firstMileStatus"
-        findViewById<TextView>(R.id.tvFromAddress).text = fromAddress
-        findViewById<TextView>(R.id.tvToAddress).text = toAddress
-
-        if (firstMileStatus == "Completed") {
-            findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Started"
-        }
-        if (secondMileStatus == "Completed") {
-            findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd stage - Completed"
-            findViewById<TextView>(R.id.lastmilestatussender)?.text = "✓ 3rd stage - Started"
-        }
-    }
-
-    private fun loadItemDetails() {
-        val doc = senderDoc ?: return
-
-        val itemDetails = doc.get("itemDetails") as? Map<*, *>
-        itemDetails?.let {
-            val name = it["itemName"] as? String ?: "N/A"
-            val kg = (it["weightKg"] as? Number)?.toInt() ?: 0
-            val gram = (it["weightGram"] as? Number)?.toInt() ?: 0
-            val instructions = it["instructions"] as? String ?: "N/A"
-
-            val price = doc.getLong("deliveryOptionPrice")?.toInt() ?: 750
-            val deliveryOption = if (price == 750) "Self Pickup" else "Auto Pickup"
-
-            findViewById<TextView>(R.id.tvItemName).text = "Item: $name"
-            findViewById<TextView>(R.id.tvItemWeight).text = "Weight: $kg kg $gram g"
-            findViewById<TextView>(R.id.tvItemInstructions).text = "Instructions: $instructions"
-            findViewById<TextView>(R.id.tvDeliveryOption).text = "Delivery Option: $deliveryOption"
-        }
-    }
-
-    private fun loadStatusData() {
-        if (uniqueKey.isNullOrEmpty()) return
-
-        db.collection("borzo_orders")
-            .whereEqualTo("uniqueKey", uniqueKey)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { orderQuery ->
-                if (!orderQuery.isEmpty) {
-                    val document = orderQuery.documents[0]
-                    val status = document.getString("order.status") ?: "N/A"
-                    val startTime = document.getString("order.required_start_datetime") ?: "N/A"
-                    val endTime = document.getString("order.required_finish_datetime") ?: "N/A"
-
-                    findViewById<TextView>(R.id.subStatus).text = status
-
-                    val flightNumber = travelerDoc?.getString("FlightNumber") ?: "N/A"
-                    val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
-                    findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error loading status data", e)
-            }
-    }
-
-    private fun loadTravelerData() {
-        if (uniqueKey.isNullOrEmpty()) {
-            Log.w("SenderProfile", "loadTravelerData: uniqueKey is null — using fallback 'asdf' in your original code is unsafe")
-            return
-        }
-
-        db.collection("traveler")
-            .whereEqualTo("uniqueKey", uniqueKey)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val travelerDocLocal = querySnapshot.documents[0]
-                    travelerDoc = travelerDocLocal
-                    checkAndUpdateBookingStatus(travelerDocLocal)
-                    updateFlightUI(travelerDocLocal)
-                    updateTravelerUI(travelerDocLocal)
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error loading traveler details", e)
-            }
-    }
-
-    private fun updateFlightUI(travelerDoc: DocumentSnapshot) {
-        try {
-            val fromAddress = travelerDoc.get("fromAddress") as? Map<String, Any>
-            val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
-
-            val fromCity = fromAddress?.get("city") as? String ?: "N/A"
-            val toCity = toAddress?.get("city") as? String ?: "N/A"
-
-            val airline = travelerDoc.getString("airline") ?: "N/A"
-            val flightNumber = travelerDoc.getString("FlightNumber") ?: "N/A"
-
-            val departureTimeStr = travelerDoc.getString("departureTime") ?: "N/A"
-            val formattedDepartureTime = formatDateTime(departureTimeStr)
-            val formattedArrivalTime = calculateArrivalTime(departureTimeStr)
-
-            val status = travelerDoc.getString("status") ?: "N/A"
-
-            runOnUiThread {
-                findViewById<TextView>(R.id.tvFromCity).text = fromCity
-                findViewById<TextView>(R.id.tvToCity).text = toCity
-                findViewById<TextView>(R.id.tvFlightStatus).text = "Airline: $airline"
-                findViewById<TextView>(R.id.tvFromTime).text = "Departure: $formattedDepartureTime"
-                findViewById<TextView>(R.id.tvToTime).text = "Arrival: $formattedArrivalTime"
-                findViewById<TextView>(R.id.tvFlightNumber).text = "Flight: $flightNumber"
-
-                val statusTextView = findViewById<TextView>(R.id.subStatus)
-                statusTextView.text = "Flight Status: $status"
-
-                when (status.lowercase()) {
-                    "scheduled", "ontime", "request accepted by traveler" -> statusTextView.setTextColor(Color.GREEN)
-                    "delayed", "in progress" -> statusTextView.setTextColor(Color.YELLOW)
-                    "cancelled", "rejected" -> statusTextView.setTextColor(Color.RED)
-                    else -> statusTextView.setTextColor(Color.GRAY)
-                }
-
-                updateTravelerUI(travelerDoc)
-            }
-
-        } catch (e: Exception) {
-            Log.e("SenderProfile", "Error updating flight UI", e)
-        }
-    }
-
-    private fun formatDateTime(dateTimeStr: String): String {
-        return try {
-            if (dateTimeStr.contains("T")) {
-                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
-                val outputFormat = SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault())
-                val date = inputFormat.parse(dateTimeStr)
-                outputFormat.format(date)
-            } else {
-                dateTimeStr
-            }
-        } catch (e: Exception) {
-            Log.e("SenderProfile", "Error formatting date", e)
-            dateTimeStr
-        }
-    }
-
-    private fun calculateArrivalTime(departureTimeStr: String): String {
-        return try {
-            if (departureTimeStr.contains("T")) {
-                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
-                val outputFormat = SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault())
-                val date = inputFormat.parse(departureTimeStr)
-                val arrivalDate = Date(date.time + (2 * 60 * 60 * 1000))
-                outputFormat.format(arrivalDate)
-            } else {
-                "N/A"
-            }
-        } catch (e: Exception) {
-            Log.e("SenderProfile", "Error calculating arrival time", e)
-            "N/A"
-        }
-    }
-
-    private fun updateTravelerUI(travelerDoc: DocumentSnapshot) {
-        try {
-            val lastName = travelerDoc.getString("lastName") ?: "N/A"
-            val airline = travelerDoc.getString("airline") ?: "N/A"
-            val flightNumber = travelerDoc.getString("flightNumber") ?: "N/A"
-            val departureTime = travelerDoc.getString("departureTime") ?: "N/A"
-            val arrivalTime = travelerDoc.getString("arrivalTime") ?: "N/A"
-            val weightUpto = travelerDoc.getString("weightUpto") ?: "0"
-            val destination = travelerDoc.getString("toPlace") ?: "N/A"
-
-            runOnUiThread {
-                findViewById<TextView>(R.id.tvTravelerName)?.text = lastName
-                findViewById<TextView>(R.id.tvTravelerAirline)?.text = airline
-                findViewById<TextView>(R.id.tvTravelerFlightNumber)?.text = flightNumber
-                findViewById<TextView>(R.id.tvTravelerDeparture)?.text = departureTime
-                findViewById<TextView>(R.id.tvTravelerArrival)?.text = arrivalTime
-                findViewById<TextView>(R.id.tvTravelerDestination)?.text = destination
-                findViewById<TextView>(R.id.tvTravelerWeight)?.text = "$weightUpto kg"
-            }
-
-        } catch (e: Exception) {
-            Log.e("SenderProfile", "Error updating traveler UI", e)
-            Toast.makeText(this, "Error displaying traveler details", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // -----------------------
-    // First/Second/Last mile logic (added)
-    // -----------------------
-
-    private fun setupMileControls() {
-        // Wire up click listeners for the textviews representing mile stages
-        val firstTv = findViewById<TextView>(R.id.firstmilesender)
-        val secondTv = findViewById<TextView>(R.id.secondmilesender)
-        val lastTv = findViewById<TextView>(R.id.lastmilestatussender)
-
-        // Refresh local travelerDoc from Firestore when tab shown for latest values
-        firstTv.setOnClickListener {
-            refreshTravelerDoc { doc ->
-                val currentFirst = doc?.getString("FirstMileStatus") ?: "Not Started"
-                when (currentFirst) {
-                    "Not Started" -> {
-                        // Start first mile -> generate OTP & set In Progress
-                        initiateFirstMile()
-                    }
-                    "In Progress" -> {
-                        // Mark first mile completed
-                        completeFirstMile()
-                    }
-                    "Completed" -> {
-                        Toast.makeText(this, "First mile already completed", Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {
-                        Toast.makeText(this, "First mile: $currentFirst", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-
-        secondTv.setOnClickListener {
-            refreshTravelerDoc { doc ->
-                val first = doc?.getString("FirstMileStatus") ?: "Not Started"
-                val second = doc?.getString("SecondMileStatus") ?: "Not Started"
-
-                if (first != "Completed") {
-                    Toast.makeText(this, "Complete first mile before marking second mile", Toast.LENGTH_SHORT).show()
-                    return@refreshTravelerDoc
-                }
-
-                if (second == "Completed") {
-                    Toast.makeText(this, "Second mile already completed", Toast.LENGTH_SHORT).show()
-                    return@refreshTravelerDoc
-                }
-
-                // For sender, marking second mile completed will prepare last mile OTP
-                completeSecondMileAndPrepareLastMile()
-            }
-        }
-
-        lastTv.setOnClickListener {
-            // Last-mile actions are primarily OTP driven (OTP verification handled by Verify button)
-            Toast.makeText(this, "Use the OTP field and Verify button to complete last mile", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun refreshTravelerDoc(onComplete: (DocumentSnapshot?) -> Unit) {
-        if (uniqueKey.isNullOrEmpty()) {
-            onComplete(null)
-            return
-        }
-        db.collection("traveler")
-            .whereEqualTo("uniqueKey", uniqueKey)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                if (!snapshot.isEmpty) {
-                    travelerDoc = snapshot.documents[0]
-                    onComplete(travelerDoc)
-                } else {
-                    onComplete(null)
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error refreshing traveler doc", e)
-                onComplete(null)
-            }
-    }
-
-    // Generate 6-digit OTP
-    private fun generateOtp(): String {
-        val otp = Random.nextInt(100000, 999999)
-        return otp.toString()
-    }
-
-    /**
-     * Initiates first mile:
-     * - sets FirstMileStatus = "In Progress"
-     * - sets FirstMileOTP = <generated>
-     * - updates traveler.status to indicate progress if desired
-     */
-    private fun initiateFirstMile() {
-        if (uniqueKey.isNullOrEmpty()) {
-            Toast.makeText(this, "No journey key available", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val otp = generateOtp()
-        val updates = hashMapOf<String, Any>(
-            "FirstMileStatus" to "In Progress",
-            "FirstMileOTP" to otp,
-            "status" to "First Mile - In Progress"
-        )
-
-        updateTravelerFieldsByUniqueKey(updates) { success, docRef ->
-            if (success) {
-                runOnUiThread {
-                    findViewById<TextView>(R.id.firstmilesender)?.text = "✓ 1st Stage - In Progress"
-                    // show OTP to sender (for manual share) and toast
-                    Toast.makeText(this, "First mile started. OTP: $otp", Toast.LENGTH_LONG).show()
-                    // Also update sender doc display if needed
-                }
-            } else {
-                runOnUiThread {
-                    Toast.makeText(this, "Failed to start first mile", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    /**
-     * Marks first mile as completed.
-     */
-    private fun completeFirstMile() {
-        if (uniqueKey.isNullOrEmpty()) {
-            Toast.makeText(this, "No journey key available", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val updates = hashMapOf<String, Any>(
-            "FirstMileStatus" to "Completed",
-            "status" to "First Mile - Completed"
-        )
-
-        updateTravelerFieldsByUniqueKey(updates) { success, _ ->
-            if (success) {
-                runOnUiThread {
-                    findViewById<TextView>(R.id.firstmilesender)?.text = "✓ 1st Stage - Completed"
-                    Toast.makeText(this, "First mile marked completed", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                runOnUiThread {
-                    Toast.makeText(this, "Failed to mark first mile completed", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    /**
-     * Completes second mile and prepares last mile:
-     * - sets SecondMileStatus = "Completed"
-     * - sets LastMileStatus = "In Progress"
-     * - generates LastMileOTP and writes it to traveler doc
-     */
-    private fun completeSecondMileAndPrepareLastMile() {
-        if (uniqueKey.isNullOrEmpty()) {
-            Toast.makeText(this, "No journey key available", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val lastOtp = generateOtp()
-        val updates = hashMapOf<String, Any>(
-            "SecondMileStatus" to "Completed",
-            "LastMileStatus" to "In Progress",
-            "LastMileOTP" to lastOtp,
-            "status" to "Second Mile - Completed, Last Mile - In Progress"
-        )
-
-        updateTravelerFieldsByUniqueKey(updates) { success, _ ->
-            if (success) {
-                runOnUiThread {
-                    findViewById<TextView>(R.id.secondmilesender)?.text = "✓ 2nd Stage - Completed"
-                    findViewById<TextView>(R.id.lastmilestatussender)?.text = "📍 3rd Stage - In Progress"
-                    Toast.makeText(this, "Second mile completed. Last mile OTP: $lastOtp", Toast.LENGTH_LONG).show()
-                }
-            } else {
-                runOnUiThread {
-                    Toast.makeText(this, "Failed to update second/last mile", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-    /**
-     * Verifies Last Mile OTP entered by the sender (delivered by picker/delivery person).
-     * If OTP matches traveler's LastMileOTP -> mark LastMileStatus = "Completed" and status = "Completed"
-     */
-    private fun verifyLastMileOtp(enteredOtp: String) {
-        if (uniqueKey.isNullOrEmpty()) {
-            Toast.makeText(this, "No journey key available", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // Get current traveler doc to compare OTP
-        db.collection("traveler")
-            .whereEqualTo("uniqueKey", uniqueKey)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { snap ->
-                if (!snap.isEmpty) {
-                    val doc = snap.documents[0]
-                    val expected = doc.getString("LastMileOTP") ?: ""
-                    if (enteredOtp == expected && enteredOtp.isNotEmpty()) {
-                        // OTP matched -> complete last mile
-                        val updates = hashMapOf<String, Any>(
-                            "LastMileStatus" to "Completed",
-                            "status" to "Completed"
-                        )
-                        doc.reference.update(updates)
-                            .addOnSuccessListener {
-                                runOnUiThread {
-                                    findViewById<TextView>(R.id.lastmilestatussender)?.text = "📍 3rd Stage - Completed"
-                                    findViewById<TextView>(R.id.tvDestinationStatus)?.text = "Order Completed, Thanks!"
-                                    Toast.makeText(this, "OTP Verified. Order completed!", Toast.LENGTH_LONG).show()
-                                }
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("SenderProfile", "Failed to update last mile status", e)
-                                runOnUiThread {
-                                    Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                    } else {
-                        runOnUiThread {
-                            Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } else {
-                    runOnUiThread {
-                        Toast.makeText(this, "Traveler document not found", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error fetching traveler for OTP", e)
-                runOnUiThread {
-                    Toast.makeText(this, "Error verifying OTP", Toast.LENGTH_SHORT).show()
-                }
-            }
-    }
-
-    /**
-     * Generic helper: find traveler doc by uniqueKey and update fields.
-     * Calls callback(success, docReferenceIfAvailable)
-     */
-    private fun updateTravelerFieldsByUniqueKey(updates: Map<String, Any>, callback: (Boolean, com.google.firebase.firestore.DocumentReference?) -> Unit) {
-        if (uniqueKey.isNullOrEmpty()) {
-            callback(false, null)
-            return
-        }
-
-        db.collection("traveler")
-            .whereEqualTo("uniqueKey", uniqueKey)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { snap ->
-                if (!snap.isEmpty) {
-                    val doc = snap.documents[0]
-                    doc.reference.update(updates)
-                        .addOnSuccessListener {
-                            // refresh local travelerDoc
-                            doc.reference.get()
-                                .addOnSuccessListener { refreshed ->
-                                    travelerDoc = refreshed
-                                    callback(true, doc.reference)
-                                }
-                                .addOnFailureListener {
-                                    // still consider true but no refreshed doc
-                                    callback(true, doc.reference)
-                                }
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("SenderProfile", "Failed to update traveler fields", e)
-                            callback(false, doc.reference)
-                        }
-                } else {
-                    Log.w("SenderProfile", "No traveler doc found for uniqueKey=$uniqueKey")
-                    callback(false, null)
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("SenderProfile", "Failed to query traveler by uniqueKey", e)
-                callback(false, null)
-            }
-    }
-
 }
