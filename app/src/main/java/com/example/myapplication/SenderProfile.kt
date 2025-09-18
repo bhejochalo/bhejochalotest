@@ -15,6 +15,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.widget.NestedScrollView
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.MapsInitializer
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
@@ -22,13 +30,19 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.random.Random
 
-class SenderProfile : AppCompatActivity() {
+class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var db: FirebaseFirestore
     private lateinit var sharedPref: SharedPreferences
     private var uniqueKey: String? = null
     private var senderDoc: DocumentSnapshot? = null
     private var travelerDoc: DocumentSnapshot? = null
+
+    // Map-related fields (programmatic MapView)
+    private var mapView: MapView? = null
+
+    private var googleMap: com.google.android.gms.maps.GoogleMap? = null
+    private var pendingLatLng: com.google.android.gms.maps.model.LatLng? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +52,9 @@ class SenderProfile : AppCompatActivity() {
         sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         //uniqueKey = sharedPref.getString("uniqueKey", null) ?: intent.getStringExtra("uniqueKey")
         uniqueKey = "asdf"
+
+        // Inject MapView programmatically into the existing layout (above tvTravelerLocation)
+        injectMapViewProgrammatically(savedInstanceState)
 
         setupTabSwitching()
         setupEditButtons()
@@ -54,7 +71,6 @@ class SenderProfile : AppCompatActivity() {
                     // show contact + location and disable edits
                     showTravelerContactAndLocation(tDoc)
                     setSenderEditingEnabled(false)
-                    showTravelerContactAndLocation(tDoc)
                 } else {
                     // hide sensitive details & enable edits
                     setSenderEditingEnabled(true)
@@ -62,7 +78,6 @@ class SenderProfile : AppCompatActivity() {
                 }
             }
         }
-
 
         loadTravelerDataOnce {
             travelerDoc?.let {
@@ -76,6 +91,96 @@ class SenderProfile : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnBookOtherTravelers).setOnClickListener {
             navigateToSenderDashboard()
+        }
+    }
+
+    // Programmatic injection of MapView into existing layout; no XML changes
+    private fun injectMapViewProgrammatically(savedInstanceState: Bundle?) {
+        try {
+            // find the textual location view — we will insert the MapView just before it
+            val tvTravelerLocation = findViewById<TextView>(R.id.tvTravelerLocation) ?: return
+            val parent = tvTravelerLocation.parent as? ViewGroup ?: return
+
+            // Avoid adding twice if activity recreated
+            val existingMap = parent.findViewWithTag<View>("travelermap_tag")
+            if (existingMap != null) {
+                // Map already injected
+                mapView = existingMap as? MapView
+                mapView?.onCreate(savedInstanceState)
+                mapView?.getMapAsync(this)
+                return
+            }
+
+            // Create MapView programmatically
+            mapView = MapView(this).apply {
+                // store a tag so we can detect later
+                tag = "travelermap_tag"
+                // set reasonable size in code (convert 200dp to px)
+                val dp200 = (200 * resources.displayMetrics.density).toInt()
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dp200
+                ).apply {
+                    (this as? ViewGroup.MarginLayoutParams)?.setMargins(0, dpToPx(8), 0, dpToPx(8))
+                }
+            }
+
+            // Insert mapView before the tvTravelerLocation inside parent
+            val index = parent.indexOfChild(tvTravelerLocation)
+            parent.addView(mapView, index)
+
+            // Initialize map view lifecycle
+            mapView?.onCreate(savedInstanceState)
+            mapView?.getMapAsync(this)
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "Error injecting MapView programmatically: ${e.message}", e)
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    // Map lifecycle forwarding
+    override fun onResume() {
+        super.onResume()
+        try { mapView?.onResume() } catch (_: Exception) {}
+    }
+
+    override fun onStart() {
+        super.onStart()
+        try { mapView?.onStart() } catch (_: Exception) {}
+    }
+
+    override fun onStop() {
+        super.onStop()
+        try { mapView?.onStop() } catch (_: Exception) {}
+    }
+
+    override fun onPause() {
+        try { mapView?.onPause() } catch (_: Exception) {}
+        super.onPause()
+    }
+
+    override fun onDestroy() {
+        try { mapView?.onDestroy() } catch (_: Exception) {}
+        super.onDestroy()
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        try { mapView?.onLowMemory() } catch (_: Exception) {}
+    }
+
+    // OnMapReady -> keep reference and apply any pending marker
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        googleMap?.uiSettings?.isZoomControlsEnabled = true
+
+        // If we had a pending lat/lng before map loaded, show it now
+        pendingLatLng?.let {
+            showTravelerOnMap(it.latitude, it.longitude)
+            pendingLatLng = null
         }
     }
 
@@ -163,22 +268,39 @@ class SenderProfile : AppCompatActivity() {
 
     private fun checkAndUpdateBookingStatus(travelerDoc: DocumentSnapshot) {
         try {
-            val status = travelerDoc.getString("status") ?: ""
+            // prefer the key variants that may exist
+            val status = travelerDoc.getString("status")
+                ?: travelerDoc.getString("orderStatus")
+                ?: travelerDoc.getString("bookingStatus")
+                ?: "N/A"
+
+            // flight number variants
+            val flightNumber = travelerDoc.getString("flightNumber")
+                ?: travelerDoc.getString("FlightNumber")
+                ?: travelerDoc.getString("FlightNo")
+                ?: travelerDoc.getString("flight_no")
+                ?: "N/A"
+
+            val trackingUrl = if (flightNumber != "N/A" && flightNumber.isNotBlank()) {
+                "https://www.flightaware.com/live/flight/$flightNumber"
+            } else {
+                "Flight tracking not available"
+            }
+
             runOnUiThread {
                 findViewById<TextView>(R.id.subStatus).text = status
-                val flightNumber =
-                    travelerDoc.getString("flightNumber") ?: travelerDoc.getString("FlightNumber")
-                    ?: "N/A"
-                val trackingUrl = "https://www.flightaware.com/live/flight/$flightNumber"
                 findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
+
                 val bookOtherBtn = findViewById<Button>(R.id.btnBookOtherTravelers)
                 bookOtherBtn.visibility = if (status == "Rejected By Traveler") View.VISIBLE else View.GONE
+
                 reorganizeItemDetailsLayout(status)
             }
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error checking booking status", e)
         }
     }
+
 
     private fun reorganizeItemDetailsLayout(status: String) {
         try {
@@ -260,7 +382,6 @@ class SenderProfile : AppCompatActivity() {
         }
     }
 
-
     private fun setupEditItemButton() {
         val btn = findViewById<Button>(R.id.btnEditItemDetails)
         btn.setOnClickListener {
@@ -271,7 +392,6 @@ class SenderProfile : AppCompatActivity() {
             showEditItemDialog()
         }
     }
-
 
     // -------------------------
     // Mile controls and refresh
@@ -300,6 +420,12 @@ class SenderProfile : AppCompatActivity() {
                 val lastStatus = doc.getString("LastMileStatus") ?: "Not Started"
                 val lastOtp = doc.getString("LastMileOTP") ?: ""
                 updateLastMileSectionUI(lastOtp, lastStatus)
+
+                // Also update contact & map if traveler accepted
+                val travelerStatus = doc.getString("status") ?: ""
+                if (travelerStatus == "Request Accepted By Traveler") {
+                    showTravelerContactAndLocation(doc)
+                }
             }
         }
 
@@ -322,12 +448,10 @@ class SenderProfile : AppCompatActivity() {
         }
     }
 
-    /**
-     * Read current traveler doc from Firestore (by uniqueKey). Callback returns DocumentSnapshot? (null if not found)
-     */
     private fun refreshTravelerDoc(callback: (DocumentSnapshot?) -> Unit) {
         val key = uniqueKey ?: sharedPref.getString("uniqueKey", null)
         if (key.isNullOrEmpty()) {
+            Log.w("SenderProfile", "refreshTravelerDoc: uniqueKey is null/empty")
             callback(null)
             return
         }
@@ -340,15 +464,27 @@ class SenderProfile : AppCompatActivity() {
                 if (!snap.isEmpty) {
                     val doc = snap.documents[0]
                     travelerDoc = doc
+                    Log.d("SenderProfile", "refreshTravelerDoc: traveler doc fetched: id=${doc.id}")
+                    // Log a few fields to help debugging
+                    try {
+                        Log.d("SenderProfile", "traveler fields: phoneNumber=${doc.getString("phoneNumber")}, FlightNumber=${doc.getString("FlightNumber")}, flightNumber=${doc.getString("flightNumber")}, status=${doc.getString("status")}")
+                        val fromAddr = doc.get("fromAddress") as? Map<*, *>
+                        val toAddr = doc.get("toAddress") as? Map<*, *>
+                        Log.d("SenderProfile", "fromAddress keys: ${fromAddr?.keys ?: "null"} toAddress keys: ${toAddr?.keys ?: "null"}")
+                    } catch (e: Exception) {
+                        Log.w("SenderProfile", "Error logging doc fields", e)
+                    }
+
                     callback(doc)
+
                     val travelerStatus = doc.getString("status") ?: ""
                     if (travelerStatus == "Request Accepted By Traveler") {
                         setSenderEditingEnabled(false)
                     } else {
                         setSenderEditingEnabled(true)
                     }
-
                 } else {
+                    Log.w("SenderProfile", "refreshTravelerDoc: no traveler doc found for key=$key")
                     callback(null)
                 }
             }
@@ -357,6 +493,7 @@ class SenderProfile : AppCompatActivity() {
                 callback(null)
             }
     }
+
 
     // -------------------------
     // First Mile
@@ -603,45 +740,197 @@ class SenderProfile : AppCompatActivity() {
             it.alpha = if (enabled) 1f else 0.45f
         }
     }
+
     private fun showTravelerContactAndLocation(doc: DocumentSnapshot?) {
-        if (doc == null) return
+        if (doc == null) {
+            Log.w("SenderProfile", "showTravelerContactAndLocation: doc is null")
+            return
+        }
 
-        // Get phone number (fall back to phoneNumber / phone)
-        val phone = doc.getString("phoneNumber") ?: doc.getString("phone") ?: "N/A"
+        // 1) Try phone from different possible fields
+        val phoneCandidates = listOf("phoneNumber", "phone", "contact", "travelerPhone")
+        var phone: String? = null
+        for (field in phoneCandidates) {
+            try {
+                val v = doc.getString(field)
+                if (!v.isNullOrBlank()) {
+                    phone = v
+                    break
+                }
+            } catch (_: Exception) { /* ignore */ }
+        }
 
-        // Try nested fromAddress or toAddress coordinates
-        val fromAddress = doc.get("fromAddress") as? Map<*, *>
-        val toAddress = doc.get("toAddress") as? Map<*, *>
+        // 2) Try lat/lng from multiple locations:
+        // - top-level "latitude"/"longitude"
+        // - nested fromAddress.latitude/fromAddress.longitude
+        // - nested toAddress.latitude/toAddress.longitude
+        // - nested coordinates as strings (try to parse)
+        var lat: Double? = null
+        var lng: Double? = null
 
-        val lat = (fromAddress?.get("latitude") as? Number)?.toDouble()
-            ?: (toAddress?.get("latitude") as? Number)?.toDouble()
-        val lng = (fromAddress?.get("longitude") as? Number)?.toDouble()
-            ?: (toAddress?.get("longitude") as? Number)?.toDouble()
+        // helper to extract Number -> Double
+        fun numToDouble(value: Any?): Double? {
+            return when (value) {
+                is Number -> value.toDouble()
+                is String -> value.toDoubleOrNull()
+                else -> null
+            }
+        }
 
+        // top-level
+        lat = numToDouble(doc.get("latitude"))
+        lng = numToDouble(doc.get("longitude"))
+
+        // try fromAddress
+        if (lat == null || lng == null) {
+            val fromAddr = doc.get("fromAddress") as? Map<*, *>
+            if (fromAddr != null) {
+                if (lat == null) lat = numToDouble(fromAddr["latitude"])
+                if (lng == null) lng = numToDouble(fromAddr["longitude"])
+            }
+        }
+
+        // try toAddress
+        if (lat == null || lng == null) {
+            val toAddr = doc.get("toAddress") as? Map<*, *>
+            if (toAddr != null) {
+                if (lat == null) lat = numToDouble(toAddr["latitude"])
+                if (lng == null) lng = numToDouble(toAddr["longitude"])
+            }
+        }
+
+        // If still null, try nested keys with different names (lat, long)
+        if (lat == null || lng == null) {
+            val fromAddr = doc.get("fromAddress") as? Map<*, *>
+            val toAddr = doc.get("toAddress") as? Map<*, *>
+            val candidates = listOf(fromAddr, toAddr)
+            for (map in candidates) {
+                if (map == null) continue
+                if (lat == null) lat = numToDouble(map["lat"]) ?: numToDouble(map["Lat"]) ?: numToDouble(map["latitude"]) ?: numToDouble(map["Latitude"])
+                if (lng == null) lng = numToDouble(map["lng"]) ?: numToDouble(map["Lng"]) ?: numToDouble(map["longitude"]) ?: numToDouble(map["Longitude"])
+            }
+        }
+
+        // Logging for debugging
+        Log.d("SenderProfile", "showTravelerContactAndLocation: phone=$phone lat=$lat lng=$lng")
+
+        // Update UI textviews
         val tvPhone = findViewById<TextView>(R.id.tvTravelerPhone)
         val tvLocation = findViewById<TextView>(R.id.tvTravelerLocation)
 
         runOnUiThread {
-            tvPhone?.text = if (phone.isNotBlank()) phone else "N/A"
-            tvLocation?.text = if (lat != null && lng != null) {
-                "Lat: %.6f, Lng: %.6f".format(lat, lng)
+            if (!phone.isNullOrBlank()) {
+                tvPhone?.text = phone
             } else {
-                // fallback to any textual fullAddress if coords missing
-                val fa = (fromAddress?.get("fullAddress") as? String)
-                    ?: (toAddress?.get("fullAddress") as? String) ?: "Location not available"
-                fa
+                tvPhone?.text = "N/A"
             }
-            // Make visible (in case you hide it by default)
-            tvPhone?.visibility = View.VISIBLE
-            tvLocation?.visibility = View.VISIBLE
+
+            if (lat != null && lng != null) {
+                val coordText = "Lat: %.6f, Lng: %.6f".format(lat, lng)
+                tvLocation?.text = coordText
+
+                // show on Google Map: if map ready add marker, else keep pendingLatLng
+                val latLng = com.google.android.gms.maps.model.LatLng(lat, lng)
+                if (googleMap != null) {
+                    try {
+                        googleMap?.clear()
+                        googleMap?.addMarker(
+                            com.google.android.gms.maps.model.MarkerOptions()
+                                .position(latLng)
+                                .title(if (!phone.isNullOrBlank()) "Traveler: $phone" else "Traveler")
+                        )
+                        googleMap?.moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(latLng, 14f))
+                    } catch (e: Exception) {
+                        Log.e("SenderProfile", "Error updating map marker", e)
+                    }
+                } else {
+                    // store pending so onMapReady will apply it
+                    pendingLatLng = latLng
+                    Log.d("SenderProfile", "Map not ready — saved pendingLatLng")
+                }
+            } else {
+                // fallback to textual address if available
+                val fromAddrText = (doc.get("fromAddress") as? Map<*, *>)?.get("fullAddress") as? String
+                val toAddrText = (doc.get("toAddress") as? Map<*, *>)?.get("fullAddress") as? String
+                val fallback = fromAddrText ?: toAddrText ?: "Location not available"
+                tvLocation?.text = fallback
+
+                // clear marker if present
+                googleMap?.clear()
+            }
         }
+    }
+
+    private fun extractDouble(value: Any?): Double? {
+        if (value == null) return null
+        return when (value) {
+            is Number -> value.toDouble()
+            is String -> value.trim().takeIf { it.isNotEmpty() }?.let {
+                // handle numbers with commas etc.
+                try {
+                    it.replace(",", "").toDouble()
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            is com.google.firebase.firestore.GeoPoint -> value.latitude // caller must also read longitude separately
+            else -> null
+        }
+    }
+    private fun extractGeoPointOrMapLatLng(obj: Any?): Pair<Double, Double>? {
+        if (obj == null) return null
+        try {
+            when (obj) {
+                is com.google.firebase.firestore.GeoPoint -> {
+                    return Pair(obj.latitude, obj.longitude)
+                }
+                is Map<*, *> -> {
+                    val lat = extractDouble(obj["latitude"]) ?: extractDouble(obj["lat"]) ?: extractDouble(obj["latValue"])
+                    val lng = extractDouble(obj["longitude"]) ?: extractDouble(obj["lng"]) ?: extractDouble(obj["lon"]) ?: extractDouble(obj["lngValue"])
+                    if (lat != null && lng != null) return Pair(lat, lng)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("SenderProfile", "extractGeoPointOrMapLatLng error: ${e.message}", e)
+        }
+        return null
     }
     private fun hideTravelerContactAndLocation() {
         runOnUiThread {
             findViewById<TextView>(R.id.tvTravelerPhone)?.text = "N/A"
             findViewById<TextView>(R.id.tvTravelerLocation)?.text = "Lat: N/A, Lng: N/A"
+            googleMap?.clear()
         }
     }
+
+    /**
+     * Places marker and moves camera to given location on the map.
+     * If map not ready yet, stores pending coords and will be applied once map ready.
+     */
+    private fun showTravelerOnMap(lat: Double, lng: Double) {
+        val latLng = LatLng(lat, lng)
+        if (googleMap == null) {
+            pendingLatLng = latLng
+            return
+        }
+
+        googleMap?.let { map ->
+            try {
+                map.clear()
+                val markerOpt = MarkerOptions()
+                    .position(latLng)
+                    .title("Traveler")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+
+                map.addMarker(markerOpt)
+                val zoom = 15f
+                map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom))
+            } catch (e: Exception) {
+                Log.e("SenderProfile", "Error showing traveler on map: ${e.message}", e)
+            }
+        }
+    }
+
     // -------------------------
     // UI load functions (flight/item/address)
     // -------------------------
@@ -709,20 +998,43 @@ class SenderProfile : AppCompatActivity() {
 
     private fun updateFlightUI(travelerDoc: DocumentSnapshot) {
         try {
-            val fromAddress = travelerDoc.get("fromAddress") as? Map<String, Any>
-            val toAddress = travelerDoc.get("toAddress") as? Map<String, Any>
+            // For debugging: log full doc data (remove in production)
+            Log.d("SenderProfile", "updateFlightUI travelerDoc: ${travelerDoc.data}")
 
-            val fromCity = fromAddress?.get("city") as? String ?: "N/A"
-            val toCity = toAddress?.get("city") as? String ?: "N/A"
+            // Get city names from nested addresses if present
+            val fromAddress = travelerDoc.get("fromAddress") as? Map<*, *>
+            val toAddress = travelerDoc.get("toAddress") as? Map<*, *>
 
-            val airline = travelerDoc.getString("airline") ?: "N/A"
-            val flightNumber = travelerDoc.getString("flightNumber") ?: travelerDoc.getString("FlightNumber") ?: "N/A"
+            val fromCity = (fromAddress?.get("city") as? String)
+                ?: travelerDoc.getString("fromCity")
+                ?: "N/A"
+            val toCity = (toAddress?.get("city") as? String)
+                ?: travelerDoc.getString("toCity")
+                ?: "N/A"
 
-            val departureTimeStr = travelerDoc.getString("departureTime") ?: "N/A"
+            // airline / flight number — try multiple variants
+            val airline = travelerDoc.getString("airline")
+                ?: travelerDoc.getString("Airline")
+                ?: "N/A"
+
+            val flightNumber = travelerDoc.getString("flightNumber")
+                ?: travelerDoc.getString("FlightNumber")
+                ?: travelerDoc.getString("FlightNo")
+                ?: travelerDoc.getString("flight_no")
+                ?: "N/A"
+
+            // departure / arrival times (strings)
+            val departureTimeStr = travelerDoc.getString("departureTime")
+                ?: travelerDoc.getString("leavingDate") // fallback
+                ?: "N/A"
+
             val formattedDepartureTime = formatDateTime(departureTimeStr)
             val formattedArrivalTime = calculateArrivalTime(departureTimeStr)
 
-            val status = travelerDoc.getString("status") ?: "N/A"
+            // combine more robust status keys
+            val status = travelerDoc.getString("status")
+                ?: travelerDoc.getString("flightStatus")
+                ?: "N/A"
 
             runOnUiThread {
                 findViewById<TextView>(R.id.tvFromCity).text = fromCity
@@ -735,19 +1047,29 @@ class SenderProfile : AppCompatActivity() {
                 val statusTextView = findViewById<TextView>(R.id.subStatus)
                 statusTextView.text = "Flight Status: $status"
 
-                when (status.lowercase()) {
-                    "scheduled", "ontime", "request accepted by traveler" -> statusTextView.setTextColor(Color.GREEN)
-                    "delayed", "in progress" -> statusTextView.setTextColor(Color.YELLOW)
+                when (status.lowercase(Locale.getDefault())) {
+                    "scheduled", "ontime", "request accepted by traveler", "scheduled" -> statusTextView.setTextColor(Color.GREEN)
+                    "delayed", "in progress", "in-air", "airborne" -> statusTextView.setTextColor(Color.YELLOW)
                     "cancelled", "rejected" -> statusTextView.setTextColor(Color.RED)
                     else -> statusTextView.setTextColor(Color.GRAY)
                 }
 
+                // also update tracking URL using the chosen flightNumber
+                val trackingUrl = if (flightNumber != "N/A" && flightNumber.isNotBlank()) {
+                    "https://www.flightaware.com/live/flight/$flightNumber"
+                } else {
+                    "Flight tracking not available"
+                }
+                findViewById<TextView>(R.id.trackingUrl).text = "Flight Tracking: $trackingUrl"
+
+                // Update traveler panel fields as well
                 updateTravelerUI(travelerDoc)
             }
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error updating flight UI", e)
         }
     }
+
 
     private fun formatDateTime(dateTimeStr: String): String {
         return try {
