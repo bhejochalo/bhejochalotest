@@ -1318,28 +1318,4 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                 Log.e("SenderProfile", "Error updating item details", e)
             }
     }
-
-    private fun updateAddressInFirestore(addressType: String, newAddress: String) {
-        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
-        val updates = hashMapOf<String, Any>(
-            "$addressType.fullAddress" to newAddress
-        )
-
-        db.collection("Sender")
-            .whereEqualTo("phoneNumber", userId)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                if (!querySnapshot.isEmpty) {
-                    val document = querySnapshot.documents[0]
-                    document.reference.update(updates)
-                        .addOnSuccessListener {
-                            Log.d("SenderProfile", "Address updated successfully")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("SenderProfile", "Error updating address", e)
-                        }
-                }
-            }
-    }
 }
