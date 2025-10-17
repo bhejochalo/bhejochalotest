@@ -63,6 +63,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
         loadSenderData {
             loadAddressData()
             loadItemDetails()
+            ensureFirstMileStarted()
 
             // Check traveler acceptance and update UI/editing permissions
             refreshTravelerDoc { tDoc ->
@@ -71,10 +72,12 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                     // show contact + location and disable edits
                     showTravelerContactAndLocation(tDoc)
                     setSenderEditingEnabled(false)
+                    setFlightDetailsVisible(true)
                 } else {
                     // hide sensitive details & enable edits
                     setSenderEditingEnabled(true)
                     hideTravelerContactAndLocation()
+                    setFlightDetailsVisible(false)
                 }
             }
         }
@@ -425,7 +428,12 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                 val travelerStatus = doc.getString("status") ?: ""
                 if (travelerStatus == "Request Accepted By Traveler") {
                     showTravelerContactAndLocation(doc)
+                    setFlightDetailsVisible(true)
                 }
+                else {
+                    setFlightDetailsVisible(false)
+                }
+
             }
         }
 
@@ -509,56 +517,225 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    // Replace existing verifyFirstMileOtp(enteredOtp: String) with this:
     private fun verifyFirstMileOtp(enteredOtp: String) {
         val doc = travelerDoc
+        val sender = senderDoc
+
         if (doc == null) {
             Toast.makeText(this, "No traveler loaded", Toast.LENGTH_SHORT).show()
             return
         }
 
         val realOtp = doc.getString("FirstMileOTP") ?: ""
-        val docRef = doc.reference
+        val travelerRef = doc.reference
 
         if (enteredOtp == realOtp && realOtp.isNotEmpty()) {
-            docRef.update("FirstMileStatus", "Completed")
+            val travelerUpdates = mapOf<String, Any>(
+                "FirstMileStatus" to "Completed"
+            )
+            val senderUpdates = mapOf<String, Any>(
+                "FirstMileStatus" to "Completed"
+            )
+
+            // Update traveler first
+            travelerRef.update(travelerUpdates)
                 .addOnSuccessListener {
-                    Toast.makeText(this, "Pickup OTP Verified. First mile completed.", Toast.LENGTH_SHORT).show()
-                    refreshTravelerDoc { refreshed ->
-                        refreshed?.let {
-                            updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                    // then also update sender doc (if available)
+                    try {
+                        val phoneNumber = sender?.getString("phoneNumber") ?: sharedPref.getString("PHONE_NUMBER", null)
+                        if (!phoneNumber.isNullOrBlank()) {
+                            db.collection("Sender").document(phoneNumber)
+                                .update(senderUpdates)
+                                .addOnSuccessListener {
+                                    Toast.makeText(this, "Pickup OTP Verified. First mile completed.", Toast.LENGTH_SHORT).show()
+                                    // Optionally you may want to set SecondMileStatus = "In Progress" here later.
+                                    refreshTravelerDoc { refreshed ->
+                                        refreshed?.let {
+                                            updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                                        }
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("SenderProfile", "Error updating Sender first mile status", e)
+                                    Toast.makeText(this, "Pickup verified but failed to update sender record", Toast.LENGTH_SHORT).show()
+                                    refreshTravelerDoc { refreshed ->
+                                        refreshed?.let {
+                                            updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                                        }
+                                    }
+                                }
+                        } else {
+                            // No sender phone found - still notify user and refresh
+                            Toast.makeText(this, "Pickup OTP Verified. First mile completed.", Toast.LENGTH_SHORT).show()
+                            refreshTravelerDoc { refreshed ->
+                                refreshed?.let {
+                                    updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                                }
+                            }
                         }
+                    } catch (e: Exception) {
+                        Log.e("SenderProfile", "verifyFirstMileOtp: error while updating sender", e)
                     }
                 }
                 .addOnFailureListener { e ->
-                    Log.e("SenderProfile", "Error updating first mile status", e)
+                    Log.e("SenderProfile", "Error updating first mile status on traveler", e)
                     Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
                 }
         } else {
             Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show()
         }
     }
+    // Add this function somewhere in the class (e.g., near other helpers)
+    private fun ensureFirstMileStarted() {
+        // If travelerDoc already present, just call initiate
+        if (travelerDoc != null) {
+            initiateFirstMile()
+            return
+        }
+
+        // Otherwise try to fetch traveler quickly by uniqueKey and then initiate
+        val key = uniqueKey ?: sharedPref.getString("uniqueKey", null)
+        if (key.isNullOrBlank()) {
+            Log.w("SenderProfile", "ensureFirstMileStarted: uniqueKey missing, cannot start first mile")
+            return
+        }
+
+        db.collection("traveler")
+            .whereEqualTo("uniqueKey", key)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snap ->
+                if (!snap.isEmpty) {
+                    travelerDoc = snap.documents[0]
+                    initiateFirstMile()
+                } else {
+                    Log.w("SenderProfile", "ensureFirstMileStarted: no traveler doc found for key=$key")
+                    // still initiate sender-side so UI shows In Progress
+                    initiateFirstMile()
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error fetching traveler to initiate first mile", e)
+                // fallback: still try to set Sender doc to In Progress so UI reflects it
+                initiateFirstMile()
+            }
+    }
+
 
     // Optional helper to initiate first mile (generates OTP & sets In Progress) — not auto-called by Refresh
+    // Replace the existing initiateFirstMile() with this:
     private fun initiateFirstMile() {
-        val doc = travelerDoc ?: return
-        val firstStatus = doc.getString("FirstMileStatus") ?: "Not Started"
-        if (firstStatus == "Not Started") {
+        val tDoc = travelerDoc
+        val sDoc = senderDoc
+
+        if (tDoc == null && sDoc == null) {
+            Log.w("SenderProfile", "initiateFirstMile: no traveler or sender docs available")
+            return
+        }
+
+        // Check current state from traveler first (prefer traveler copy)
+        val firstStatusTraveler = tDoc?.getString("FirstMileStatus")
+        val firstStatusSender = sDoc?.getString("FirstMileStatus")
+        val currentStatus = firstStatusTraveler ?: firstStatusSender ?: "Not Started"
+
+        if (currentStatus == "Not Started" || currentStatus.isBlank()) {
             val generated = generateOtp()
-            doc.reference.update(mapOf(
+
+            val updatesForTraveler = mapOf(
                 "FirstMileOTP" to generated,
                 "FirstMileStatus" to "In Progress"
-            )).addOnSuccessListener {
-                Toast.makeText(this, "First mile started. OTP generated.", Toast.LENGTH_SHORT).show()
-                refreshTravelerDoc { refreshed ->
-                    refreshed?.let {
-                        updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "In Progress")
+            )
+
+            val updatesForSender = mapOf(
+                "FirstMileOTP" to generated,
+                "FirstMileStatus" to "In Progress"
+            )
+
+            // Update traveler doc if available
+            tDoc?.reference?.update(updatesForTraveler)
+                ?.addOnSuccessListener {
+                    Log.d("SenderProfile", "Traveler FirstMile initiated with OTP $generated")
+                    // also try update sender doc
+                    try {
+                        val phoneNumber = sDoc?.getString("phoneNumber") ?: sharedPref.getString("PHONE_NUMBER", null)
+                        if (!phoneNumber.isNullOrBlank()) {
+                            db.collection("Sender").document(phoneNumber)
+                                .update(updatesForSender)
+                                .addOnSuccessListener {
+                                    Log.d("SenderProfile", "Sender FirstMile fields updated to In Progress")
+                                    // refresh local docs
+                                    refreshTravelerDoc { refreshed ->
+                                        // update UI
+                                        refreshed?.let {
+                                            updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "In Progress")
+                                        }
+                                    }
+                                    loadAddressData()
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("SenderProfile", "Error updating Sender FirstMile fields", e)
+                                }
+                        } else {
+                            Log.w("SenderProfile", "initiateFirstMile: no sender phoneNumber to update")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SenderProfile", "Error updating sender after traveler update", e)
                     }
                 }
-            }.addOnFailureListener { e ->
-                Log.e("SenderProfile", "Error initiating first mile", e)
+                ?.addOnFailureListener { e ->
+                    Log.e("SenderProfile", "Error initiating first mile on traveler doc", e)
+                }
+
+            // If traveler doc not available, still attempt to update Sender doc so sender UI shows In Progress
+            if (tDoc == null) {
+                val phoneNumber = sDoc?.getString("phoneNumber") ?: sharedPref.getString("PHONE_NUMBER", null)
+                if (!phoneNumber.isNullOrBlank()) {
+                    db.collection("Sender").document(phoneNumber)
+                        .update(updatesForSender)
+                        .addOnSuccessListener {
+                            Log.d("SenderProfile", "Sender FirstMile fields updated even though traveler missing")
+                            // show UI update
+                            runOnUiThread {
+                                findViewById<TextView>(R.id.fileMileMainStatus)?.text = "✓ 1st Stage - In Progress"
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("SenderProfile", "Error updating Sender FirstMile when traveler missing", e)
+                        }
+                }
             }
         } else {
-            Toast.makeText(this, "First mile already in progress or completed", Toast.LENGTH_SHORT).show()
+            Log.d("SenderProfile", "initiateFirstMile: already started or completed (status=$currentStatus)")
+        }
+    }
+
+    /**
+     * Toggle visibility of flight-related UI. When false, clears flight fields and hides the flight card.
+     */
+    private fun setFlightDetailsVisible(visible: Boolean) {
+        runOnUiThread {
+            val flightCard = findViewById<CardView>(R.id.flightInfoCard)
+            val tvFromCity = findViewById<TextView>(R.id.tvFromCity)
+            val tvToCity = findViewById<TextView>(R.id.tvToCity)
+            val tvFlightStatus = findViewById<TextView>(R.id.tvFlightStatus)
+            val tvFromTime = findViewById<TextView>(R.id.tvFromTime)
+            val tvToTime = findViewById<TextView>(R.id.tvToTime)
+            val tvFlightNumber = findViewById<TextView>(R.id.tvFlightNumber)
+            val trackingUrl = findViewById<TextView>(R.id.trackingUrl)
+
+            flightCard?.visibility = if (visible) View.VISIBLE else View.GONE
+
+            if (!visible) {
+                // clear fields to avoid leaking info
+                tvFromCity?.text = "N/A"
+                tvToCity?.text = "N/A"
+                tvFlightStatus?.text = "Airline: N/A"
+                tvFromTime?.text = "Departure: N/A"
+                tvToTime?.text = "Arrival: N/A"
+                tvFlightNumber?.text = "Flight: N/A"
+                trackingUrl?.text = "Flight Tracking: N/A"
+            }
         }
     }
 
@@ -1001,6 +1178,16 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
             // For debugging: log full doc data (remove in production)
             Log.d("SenderProfile", "updateFlightUI travelerDoc: ${travelerDoc.data}")
 
+            // determine status early
+            val status = travelerDoc.getString("status") ?: travelerDoc.getString("flightStatus") ?: ""
+            val accepted = status == "Request Accepted By Traveler"
+
+            // If traveler not accepted, hide flight details and exit early
+            if (!accepted) {
+                setFlightDetailsVisible(false)
+                return
+            }
+
             // Get city names from nested addresses if present
             val fromAddress = travelerDoc.get("fromAddress") as? Map<*, *>
             val toAddress = travelerDoc.get("toAddress") as? Map<*, *>
@@ -1030,11 +1217,6 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
 
             val formattedDepartureTime = formatDateTime(departureTimeStr)
             val formattedArrivalTime = calculateArrivalTime(departureTimeStr)
-
-            // combine more robust status keys
-            val status = travelerDoc.getString("status")
-                ?: travelerDoc.getString("flightStatus")
-                ?: "N/A"
 
             runOnUiThread {
                 findViewById<TextView>(R.id.tvFromCity).text = fromCity
@@ -1069,6 +1251,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
             Log.e("SenderProfile", "Error updating flight UI", e)
         }
     }
+
 
 
     private fun formatDateTime(dateTimeStr: String): String {
