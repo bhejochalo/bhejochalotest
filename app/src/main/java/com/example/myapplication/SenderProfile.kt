@@ -4,7 +4,9 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,6 +16,8 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -40,6 +44,11 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
 
     // Map-related fields (programmatic MapView)
     private var mapView: MapView? = null
+    // Add these constants at the top of the class
+    companion object {
+        private const val PERMISSION_CALL_PHONE = 100
+        private const val PERMISSION_LOCATION = 101
+    }
 
     private var googleMap: com.google.android.gms.maps.GoogleMap? = null
     private var pendingLatLng: com.google.android.gms.maps.model.LatLng? = null
@@ -59,6 +68,8 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
         setupTabSwitching()
         setupEditButtons()
         setupEditItemButton()
+        setupMileControls()
+        setupFirstMileContactButtons()
 
         loadSenderData {
             loadAddressData()
@@ -514,10 +525,108 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                 else -> "✓ 1st Stage - Not Started"
             }
             findViewById<TextView>(R.id.tvPickupOtp).text = if (otp.isNotEmpty()) "Pickup OTP: $otp" else ""
+
+            // Show/hide contact buttons based on first mile status
+            val btnCallTraveler = findViewById<Button>(R.id.btnCallTraveler)
+            val btnGetDirections = findViewById<Button>(R.id.btnGetDirections)
+
+            if (status == "In Progress" || status == "Completed") {
+                btnCallTraveler?.visibility = View.VISIBLE
+                btnGetDirections?.visibility = View.VISIBLE
+            } else {
+                btnCallTraveler?.visibility = View.GONE
+                btnGetDirections?.visibility = View.GONE
+            }
         }
     }
 
-    // Replace existing verifyFirstMileOtp(enteredOtp: String) with this:
+
+    // Add these methods to handle phone calls and directions
+    private fun setupFirstMileContactButtons() {
+        val btnCallTraveler = findViewById<Button>(R.id.btnCallTraveler)
+        val btnGetDirections = findViewById<Button>(R.id.btnGetDirections)
+
+        btnCallTraveler.setOnClickListener {
+            makePhoneCallToTraveler()
+        }
+
+        btnGetDirections.setOnClickListener {
+            openDirectionsToTraveler()
+        }
+    }
+
+    private fun makePhoneCallToTraveler() {
+        val travelerPhone = travelerDoc?.getString("phoneNumber") ?: travelerDoc?.getString("phone") ?: ""
+
+        if (travelerPhone.isNotEmpty()) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$travelerPhone"))
+                startActivity(intent)
+            } else {
+                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CALL_PHONE), PERMISSION_CALL_PHONE)
+            }
+        } else {
+            Toast.makeText(this, "Traveler phone number not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun openDirectionsToTraveler() {
+        val travelerLocation = extractTravelerLocation()
+
+        travelerLocation?.let { (lat, lng) ->
+            val uri = "google.navigation:q=$lat,$lng"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+            intent.setPackage("com.google.android.apps.maps")
+
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+            } else {
+                // Fallback: Open in browser
+                val webUri = "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng"
+                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(webUri))
+                startActivity(webIntent)
+            }
+        } ?: run {
+            Toast.makeText(this, "Traveler location not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun extractTravelerLocation(): Pair<Double, Double>? {
+        val doc = travelerDoc ?: return null
+
+        // Try to extract latitude and longitude from various field names
+        val lat = extractDouble(doc.get("latitude"))
+            ?: extractDouble((doc.get("fromAddress") as? Map<*, *>)?.get("latitude"))
+            ?: extractDouble((doc.get("toAddress") as? Map<*, *>)?.get("latitude"))
+
+        val lng = extractDouble(doc.get("longitude"))
+            ?: extractDouble((doc.get("fromAddress") as? Map<*, *>)?.get("longitude"))
+            ?: extractDouble((doc.get("toAddress") as? Map<*, *>)?.get("longitude"))
+
+        return if (lat != null && lng != null) Pair(lat, lng) else null
+    }
+
+    // Handle permission results
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            PERMISSION_CALL_PHONE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    makePhoneCallToTraveler()
+                } else {
+                    Toast.makeText(this, "Phone call permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+            PERMISSION_LOCATION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    openDirectionsToTraveler()
+                } else {
+                    Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
     private fun verifyFirstMileOtp(enteredOtp: String) {
         val doc = travelerDoc
         val sender = senderDoc
@@ -532,58 +641,95 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
 
         if (enteredOtp == realOtp && realOtp.isNotEmpty()) {
             val travelerUpdates = mapOf<String, Any>(
-                "FirstMileStatus" to "Completed"
+                "FirstMileStatus" to "Completed",
+                "SecondMileStatus" to "In Progress"  // Automatically start second mile
             )
             val senderUpdates = mapOf<String, Any>(
-                "FirstMileStatus" to "Completed"
+                "FirstMileStatus" to "Completed",
+                "SecondMileStatus" to "In Progress"  // Automatically start second mile
             )
 
             // Update traveler first
             travelerRef.update(travelerUpdates)
                 .addOnSuccessListener {
-                    // then also update sender doc (if available)
+                    // Update sender doc
                     try {
                         val phoneNumber = sender?.getString("phoneNumber") ?: sharedPref.getString("PHONE_NUMBER", null)
                         if (!phoneNumber.isNullOrBlank()) {
                             db.collection("Sender").document(phoneNumber)
                                 .update(senderUpdates)
                                 .addOnSuccessListener {
-                                    Toast.makeText(this, "Pickup OTP Verified. First mile completed.", Toast.LENGTH_SHORT).show()
-                                    // Optionally you may want to set SecondMileStatus = "In Progress" here later.
+                                    showSecondMileStartedMessage(doc)
                                     refreshTravelerDoc { refreshed ->
                                         refreshed?.let {
                                             updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
-                                        }
-                                    }
-                                }
-                                .addOnFailureListener { e ->
-                                    Log.e("SenderProfile", "Error updating Sender first mile status", e)
-                                    Toast.makeText(this, "Pickup verified but failed to update sender record", Toast.LENGTH_SHORT).show()
-                                    refreshTravelerDoc { refreshed ->
-                                        refreshed?.let {
-                                            updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                                            updateSecondMileUI(it)
                                         }
                                     }
                                 }
                         } else {
-                            // No sender phone found - still notify user and refresh
-                            Toast.makeText(this, "Pickup OTP Verified. First mile completed.", Toast.LENGTH_SHORT).show()
+                            showSecondMileStartedMessage(doc)
                             refreshTravelerDoc { refreshed ->
                                 refreshed?.let {
                                     updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                                    updateSecondMileUI(it)
                                 }
                             }
                         }
                     } catch (e: Exception) {
-                        Log.e("SenderProfile", "verifyFirstMileOtp: error while updating sender", e)
+                        Log.e("SenderProfile", "Error updating sender", e)
+                        showSecondMileStartedMessage(doc)
                     }
                 }
                 .addOnFailureListener { e ->
-                    Log.e("SenderProfile", "Error updating first mile status on traveler", e)
+                    Log.e("SenderProfile", "Error updating first mile status", e)
                     Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
                 }
         } else {
             Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showSecondMileStartedMessage(travelerDoc: DocumentSnapshot) {
+        val flightNumber = travelerDoc.getString("flightNumber")
+            ?: travelerDoc.getString("FlightNumber")
+            ?: "N/A"
+
+        val trackingUrl = if (flightNumber != "N/A") {
+            "https://www.flightaware.com/live/flight/$flightNumber"
+        } else {
+            "Flight tracking not available"
+        }
+
+        val message = "✓ First stage completed! Traveler is flying with second stage.\n\nFlight Tracking: $trackingUrl"
+
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                .setTitle("Second Stage Started")
+                .setMessage(message)
+                .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                .show()
+
+            // Also update the second mile UI section
+            findViewById<TextView>(R.id.secondmilesender)?.text = "⏳ 2nd Stage - In Progress"
+            findViewById<TextView>(R.id.tvTransitStatus)?.text = "Traveler is flying with your package\nFlight: $flightNumber\nTracking: $trackingUrl"
+        }
+    }
+
+    private fun updateSecondMileUI(travelerDoc: DocumentSnapshot) {
+        val flightNumber = travelerDoc.getString("flightNumber")
+            ?: travelerDoc.getString("FlightNumber")
+            ?: "N/A"
+
+        val trackingUrl = if (flightNumber != "N/A") {
+            "https://www.flightaware.com/live/flight/$flightNumber"
+        } else {
+            "Flight tracking not available"
+        }
+
+        runOnUiThread {
+            findViewById<TextView>(R.id.secondmilesender)?.text = "⏳ 2nd Stage - In Progress"
+            findViewById<TextView>(R.id.tvTransitStatus)?.text = "Traveler is flying with your package\nFlight: $flightNumber\nTracking: $trackingUrl"
         }
     }
     // Add this function somewhere in the class (e.g., near other helpers)
