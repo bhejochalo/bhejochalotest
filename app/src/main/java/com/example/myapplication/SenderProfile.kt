@@ -60,7 +60,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
         db = FirebaseFirestore.getInstance()
         sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         //uniqueKey = sharedPref.getString("uniqueKey", null) ?: intent.getStringExtra("uniqueKey")
-        uniqueKey = "asdf"
+        uniqueKey = "swadgkey"
 
         // Inject MapView programmatically into the existing layout (above tvTravelerLocation)
         injectMapViewProgrammatically(savedInstanceState)
@@ -75,6 +75,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
             loadAddressData()
             loadItemDetails()
             ensureFirstMileStarted()
+            initializeMileStatusFields()
 
             // Check traveler acceptance and update UI/editing permissions
             refreshTravelerDoc { tDoc ->
@@ -107,7 +108,54 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
             navigateToSenderDashboard()
         }
     }
+    private fun initializeMileStatusFields() {
+        val userId = sharedPref.getString("PHONE_NUMBER", null) ?: return
 
+        db.collection("Sender")
+            .whereEqualTo("phoneNumber", userId)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    val document = querySnapshot.documents[0]
+
+                    // Check if these fields already exist or need initialization
+                    val secondMileStatus = document.getString("SecondMileStatus")
+                    val lastMileStatus = document.getString("LastMileStatus")
+                    val lastMileOtp = document.getString("LastMileOTP")
+
+                    // Only initialize if fields don't exist or are null
+                    val updates = hashMapOf<String, Any>()
+
+                    if (secondMileStatus == null) {
+                        updates["SecondMileStatus"] = "Not Started"
+                    }
+
+                    if (lastMileStatus == null) {
+                        updates["LastMileStatus"] = "Not Started"
+                    }
+
+                    if (lastMileOtp == null) {
+                        updates["LastMileOTP"] = ""
+                    }
+
+                    // Only update if there are fields to initialize
+                    if (updates.isNotEmpty()) {
+                        db.collection("Sender").document(userId)
+                            .update(updates)
+                            .addOnSuccessListener {
+                                Log.d("SenderProfile", "Mile status fields initialized successfully")
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("SenderProfile", "Error initializing mile status fields", e)
+                            }
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error checking sender document", e)
+            }
+    }
     // Programmatic injection of MapView into existing layout; no XML changes
     private fun injectMapViewProgrammatically(savedInstanceState: Bundle?) {
         try {
@@ -642,23 +690,37 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
         if (enteredOtp == realOtp && realOtp.isNotEmpty()) {
             val travelerUpdates = mapOf<String, Any>(
                 "FirstMileStatus" to "Completed",
-                "SecondMileStatus" to "In Progress"  // Automatically start second mile
+                "SecondMileStatus" to "In Progress"  // Set second mile status in traveler document
             )
             val senderUpdates = mapOf<String, Any>(
                 "FirstMileStatus" to "Completed",
-                "SecondMileStatus" to "In Progress"  // Automatically start second mile
+                "SecondMileStatus" to "In Progress"  // Also update sender document
             )
 
-            // Update traveler first
+            // Update traveler document first
             travelerRef.update(travelerUpdates)
                 .addOnSuccessListener {
-                    // Update sender doc
+                    Log.d("SenderProfile", "Successfully updated traveler FirstMileStatus to Completed and SecondMileStatus to In Progress")
+
+                    // Then update sender document
                     try {
                         val phoneNumber = sender?.getString("phoneNumber") ?: sharedPref.getString("PHONE_NUMBER", null)
                         if (!phoneNumber.isNullOrBlank()) {
                             db.collection("Sender").document(phoneNumber)
                                 .update(senderUpdates)
                                 .addOnSuccessListener {
+                                    Log.d("SenderProfile", "Successfully updated sender FirstMileStatus to Completed and SecondMileStatus to In Progress")
+                                    showSecondMileStartedMessage(doc)
+                                    refreshTravelerDoc { refreshed ->
+                                        refreshed?.let {
+                                            updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                                            updateSecondMileUI(it)
+                                        }
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("SenderProfile", "Error updating sender document", e)
+                                    // Even if sender update fails, show success message since traveler update succeeded
                                     showSecondMileStartedMessage(doc)
                                     refreshTravelerDoc { refreshed ->
                                         refreshed?.let {
@@ -668,6 +730,8 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                                     }
                                 }
                         } else {
+                            // No sender phone found - still proceed with traveler update
+                            Log.w("SenderProfile", "No sender phone number found, but traveler updated successfully")
                             showSecondMileStartedMessage(doc)
                             refreshTravelerDoc { refreshed ->
                                 refreshed?.let {
@@ -677,13 +741,19 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                             }
                         }
                     } catch (e: Exception) {
-                        Log.e("SenderProfile", "Error updating sender", e)
+                        Log.e("SenderProfile", "Exception while updating sender", e)
                         showSecondMileStartedMessage(doc)
+                        refreshTravelerDoc { refreshed ->
+                            refreshed?.let {
+                                updateFirstMileSectionUI(it.getString("FirstMileOTP") ?: "", it.getString("FirstMileStatus") ?: "Completed")
+                                updateSecondMileUI(it)
+                            }
+                        }
                     }
                 }
                 .addOnFailureListener { e ->
-                    Log.e("SenderProfile", "Error updating first mile status", e)
-                    Toast.makeText(this, "Failed to update status", Toast.LENGTH_SHORT).show()
+                    Log.e("SenderProfile", "Error updating traveler document", e)
+                    Toast.makeText(this, "Failed to update status in traveler record", Toast.LENGTH_SHORT).show()
                 }
         } else {
             Toast.makeText(this, "Invalid OTP", Toast.LENGTH_SHORT).show()
@@ -710,12 +780,40 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                 .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
                 .show()
 
-            // Also update the second mile UI section
+            // Update UI to reflect second mile in progress
             findViewById<TextView>(R.id.secondmilesender)?.text = "⏳ 2nd Stage - In Progress"
             findViewById<TextView>(R.id.tvTransitStatus)?.text = "Traveler is flying with your package\nFlight: $flightNumber\nTracking: $trackingUrl"
+
+            // Also update the tracking URL at the bottom
+            findViewById<TextView>(R.id.trackingUrl)?.text = "Flight Tracking: $trackingUrl"
+        }
+
+        // Log the successful status update
+        Log.d("SenderProfile", "Second mile started - Flight: $flightNumber, Tracking: $trackingUrl")
+    }
+    private fun verifySecondMileStatusUpdate() {
+        refreshTravelerDoc { doc ->
+            doc?.let {
+                val secondMileStatus = it.getString("SecondMileStatus") ?: "Not Started"
+                Log.d("SenderProfile", "Current SecondMileStatus in database: $secondMileStatus")
+
+                if (secondMileStatus == "In Progress") {
+                    // Successfully updated in database
+                    Toast.makeText(this, "Second stage successfully started!", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Something went wrong, try to update again
+                    Log.w("SenderProfile", "SecondMileStatus not updated properly, attempting to fix...")
+                    it.reference.update("SecondMileStatus", "In Progress")
+                        .addOnSuccessListener {
+                            Log.d("SenderProfile", "Fixed SecondMileStatus to In Progress")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("SenderProfile", "Failed to fix SecondMileStatus", e)
+                        }
+                }
+            }
         }
     }
-
     private fun updateSecondMileUI(travelerDoc: DocumentSnapshot) {
         val flightNumber = travelerDoc.getString("flightNumber")
             ?: travelerDoc.getString("FlightNumber")
@@ -932,17 +1030,34 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                 return
             }
 
+            // Check current second mile status from database
+            val currentSecondMileStatus = doc.getString("SecondMileStatus") ?: "Not Started"
+
             when {
                 now.before(dep) -> {
                     secondTv.text = "⏳ 2nd Stage - Not Started"
                     transitStatusTv.text = "Flight scheduled to depart at ${formatLocal(dep)}"
+
+                    // If somehow second mile was marked as in progress but flight hasn't departed, correct it
+                    if (currentSecondMileStatus == "In Progress") {
+                        doc.reference.update("SecondMileStatus", "Not Started")
+                    }
                 }
                 now.after(dep) && now.before(arr) -> {
                     secondTv.text = "⏳ 2nd Stage - In Transit"
                     transitStatusTv.text = "Flight is airborne"
-                    if (doc.getString("SecondMileStatus") != "In Progress") {
+
+                    // Ensure second mile status is set to In Progress in database
+                    if (currentSecondMileStatus != "In Progress") {
                         doc.reference.update("SecondMileStatus", "In Progress")
+                            .addOnSuccessListener {
+                                Log.d("SenderProfile", "Updated SecondMileStatus to In Progress based on flight timing")
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("SenderProfile", "Failed to update SecondMileStatus to In Progress", e)
+                            }
                     }
+
                     if (flightNumber.isNotBlank()) {
                         fetchFlightStatusFromFlightAware(flightNumber) { statusText ->
                             runOnUiThread { transitStatusTv.text = statusText }
@@ -952,8 +1067,16 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                 now.after(arr) -> {
                     secondTv.text = "✓ 2nd Stage - Completed"
                     transitStatusTv.text = "Flight landed at ${formatLocal(arr)}"
-                    if (doc.getString("SecondMileStatus") != "Completed") {
+
+                    // Update second mile status to Completed if not already
+                    if (currentSecondMileStatus != "Completed") {
                         doc.reference.update("SecondMileStatus", "Completed")
+                            .addOnSuccessListener {
+                                Log.d("SenderProfile", "Updated SecondMileStatus to Completed based on flight arrival")
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("SenderProfile", "Failed to update SecondMileStatus to Completed", e)
+                            }
                     }
 
                     val lastStatus = doc.getString("LastMileStatus") ?: "Not Started"
@@ -965,6 +1088,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                                 "LastMileStatus" to "In Progress"
                             )
                         ).addOnSuccessListener {
+                            Log.d("SenderProfile", "Initiated Last Mile with OTP")
                             refreshTravelerDoc { refreshed ->
                                 refreshed?.let {
                                     updateLastMileSectionUI(it.getString("LastMileOTP") ?: "", it.getString("LastMileStatus") ?: "In Progress")
