@@ -60,7 +60,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
         db = FirebaseFirestore.getInstance()
         sharedPref = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE)
         //uniqueKey = sharedPref.getString("uniqueKey", null) ?: intent.getStringExtra("uniqueKey")
-        uniqueKey = "swadgkey"
+        uniqueKey = "asdf"
 
         // Inject MapView programmatically into the existing layout (above tvTravelerLocation)
         injectMapViewProgrammatically(savedInstanceState)
@@ -469,6 +469,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                     Toast.makeText(this, "No traveler found", Toast.LENGTH_SHORT).show()
                     return@refreshTravelerDoc
                 }
+                updateFlightUI(doc)
 
                 // Update first mile section
                 val firstStatus = doc.getString("FirstMileStatus") ?: "Not Started"
@@ -989,7 +990,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
     private fun refreshSecondMileAndMaybeStartLast(doc: DocumentSnapshot) {
         val departureStr = doc.getString("departureTime") ?: doc.getString("leavingDate") ?: ""
         val arrivalStr = doc.getString("arrivalTime") ?: ""
-        val flightNumber = doc.getString("flightNumber") ?: ""
+        val flightNumber = doc.getString("flightNumber") ?: doc.getString("FlightNumber") ?: ""
         val secondTv = findViewById<TextView>(R.id.secondmilesender)
         val transitStatusTv = findViewById<TextView>(R.id.tvTransitStatus)
         val lastUpdatedTv = findViewById<TextView>(R.id.tvLastUpdated)
@@ -1000,7 +1001,8 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                 SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault()),
                 SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
                 SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()),
-                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
+                SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.getDefault()) // Added fallback format
             )
 
             fun parseFlexible(input: String): Date? {
@@ -1010,6 +1012,7 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
                         p.timeZone = TimeZone.getDefault()
                         return p.parse(input)
                     } catch (_: Exception) {
+                        // Try next format
                     }
                 }
                 return null
@@ -1018,93 +1021,131 @@ class SenderProfile : AppCompatActivity(), OnMapReadyCallback {
             val dep = parseFlexible(departureStr)
             val arr = parseFlexible(arrivalStr)
 
-            if (dep == null || arr == null) {
-                secondTv.text = "⏳ 2nd Stage - Unknown (flight info missing)"
-                transitStatusTv.text = "Flight: $flightNumber"
-                lastUpdatedTv.text = "Updated: ${SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault()).format(Date())}"
-                if (flightNumber.isNotBlank()) {
-                    fetchFlightStatusFromFlightAware(flightNumber) { statusText ->
-                        runOnUiThread { transitStatusTv.text = statusText }
-                    }
-                }
-                return
-            }
-
-            // Check current second mile status from database
+            // Get current status from database first
             val currentSecondMileStatus = doc.getString("SecondMileStatus") ?: "Not Started"
 
-            when {
-                now.before(dep) -> {
-                    secondTv.text = "⏳ 2nd Stage - Not Started"
-                    transitStatusTv.text = "Flight scheduled to depart at ${formatLocal(dep)}"
+            // If we have valid flight data, use it to determine status
+            if (dep != null && arr != null) {
+                when {
+                    now.before(dep) -> {
+                        secondTv.text = "⏳ 2nd Stage - Not Started"
+                        transitStatusTv.text = "Flight scheduled to depart at ${formatLocal(dep)}"
 
-                    // If somehow second mile was marked as in progress but flight hasn't departed, correct it
-                    if (currentSecondMileStatus == "In Progress") {
-                        doc.reference.update("SecondMileStatus", "Not Started")
-                    }
-                }
-                now.after(dep) && now.before(arr) -> {
-                    secondTv.text = "⏳ 2nd Stage - In Transit"
-                    transitStatusTv.text = "Flight is airborne"
-
-                    // Ensure second mile status is set to In Progress in database
-                    if (currentSecondMileStatus != "In Progress") {
-                        doc.reference.update("SecondMileStatus", "In Progress")
-                            .addOnSuccessListener {
-                                Log.d("SenderProfile", "Updated SecondMileStatus to In Progress based on flight timing")
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("SenderProfile", "Failed to update SecondMileStatus to In Progress", e)
-                            }
-                    }
-
-                    if (flightNumber.isNotBlank()) {
-                        fetchFlightStatusFromFlightAware(flightNumber) { statusText ->
-                            runOnUiThread { transitStatusTv.text = statusText }
+                        // Update database status if needed
+                        if (currentSecondMileStatus != "Not Started") {
+                            doc.reference.update("SecondMileStatus", "Not Started")
                         }
                     }
-                }
-                now.after(arr) -> {
-                    secondTv.text = "✓ 2nd Stage - Completed"
-                    transitStatusTv.text = "Flight landed at ${formatLocal(arr)}"
+                    now.after(dep) && now.before(arr) -> {
+                        secondTv.text = "⏳ 2nd Stage - In Transit"
+                        transitStatusTv.text = "Flight is airborne"
 
-                    // Update second mile status to Completed if not already
-                    if (currentSecondMileStatus != "Completed") {
-                        doc.reference.update("SecondMileStatus", "Completed")
-                            .addOnSuccessListener {
-                                Log.d("SenderProfile", "Updated SecondMileStatus to Completed based on flight arrival")
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("SenderProfile", "Failed to update SecondMileStatus to Completed", e)
-                            }
-                    }
+                        // Update database status if needed
+                        if (currentSecondMileStatus != "In Progress") {
+                            doc.reference.update("SecondMileStatus", "In Progress")
+                                .addOnSuccessListener {
+                                    Log.d("SenderProfile", "Updated SecondMileStatus to In Progress based on flight timing")
+                                }
+                        }
 
-                    val lastStatus = doc.getString("LastMileStatus") ?: "Not Started"
-                    if (lastStatus == "Not Started") {
-                        val lastOtp = generateOtp()
-                        doc.reference.update(
-                            mapOf(
-                                "LastMileOTP" to lastOtp,
-                                "LastMileStatus" to "In Progress"
-                            )
-                        ).addOnSuccessListener {
-                            Log.d("SenderProfile", "Initiated Last Mile with OTP")
-                            refreshTravelerDoc { refreshed ->
-                                refreshed?.let {
-                                    updateLastMileSectionUI(it.getString("LastMileOTP") ?: "", it.getString("LastMileStatus") ?: "In Progress")
+                        // Fetch live flight status
+                        if (flightNumber.isNotBlank()) {
+                            fetchFlightStatusFromFlightAware(flightNumber) { statusText ->
+                                runOnUiThread {
+                                    transitStatusTv.text = statusText
+                                    // Also update the tracking URL
+                                    findViewById<TextView>(R.id.trackingUrl)?.text =
+                                        "Flight Tracking: https://www.flightaware.com/live/flight/$flightNumber"
                                 }
                             }
-                        }.addOnFailureListener { e ->
-                            Log.e("SenderProfile", "Error initiating last mile", e)
+                        }
+                    }
+                    now.after(arr) -> {
+                        secondTv.text = "✓ 2nd Stage - Completed"
+                        transitStatusTv.text = "Flight landed at ${formatLocal(arr)}"
+
+                        // Update database status if needed
+                        if (currentSecondMileStatus != "Completed") {
+                            doc.reference.update("SecondMileStatus", "Completed")
+                                .addOnSuccessListener {
+                                    Log.d("SenderProfile", "Updated SecondMileStatus to Completed based on flight arrival")
+                                    // Auto-start last mile when flight completes
+                                    startLastMileAfterFlightCompletion(doc)
+                                }
                         }
                     }
                 }
+            } else {
+                // If flight data parsing failed, use the persisted status from database
+                handleMissingFlightData(currentSecondMileStatus, flightNumber, secondTv, transitStatusTv)
             }
 
             lastUpdatedTv.text = "Updated: ${SimpleDateFormat("HH:mm, dd MMM yyyy", Locale.getDefault()).format(Date())}"
+
         } catch (e: Exception) {
             Log.e("SenderProfile", "Error processing second mile", e)
-            findViewById<TextView>(R.id.secondmilesender).text = "⏳ 2nd Stage - Unknown"
+            // Fallback to database status on error
+            val currentStatus = doc.getString("SecondMileStatus") ?: "Unknown"
+            secondTv.text = "⏳ 2nd Stage - $currentStatus"
+            transitStatusTv.text = "Flight: $flightNumber"
+        }
+    }
+
+    private fun handleMissingFlightData(
+        currentStatus: String,
+        flightNumber: String,
+        secondTv: TextView,
+        transitStatusTv: TextView
+    ) {
+        // Use the persisted status from database instead of showing "Unknown"
+        when (currentStatus) {
+            "Not Started" -> {
+                secondTv.text = "⏳ 2nd Stage - Not Started"
+                transitStatusTv.text = "Awaiting flight departure"
+            }
+            "In Progress" -> {
+                secondTv.text = "⏳ 2nd Stage - In Transit"
+                transitStatusTv.text = "Flight in progress - $flightNumber"
+
+                // Still try to get flight status if we have flight number
+                if (flightNumber.isNotBlank()) {
+                    fetchFlightStatusFromFlightAware(flightNumber) { statusText ->
+                        runOnUiThread {
+                            transitStatusTv.text = statusText
+                        }
+                    }
+                }
+            }
+            "Completed" -> {
+                secondTv.text = "✓ 2nd Stage - Completed"
+                transitStatusTv.text = "Flight completed"
+            }
+            else -> {
+                secondTv.text = "⏳ 2nd Stage - $currentStatus"
+                transitStatusTv.text = "Flight: $flightNumber"
+            }
+        }
+    }
+
+    private fun startLastMileAfterFlightCompletion(doc: DocumentSnapshot) {
+        val lastStatus = doc.getString("LastMileStatus") ?: "Not Started"
+        if (lastStatus == "Not Started") {
+            val lastOtp = generateOtp()
+            doc.reference.update(
+                mapOf(
+                    "LastMileOTP" to lastOtp,
+                    "LastMileStatus" to "In Progress"
+                )
+            ).addOnSuccessListener {
+                Log.d("SenderProfile", "Auto-initiated Last Mile after flight completion")
+                refreshTravelerDoc { refreshed ->
+                    refreshed?.let {
+                        updateLastMileSectionUI(it.getString("LastMileOTP") ?: "", it.getString("LastMileStatus") ?: "In Progress")
+                    }
+                }
+            }.addOnFailureListener { e ->
+                Log.e("SenderProfile", "Error auto-initiating last mile", e)
+            }
         }
     }
 
